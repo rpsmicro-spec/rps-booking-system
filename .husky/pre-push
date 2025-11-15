@@ -1,0 +1,4 @@
+# Run build check before pushing
+echo "🔍 Running build check..."
+npm run build
+
