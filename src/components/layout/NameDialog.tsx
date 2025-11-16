@@ -29,7 +29,7 @@ type NameFormValues = z.infer<typeof nameSchema>;
 
 interface NameDialogProps {
   open: boolean;
-  onNameSet: (name: string) => void;
+  onNameSet: (name: string) => Promise<void> | void;
 }
 
 export function NameDialog({ open, onNameSet }: NameDialogProps) {
@@ -47,23 +47,29 @@ export function NameDialog({ open, onNameSet }: NameDialogProps) {
   const onSubmit = async (data: NameFormValues) => {
     setIsLoading(true);
     try {
+      const trimmedName = data.name.trim();
+      
       const response = await fetch("/api/users/me", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: data.name }),
+        body: JSON.stringify({ name: trimmedName }),
       });
 
       const result = await response.json();
 
       if (!response.ok) {
+        console.error("Failed to update name:", result.error);
         toast.error(result.error || "Failed to update name");
+        setIsLoading(false);
         return;
       }
 
+      console.log("Name updated successfully:", trimmedName);
       toast.success("Name updated successfully!");
-      onNameSet(data.name);
+      onNameSet(trimmedName);
       reset();
-    } catch {
+    } catch (error) {
+      console.error("Error updating name:", error);
       toast.error("An unexpected error occurred");
     } finally {
       setIsLoading(false);

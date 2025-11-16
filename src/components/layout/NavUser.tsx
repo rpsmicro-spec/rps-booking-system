@@ -45,14 +45,22 @@ export function NavUser() {
   const [showLogoutDialog, setShowLogoutDialog] = useState(false)
 
   useEffect(() => {
-    fetch("/api/users/me")
+    console.log("NavUser: Fetching user data...");
+    fetch("/api/users/me", {
+      cache: 'no-store',
+      headers: {
+        'Cache-Control': 'no-cache'
+      }
+    })
       .then((res) => res.json())
       .then((data) => {
+        console.log("NavUser: Fetched user data:", data);
         if (data.user) {
           setUser(data.user)
         }
       })
-      .catch(() => {
+      .catch((error) => {
+        console.error("NavUser: Error fetching user:", error);
         // Ignore errors
       })
       .finally(() => {
@@ -90,8 +98,11 @@ export function NavUser() {
   }
 
   const handleNameSet = (name: string) => {
+    console.log("handleNameSet called with:", name);
     if (user) {
-      setUser({ ...user, name })
+      const trimmedName = name.trim();
+      console.log("Updating user name to:", trimmedName);
+      setUser({ ...user, name: trimmedName });
     }
   }
 
@@ -115,6 +126,8 @@ export function NavUser() {
 
   const hasName = user.name && user.name.trim().length > 0
   const userRole = (user.role as UserRole) || "staff"
+
+  console.log("NavUser render - user.name:", user.name, "hasName:", hasName)
 
   // Show dialog if name is not set
   if (!hasName) {
