@@ -32,11 +32,12 @@ export function EditJobFormClient({ job }: EditJobFormClientProps) {
     notes?: string
     before_photos?: (string | File)[]
     after_photos?: (string | File)[]
-    invoice_file_path?: string
+    invoice_file_path?: string | File | null
   }) => {
     try {
       // Prepare the update data - exclude job_number as it cannot be changed
       // Photos are already uploaded and converted to URLs by JobForm, so include them
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { job_number: _job_number, ...updateData } = data
 
       const response = await fetch(`/api/jobs/${job.id}`, {
