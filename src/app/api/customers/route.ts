@@ -9,6 +9,8 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url)
     const search = searchParams.get('search')
+    const limit = parseInt(searchParams.get('limit') || '50')
+    const offset = parseInt(searchParams.get('offset') || '0')
 
     // Get all unique customers by grouping jobs
     let query = supabase
@@ -94,11 +96,23 @@ export async function GET(request: Request) {
     })
 
     // Convert map to array and sort
-    const customers = Array.from(customerMap.values()).sort((a, b) => 
+    const allCustomers = Array.from(customerMap.values()).sort((a, b) => 
       a.customer_name.localeCompare(b.customer_name)
     )
 
-    return NextResponse.json({ customers }, { status: 200 })
+    // Apply pagination
+    const total = allCustomers.length
+    const customers = allCustomers.slice(offset, offset + limit)
+
+    return NextResponse.json(
+      {
+        customers,
+        total,
+        limit,
+        offset,
+      },
+      { status: 200 }
+    )
   } catch {
     return NextResponse.json(
       { error: 'An unexpected error occurred' },
