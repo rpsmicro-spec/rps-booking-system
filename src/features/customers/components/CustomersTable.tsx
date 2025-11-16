@@ -39,9 +39,12 @@ interface Customer {
 
 interface CustomersTableProps {
   search?: string
+  limit?: number
+  offset?: number
+  onTotalChange?: (total: number) => void
 }
 
-export function CustomersTable({ search }: CustomersTableProps) {
+export function CustomersTable({ search, limit = 50, offset = 0, onTotalChange }: CustomersTableProps) {
   const router = useRouter()
   const [customers, setCustomers] = useState<Customer[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -54,13 +57,15 @@ export function CustomersTable({ search }: CustomersTableProps) {
   useEffect(() => {
     fetchCustomers()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search])
+  }, [search, limit, offset])
 
   const fetchCustomers = async () => {
     setIsLoading(true)
     try {
       const params = new URLSearchParams()
       if (search) params.append('search', search)
+      params.append('limit', limit.toString())
+      params.append('offset', offset.toString())
 
       const response = await fetch(`/api/customers?${params.toString()}`)
       const result = await response.json()
@@ -71,6 +76,7 @@ export function CustomersTable({ search }: CustomersTableProps) {
       }
 
       setCustomers(result.customers || [])
+      onTotalChange?.(result.total || 0)
     } catch (error) {
       console.error('Error fetching customers:', error)
     } finally {

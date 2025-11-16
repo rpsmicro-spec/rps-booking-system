@@ -93,7 +93,7 @@ export default async function DashboardPage() {
       <div className="grid gap-4">
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg md:text-xl">Recent Jobs (Last Week)</CardTitle>
+            <CardTitle className="text-lg md:text-xl">Recent Jobs (This Week)</CardTitle>
           </CardHeader>
           <CardContent>
             <RecentJobsTable />

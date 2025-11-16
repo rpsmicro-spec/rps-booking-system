@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
   Table,
@@ -40,6 +41,7 @@ const STATUS_COLORS: Record<string, 'default' | 'secondary' | 'destructive' | 'o
 }
 
 export function RecentJobsTable() {
+  const router = useRouter()
   const [jobs, setJobs] = useState<Job[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
@@ -58,16 +60,20 @@ export function RecentJobsTable() {
         return
       }
 
-      // Filter jobs created in the last week
-      const oneWeekAgo = new Date()
-      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
-      oneWeekAgo.setHours(0, 0, 0, 0)
+      // Filter jobs created this week (from start of current week)
+      const now = new Date()
+      const startOfWeek = new Date(now)
+      // Get Monday of current week (0 = Sunday, 1 = Monday, etc.)
+      const dayOfWeek = now.getDay()
+      const diff = now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1) // Adjust to Monday
+      startOfWeek.setDate(diff)
+      startOfWeek.setHours(0, 0, 0, 0)
 
       const recentJobs = (result.jobs || [])
         .filter((job: Job) => {
           if (!job.created_at) return false
           const createdDate = new Date(job.created_at)
-          return createdDate >= oneWeekAgo
+          return createdDate >= startOfWeek
         })
         .slice(0, 12) // Limit to 12 items
 
@@ -77,6 +83,10 @@ export function RecentJobsTable() {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const handleRowClick = (jobId: string) => {
+    router.push(`/jobs/${jobId}`)
   }
 
   if (isLoading) {
@@ -107,7 +117,7 @@ export function RecentJobsTable() {
                       </EmptyMedia>
                       <EmptyTitle>No Recent Jobs</EmptyTitle>
                       <EmptyDescription>
-                        No jobs found in the last week. Create a new job to get started.
+                        No jobs found this week. Create a new job to get started.
                       </EmptyDescription>
                     </EmptyHeader>
                   </Empty>
@@ -116,7 +126,11 @@ export function RecentJobsTable() {
             </TableRow>
           ) : (
             jobs.map((job) => (
-              <TableRow key={job.id}>
+              <TableRow
+                key={job.id}
+                className="cursor-pointer"
+                onClick={() => handleRowClick(job.id)}
+              >
                 <TableCell className="font-medium">{job.job_number}</TableCell>
                 <TableCell>{job.customer_name}</TableCell>
                 <TableCell>
@@ -129,7 +143,7 @@ export function RecentJobsTable() {
                     ? format(new Date(job.booking_date), 'MMM dd, yyyy')
                     : '-'}
                 </TableCell>
-                <TableCell className="text-right">
+                <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="icon">

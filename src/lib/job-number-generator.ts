@@ -55,6 +55,20 @@ export async function getNextJobNumberPreview(): Promise<string | null> {
     return null
   }
 
-  return generateJobNumber(settingsData)
+  // Validate required fields
+  if (
+    !settingsData.prefix ||
+    !settingsData.number_base ||
+    settingsData.next_number === null
+  ) {
+    return null
+  }
+
+  return generateJobNumber({
+    prefix: settingsData.prefix,
+    number_base: settingsData.number_base as 'sequence' | 'year',
+    next_number: settingsData.next_number,
+    year: settingsData.year ?? undefined,
+  })
 }
 

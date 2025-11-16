@@ -4,6 +4,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { deleteStorageFile, deleteStorageFiles } from './delete'
+import type { Json } from '@/types/database.types'
 
 interface CleanupResult {
   deletedFiles: number
@@ -185,7 +186,7 @@ export async function runStorageCleanup(): Promise<CleanupResult> {
     cleanup_type: 'storage',
     resource_type: 'files',
     reason: 'Automated cleanup',
-    metadata: result as Record<string, unknown>,
+    metadata: result as unknown as Json,
   })
 
   return result

@@ -1,46 +1,55 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { JobsTable } from './JobsTable'
-import { JobSearch } from './JobSearch'
-import { JobFilters } from './JobFilters'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import Link from 'next/link'
-import { Plus, Settings } from 'lucide-react'
-import { JobNumberSettingsDialog } from './JobNumberSettingsDialog'
+import { useState } from "react";
+import { JobsTable } from "./JobsTable";
+import { JobSearch } from "./JobSearch";
+import { JobFilters } from "./JobFilters";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import Link from "next/link";
+import { Plus, Settings } from "lucide-react";
+import { JobNumberSettingsDialog } from "./JobNumberSettingsDialog";
 
 export function JobsPageClient() {
-  const [settingsDialogOpen, setSettingsDialogOpen] = useState(false)
-  const [status, setStatus] = useState<string | null>(null)
-  const [search, setSearch] = useState('')
-  const [dateFrom, setDateFrom] = useState<string | null>(null)
-  const [dateTo, setDateTo] = useState<string | null>(null)
-  const [offset, setOffset] = useState(0)
-  const [total, setTotal] = useState(0)
-  const limit = 50
+  const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
+  const [status, setStatus] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [dateFrom, setDateFrom] = useState<string | null>(null);
+  const [dateTo, setDateTo] = useState<string | null>(null);
+  const [offset, setOffset] = useState(0);
+  const [total, setTotal] = useState(0);
+  const limit = 50;
 
   const handleStatusChange = (newStatus: string | null) => {
-    setStatus(newStatus)
-    setOffset(0)
-  }
+    setStatus(newStatus);
+    setOffset(0);
+  };
 
   const handleSearchChange = (newSearch: string) => {
-    setSearch(newSearch)
-    setOffset(0)
-  }
+    setSearch(newSearch);
+    setOffset(0);
+  };
 
   const handleClearFilters = () => {
-    setStatus(null)
-    setDateFrom(null)
-    setDateTo(null)
-    setOffset(0)
-  }
+    setStatus(null);
+    setDateFrom(null);
+    setDateTo(null);
+    setOffset(0);
+  };
 
   const handleClearSearch = () => {
-    setSearch('')
-    setOffset(0)
-  }
+    setSearch("");
+    setOffset(0);
+  };
 
   return (
     <>
@@ -89,12 +98,12 @@ export function JobsPageClient() {
             dateTo={dateTo}
             onStatusChange={handleStatusChange}
             onDateFromChange={(date) => {
-              setDateFrom(date)
-              setOffset(0)
+              setDateFrom(date);
+              setOffset(0);
             }}
             onDateToChange={(date) => {
-              setDateTo(date)
-              setOffset(0)
+              setDateTo(date);
+              setOffset(0);
             }}
             onClear={handleClearFilters}
           />
@@ -118,26 +127,117 @@ export function JobsPageClient() {
 
           {/* Pagination */}
           {total > limit && (
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">
-                Showing {offset + 1}-{Math.min(offset + limit, total)} of {total} jobs
+            <div className="flex flex-col gap-4">
+              <p className="text-sm text-muted-foreground text-center">
+                Showing {offset + 1}-{Math.min(offset + limit, total)} of{" "}
+                {total} jobs
               </p>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setOffset(Math.max(0, offset - limit))}
-                  disabled={offset === 0}
-                >
-                  Previous
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => setOffset(offset + limit)}
-                  disabled={offset + limit >= total}
-                >
-                  Next
-                </Button>
-              </div>
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (offset > 0) {
+                          setOffset(Math.max(0, offset - limit));
+                        }
+                      }}
+                      className={
+                        offset === 0
+                          ? "pointer-events-none opacity-50"
+                          : "cursor-pointer"
+                      }
+                    />
+                  </PaginationItem>
+
+                  {(() => {
+                    const totalPages = Math.ceil(total / limit);
+                    const currentPage = Math.floor(offset / limit) + 1;
+                    const pages: (number | "ellipsis")[] = [];
+
+                    if (totalPages <= 7) {
+                      // Show all pages
+                      for (let i = 1; i <= totalPages; i++) {
+                        pages.push(i);
+                      }
+                    } else {
+                      // Show first page
+                      pages.push(1);
+
+                      if (currentPage <= 4) {
+                        // Show pages 2-5, then ellipsis, then last
+                        for (let i = 2; i <= 5; i++) {
+                          pages.push(i);
+                        }
+                        pages.push("ellipsis");
+                        pages.push(totalPages);
+                      } else if (currentPage >= totalPages - 3) {
+                        // Show first, ellipsis, then last 5 pages
+                        pages.push("ellipsis");
+                        for (let i = totalPages - 4; i <= totalPages; i++) {
+                          pages.push(i);
+                        }
+                      } else {
+                        // Show first, ellipsis, current-1, current, current+1, ellipsis, last
+                        pages.push("ellipsis");
+                        for (
+                          let i = currentPage - 1;
+                          i <= currentPage + 1;
+                          i++
+                        ) {
+                          pages.push(i);
+                        }
+                        pages.push("ellipsis");
+                        pages.push(totalPages);
+                      }
+                    }
+
+                    return pages.map((page, index) => {
+                      if (page === "ellipsis") {
+                        return (
+                          <PaginationItem key={`ellipsis-${index}`}>
+                            <PaginationEllipsis />
+                          </PaginationItem>
+                        );
+                      }
+
+                      return (
+                        <PaginationItem key={page}>
+                          <PaginationLink
+                            href="#"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              setOffset((page - 1) * limit);
+                            }}
+                            isActive={currentPage === page}
+                            className="cursor-pointer"
+                          >
+                            {page}
+                          </PaginationLink>
+                        </PaginationItem>
+                      );
+                    });
+                  })()}
+
+                  <PaginationItem>
+                    <PaginationNext
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (offset + limit < total) {
+                          setOffset(offset + limit);
+                        }
+                      }}
+                      className={
+                        offset + limit >= total
+                          ? "pointer-events-none opacity-50"
+                          : "cursor-pointer"
+                      }
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
             </div>
           )}
         </div>
@@ -148,6 +248,5 @@ export function JobsPageClient() {
         onOpenChange={setSettingsDialogOpen}
       />
     </>
-  )
+  );
 }
-
