@@ -7,33 +7,27 @@ ALTER TABLE cleanup_log ENABLE ROW LEVEL SECURITY;
 -- Allow authenticated users to view all jobs
 CREATE POLICY "Users can view jobs"
   ON jobs FOR SELECT
-  USING (auth.role() = 'authenticated');
+  USING ((select auth.role()) = 'authenticated');
 
 -- Allow authenticated users to create jobs
 CREATE POLICY "Users can create jobs"
   ON jobs FOR INSERT
-  WITH CHECK (auth.role() = 'authenticated');
+  WITH CHECK ((select auth.role()) = 'authenticated');
 
--- Allow authenticated users to update jobs
+-- Allow authenticated users to update jobs (includes soft delete)
 CREATE POLICY "Users can update jobs"
   ON jobs FOR UPDATE
-  USING (auth.role() = 'authenticated')
-  WITH CHECK (auth.role() = 'authenticated');
-
--- Allow authenticated users to delete jobs (soft delete)
-CREATE POLICY "Users can delete jobs"
-  ON jobs FOR UPDATE
-  USING (auth.role() = 'authenticated')
-  WITH CHECK (auth.role() = 'authenticated');
+  USING ((select auth.role()) = 'authenticated')
+  WITH CHECK ((select auth.role()) = 'authenticated');
 
 -- Job Status History RLS Policies
 CREATE POLICY "Users can view job status history"
   ON job_status_history FOR SELECT
-  USING (auth.role() = 'authenticated');
+  USING ((select auth.role()) = 'authenticated');
 
 CREATE POLICY "Users can insert job status history"
   ON job_status_history FOR INSERT
-  WITH CHECK (auth.role() = 'authenticated');
+  WITH CHECK ((select auth.role()) = 'authenticated');
 
 -- Cleanup Log RLS Policies (admin/system only)
 CREATE POLICY "System can manage cleanup log"

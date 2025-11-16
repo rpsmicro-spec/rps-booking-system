@@ -26,3 +26,7 @@ CREATE INDEX IF NOT EXISTS idx_jobs_cleanup
   WHERE deleted_at IS NULL 
     AND archived_at IS NULL;
 
+-- Index for foreign key on job_status_history.changed_by
+CREATE INDEX IF NOT EXISTS idx_job_status_history_changed_by 
+  ON job_status_history(changed_by);
+

@@ -57,12 +57,15 @@ CREATE INDEX IF NOT EXISTS idx_job_status_history_changed_at ON job_status_histo
 
 -- Function to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SET search_path = ''
+AS $$
 BEGIN
   NEW.updated_at = NOW();
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$;
 
 -- Trigger to automatically update updated_at
 CREATE TRIGGER update_jobs_updated_at

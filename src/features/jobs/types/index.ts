@@ -11,9 +11,9 @@ export type {
   JobStatusHistoryInsert,
   JobStatusHistoryUpdate,
   JobStatus,
-} from '@/lib/types'
+} from '@/types/types'
 
-import type { JobInsert, JobUpdate } from '@/lib/types'
+import type { JobInsert, JobUpdate } from '@/types/types'
 
 // Feature-specific input types (for forms)
 export type CreateJobInput = Omit<JobInsert, 'id' | 'created_at' | 'updated_at' | 'created_by'>

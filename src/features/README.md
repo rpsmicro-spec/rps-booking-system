@@ -38,7 +38,9 @@ src/
 │   ├── constants/        # App-wide constants
 │   └── utils/            # Core utilities
 │
-└── types/                 # Global types (if any)
+└── types/                 # Database types
+    ├── database.types.ts # Generated from Supabase
+    └── types.ts           # Re-exported types
 ```
 
 ## Principles
@@ -56,6 +58,7 @@ src/
 - `@/components/ui/*` - shadcn/ui components
 - `@/components/layout/*` - Layout components
 - `@/lib/*` - Core libraries
+- `@/types/*` - Database types
 - `@/app/*` - App Router
 
 ## Example Usage
@@ -75,4 +78,5 @@ import { Sidebar } from "@/components/layout/Sidebar";
 // Import core
 import { createClient } from "@/lib/supabase/client";
 import { JOB_STATUS } from "@/lib/constants";
+import type { Job, JobStatus } from "@/types/types";
 ```

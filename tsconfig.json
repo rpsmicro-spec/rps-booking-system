@@ -22,7 +22,8 @@
       "@/*": ["./src/*"],
       "@/features/*": ["./src/features/*"],
       "@/lib/*": ["./src/lib/*"],
-      "@/app/*": ["./src/app/*"]
+      "@/app/*": ["./src/app/*"],
+      "@/types/*": ["./src/types/*"]
     }
   },
   "include": [
