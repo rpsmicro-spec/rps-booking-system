@@ -1,5 +1,22 @@
 -- Enable UUID extension
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+-- Ensure uuid-ossp is available
+-- If extension exists in wrong schema, drop and recreate in public schema
+DO $$
+BEGIN
+  -- Check if extension exists but not in public schema
+  IF EXISTS (
+    SELECT 1 FROM pg_extension e
+    JOIN pg_namespace n ON e.extnamespace = n.oid
+    WHERE e.extname = 'uuid-ossp' AND n.nspname != 'public'
+  ) THEN
+    DROP EXTENSION "uuid-ossp" CASCADE;
+  END IF;
+  
+  -- Create extension in public schema if it doesn't exist
+  IF NOT EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'uuid-ossp') THEN
+    CREATE EXTENSION "uuid-ossp" SCHEMA public;
+  END IF;
+END $$;
 
 -- Jobs table
 CREATE TABLE IF NOT EXISTS jobs (

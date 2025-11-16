@@ -59,6 +59,7 @@ export function PendingInvitations({ refreshTrigger }: PendingInvitationsProps) 
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleResendInvitation = async (_user: User) => {
     try {
       // TODO: Implement resend invitation API
