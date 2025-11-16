@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth/helpers'
 import type { Database } from '@/types/database.types'
@@ -112,12 +113,14 @@ export async function PUT(request: Request) {
     }
 
     let result: JobNumberSettings
-    if (existing?.data) {
-      // Update existing settings
+    const adminClient = createAdminClient()
+    
+    if (existing) {
+      // Update existing settings - use regular client (RLS allows UPDATE)
       const { data, error } = await supabase
         .from('job_number_settings')
         .update(updateData)
-        .eq('id', existing.data.id)
+        .eq('id', existing.id)
         .select()
         .single() as { data: JobNumberSettings | null; error: unknown }
 
@@ -125,14 +128,14 @@ export async function PUT(request: Request) {
       if (!data) throw new Error('Failed to update settings')
       result = data
     } else {
-      // Create new settings
+      // Create new settings - use admin client to bypass RLS for INSERT
       const insertData: JobNumberSettingsInsert = {
         prefix: prefix || '',
         number_base: number_base || 'sequence',
         next_number: next_number || 1,
         year: number_base === 'year' ? new Date().getFullYear() : null,
       }
-      const { data, error } = await supabase
+      const { data, error } = await adminClient
         .from('job_number_settings')
         .insert(insertData)
         .select()

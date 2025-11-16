@@ -296,7 +296,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_next_job_number: { Args: never; Returns: string }
       generate_public_token: { Args: never; Returns: string }
+      get_and_lock_job_settings: {
+        Args: never
+        Returns: {
+          created_at: string
+          id: string
+          next_number: number
+          number_base: string
+          prefix: string
+          updated_at: string
+          year: number
+        }[]
+      }
       log_audit_event: {
         Args: {
           p_action: string
@@ -309,7 +322,6 @@ export type Database = {
         }
         Returns: string
       }
-      migrate_address_data: { Args: never; Returns: undefined }
     }
     Enums: {
       [_ in never]: never

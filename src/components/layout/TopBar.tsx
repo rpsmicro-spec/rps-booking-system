@@ -28,6 +28,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { toast } from "sonner";
 import { ROLE_LABELS, type UserRole } from "@/lib/constants/roles";
 import type { User as UserType } from "@/types/types";
+import { InstallButton } from "@/components/pwa/InstallButton";
 
 export function TopBar() {
   const router = useRouter();
@@ -136,7 +137,7 @@ export function TopBar() {
 
   return (
     <>
-      {/* Mobile: Show logo and title with user menu */}
+      {/* Mobile: Show logo and title with install button and user menu */}
       <div className="md:hidden flex items-center gap-2 flex-1 min-w-0">
         <Link
           href="/dashboard"
@@ -151,11 +152,13 @@ export function TopBar() {
           />
           <h2 className="text-base font-semibold truncate">RPS Micro</h2>
         </Link>
+        <InstallButton />
         <UserMenu />
       </div>
 
-      {/* Desktop: Show user menu only */}
+      {/* Desktop: Show install button and user menu */}
       <div className="hidden md:flex items-center gap-4">
+        <InstallButton />
         <UserMenu />
       </div>
 

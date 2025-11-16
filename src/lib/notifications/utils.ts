@@ -69,10 +69,19 @@ export function getCustomerWhatsAppLink(phoneNumber: string, message: string): s
  * Generate status update message to send TO customer (from business)
  */
 export function generateStatusUpdateMessageToCustomer(job: Job, statusLabel: string, viewLink: string): string {
-  return `Hello ${job.customer_name}, your job ${job.job_number} status has been updated to ${statusLabel}. View details: ${viewLink}
+  return `Hello ${job.customer_name},
 
-${COMPANY_INFO.NAME}
-${COMPANY_INFO.ADDRESS}
+Your job #${job.job_number} status has been updated to: *${statusLabel}*
+
+You can view all details, photos, and track progress at:
+${viewLink}
+
+Thank you for choosing ${COMPANY_INFO.NAME}!
+
+---
+*${COMPANY_INFO.NAME}*
+${COMPANY_INFO.ADDRESS_SINGLE_LINE}
+
 📞 ${COMPANY_INFO.PHONE} | ${COMPANY_INFO.TEL}
 📧 ${COMPANY_INFO.EMAIL}
 📍 ${COMPANY_INFO.GOOGLE_MAPS_LINK}`
@@ -82,17 +91,39 @@ ${COMPANY_INFO.ADDRESS}
  * Generate completion message to send TO customer (from business)
  */
 export function generateCompletionMessageToCustomer(job: Job, viewLink: string): string {
-  let message = `Hello ${job.customer_name}, great news! Your job ${job.job_number} has been completed.`
-  if (job.invoice_file_path) {
-    message += ` Invoice is available.`
-  }
-  message += ` View details: ${viewLink}
+  let message = `Hello ${job.customer_name},
 
-${COMPANY_INFO.NAME}
-${COMPANY_INFO.ADDRESS}
+Great news! Your job #${job.job_number} has been *completed successfully*.`
+
+  if (job.invoice_file_path) {
+    message += `
+
+Your invoice is now available on the job details page.`
+  }
+
+  message += `
+
+View your completed job, photos, and all details at:
+${viewLink}`
+
+  if (job.invoice_file_path) {
+    message += `
+
+You can download your invoice directly from the job page.`
+  }
+
+  message += `
+
+Thank you for choosing ${COMPANY_INFO.NAME}! We appreciate your business.
+
+---
+*${COMPANY_INFO.NAME}*
+${COMPANY_INFO.ADDRESS_SINGLE_LINE}
+
 📞 ${COMPANY_INFO.PHONE} | ${COMPANY_INFO.TEL}
 📧 ${COMPANY_INFO.EMAIL}
 📍 ${COMPANY_INFO.GOOGLE_MAPS_LINK}`
+
   return message
 }
 

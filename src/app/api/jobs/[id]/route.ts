@@ -54,11 +54,20 @@ export async function PATCH(
 
     const body = await request.json()
 
+    // Prevent job_number from being changed - it's auto-generated and must remain unique
+    const { job_number, ...updateData } = body
+    if (job_number !== undefined) {
+      return NextResponse.json(
+        { error: 'Job number cannot be changed. It is auto-generated and must remain unique.' },
+        { status: 400 }
+      )
+    }
+
     // Update job
     const { data, error } = await supabase
       .from('jobs')
       .update({
-        ...body,
+        ...updateData,
         updated_at: new Date().toISOString(),
       })
       .eq('id', id)

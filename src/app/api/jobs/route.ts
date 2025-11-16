@@ -3,6 +3,13 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth/helpers'
 import { headers } from 'next/headers'
+import { resend, FROM_EMAIL, FROM_NAME } from '@/lib/email/resend'
+import {
+  generateStatusChangeEmail,
+  generateStatusChangeEmailText,
+} from '@/lib/email/templates'
+import { getJobViewUrl, getWhatsAppLink, generateWhatsAppMessage } from '@/lib/notifications/utils'
+import { JOB_STATUS, STATUS_LABELS } from '@/lib/constants'
 
 export async function GET(request: Request) {
   try {
@@ -116,12 +123,10 @@ export async function POST(request: Request) {
       )
     }
 
-    // Auto-generate job number if not provided (with idempotency)
-    let jobNumber = body.job_number
-    if (!jobNumber || jobNumber.trim() === '') {
-      const { generateAndReserveJobNumber } = await import('@/lib/job-number-generator')
-      jobNumber = await generateAndReserveJobNumber()
-    }
+    // Always auto-generate job number to ensure uniqueness and proper sequencing
+    // Manual job numbers are not allowed to prevent duplicates and counter desync
+    const { generateAndReserveJobNumber } = await import('@/lib/job-number-generator')
+    const jobNumber = await generateAndReserveJobNumber()
 
     // Create job
     const { data, error } = await supabase
@@ -155,6 +160,47 @@ export async function POST(request: Request) {
       ip_address: headersList.get('x-forwarded-for') || headersList.get('x-real-ip') || null,
       user_agent: headersList.get('user-agent') || null,
     })
+
+    // Send email notification if job has email and public_token (for "collected" status)
+    if (data.email && data.public_token && resend) {
+      try {
+        const status = data.status || JOB_STATUS.COLLECTED
+        const statusLabel = STATUS_LABELS[status as keyof typeof STATUS_LABELS] || 'Collected'
+        const viewLink = getJobViewUrl(data)
+        const whatsappLink = getWhatsAppLink(
+          generateWhatsAppMessage(data, statusLabel)
+        )
+
+        const emailData = {
+          job: data,
+          viewLink,
+          whatsappLink: whatsappLink ?? undefined,
+        }
+
+        const subject = `Job ${data.job_number} Status Update - ${statusLabel}`
+        const html = generateStatusChangeEmail(emailData)
+        const text = generateStatusChangeEmailText(emailData)
+
+        const { data: emailResult, error: emailError } = await resend.emails.send({
+          from: `${FROM_NAME} <${FROM_EMAIL}>`,
+          to: data.email,
+          subject,
+          html,
+          text,
+        })
+
+        if (emailError) {
+          console.error('Email send error:', emailError)
+        } else {
+          console.log('Email notification sent successfully:', emailResult?.id)
+        }
+      } catch (error) {
+        // Don't fail the job creation if notification fails
+        console.error('Failed to send email notification:', error)
+      }
+    } else if (data.email && data.public_token && !resend) {
+      console.warn('Email service not configured. RESEND_API_KEY is missing.')
+    }
 
     return NextResponse.json({ job: data }, { status: 201 })
   } catch {
