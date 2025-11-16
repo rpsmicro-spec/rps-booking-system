@@ -36,9 +36,18 @@ export async function PATCH(request: Request) {
     const supabase = await createClient()
     const { name } = await request.json()
 
-    if (!name || name.trim().length < 2) {
+    const trimmedName = name?.trim() || ''
+
+    if (!trimmedName || trimmedName.length < 2) {
       return NextResponse.json(
         { error: 'Name must be at least 2 characters' },
+        { status: 400 }
+      )
+    }
+
+    if (trimmedName.length > 100) {
+      return NextResponse.json(
+        { error: 'Name must be less than 100 characters' },
         { status: 400 }
       )
     }
@@ -47,7 +56,7 @@ export async function PATCH(request: Request) {
     const { data: updatedUser, error } = await supabase
       .from('users')
       .update({
-        name: name.trim(),
+        name: trimmedName,
         updated_at: new Date().toISOString(),
       })
       .eq('id', user.id)
@@ -63,7 +72,7 @@ export async function PATCH(request: Request) {
 
     // Also update auth metadata
     await supabase.auth.updateUser({
-      data: { name: name.trim() },
+      data: { name: trimmedName },
     })
 
     return NextResponse.json({ user: updatedUser }, { status: 200 })

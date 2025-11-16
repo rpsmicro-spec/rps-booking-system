@@ -3,7 +3,7 @@
 import { cn } from "@/lib/utils";
 import { type UseSupabaseUploadReturn } from "@/hooks/use-supabase-upload";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, File, Loader2, Upload, X } from "lucide-react";
+import { CheckCircle, File, Loader2, Upload, X, Camera } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import {
   createContext,
@@ -302,7 +302,7 @@ const DropzoneContent = ({ className }: { className?: string }) => {
 };
 
 const DropzoneEmptyState = ({ className }: { className?: string }) => {
-  const { maxFiles, maxFileSize, inputRef, isSuccess } = useDropzoneContext();
+  const { maxFiles, maxFileSize, inputRef, isSuccess, enableCamera, handleCameraClick } = useDropzoneContext();
 
   if (isSuccess) {
     return null;
@@ -316,20 +316,38 @@ const DropzoneEmptyState = ({ className }: { className?: string }) => {
         {!maxFiles || maxFiles > 1 ? "s" : ""}
       </p>
       <div className="flex flex-col items-center gap-y-1">
-        <p className="text-xs text-muted-foreground">
-          Drag and drop or{" "}
-          <a
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              inputRef?.current?.click();
-            }}
-            className="underline cursor-pointer transition hover:text-foreground"
-          >
-            select {maxFiles === 1 ? `file` : "files"}
-          </a>{" "}
-          to upload
-        </p>
+        <div className="flex items-center gap-2 flex-wrap justify-center">
+          <p className="text-xs text-muted-foreground">
+            Drag and drop or{" "}
+            <a
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                inputRef?.current?.click();
+              }}
+              className="underline cursor-pointer transition hover:text-foreground"
+            >
+              select {maxFiles === 1 ? `file` : "files"}
+            </a>
+          </p>
+          {enableCamera && (
+            <>
+              <span className="text-xs text-muted-foreground">or</span>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleCameraClick?.();
+                }}
+                className="inline-flex items-center gap-1 text-xs text-muted-foreground underline cursor-pointer transition hover:text-foreground"
+              >
+                <Camera className="h-3 w-3" />
+                open camera
+              </button>
+            </>
+          )}
+        </div>
         {maxFileSize !== Number.POSITIVE_INFINITY && (
           <p className="text-xs text-muted-foreground">
             Maximum file size: {formatBytes(maxFileSize, 2)}

@@ -9,7 +9,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Info, User, Phone, Mail, MapPin } from "lucide-react";
+import { Info, User, Phone, Mail, MapPin, UserCircle } from "lucide-react";
 import { formatAddress } from "@/lib/utils/address";
 import type { Job } from "@/types/types";
 
@@ -34,7 +34,7 @@ export function CustomerDetailsDialog({ job }: CustomerDetailsDialogProps) {
           </DialogDescription>
         </DialogHeader>
         <div className="mt-6 space-y-6">
-          {/* Customer Name */}
+          {/* Company Name */}
           <div className="flex items-start gap-4">
             <div className="flex-shrink-0 mt-0.5">
               <div className="rounded-full bg-muted p-2">
@@ -42,10 +42,32 @@ export function CustomerDetailsDialog({ job }: CustomerDetailsDialogProps) {
               </div>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-muted-foreground mb-1.5">Customer Name</p>
+              <p className="text-xs font-medium text-muted-foreground mb-1.5">Company Name</p>
               <p className="text-base font-semibold">{job.customer_name}</p>
             </div>
           </div>
+
+          {/* Contact Person Name */}
+          {(job as Job & { contact_person_name?: string }).contact_person_name && (
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0 mt-0.5">
+                <div className="rounded-full bg-muted p-2">
+                  <UserCircle className="h-4 w-4 text-muted-foreground" />
+                </div>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium text-muted-foreground mb-1.5">Contact Person</p>
+                <p className="text-base font-semibold break-words">
+                  {(job as Job & { contact_person_name?: string }).contact_person_name}
+                  {(job as Job & { contact_person_designation?: string }).contact_person_designation && (
+                    <span className="text-sm font-normal text-muted-foreground ml-2">
+                      ({(job as Job & { contact_person_designation?: string }).contact_person_designation})
+                    </span>
+                  )}
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Contact Information */}
           {(job.contact_number || job.email) && (

@@ -76,14 +76,14 @@ export function StatusUpdate({
   }
 
   return (
-    <div className="flex items-center gap-4">
-      <div className="flex-1">
+    <div className="flex items-center gap-2 sm:gap-4">
+      <div className="flex-1 min-w-0">
         <Select
           value={selectedStatus || currentStatus}
           onValueChange={(value) => handleStatusChange(value as JobStatus)}
           disabled={isUpdating}
         >
-          <SelectTrigger>
+          <SelectTrigger className="w-full">
             <SelectValue placeholder="Select status" />
           </SelectTrigger>
           <SelectContent>
@@ -99,7 +99,7 @@ export function StatusUpdate({
         </Select>
       </div>
       {isUpdating && (
-        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground flex-shrink-0" />
       )}
     </div>
   )

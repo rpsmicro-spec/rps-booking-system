@@ -5,7 +5,9 @@ import { useRouter } from "next/navigation"
 import {
   LogOut,
   User,
+  Users,
 } from "lucide-react"
+import Link from "next/link"
 import {
   Avatar,
   AvatarFallback,
@@ -126,6 +128,7 @@ export function NavUser() {
 
   const hasName = user.name && user.name.trim().length > 0
   const userRole = (user.role as UserRole) || "staff"
+  const canManageUsers = userRole === "owner" || userRole === "admin"
 
   console.log("NavUser render - user.name:", user.name, "hasName:", hasName)
 
@@ -202,6 +205,17 @@ export function NavUser() {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
+            {canManageUsers && (
+              <>
+                <DropdownMenuItem asChild>
+                  <Link href="/users">
+                    <Users />
+                    Users
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+              </>
+            )}
             <DropdownMenuItem
               variant="destructive"
               onClick={() => setShowLogoutDialog(true)}

@@ -4,7 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { LogOut, User } from "lucide-react";
+import { LogOut, User, Users, Moon, Sun, Monitor, Activity } from "lucide-react";
+import { useTheme } from "next-themes";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   AlertDialog,
@@ -32,9 +33,16 @@ import { InstallButton } from "@/components/pwa/InstallButton";
 
 export function TopBar() {
   const router = useRouter();
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
   const [user, setUser] = useState<UserType | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+
+  // Avoid hydration mismatch for theme
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     fetch("/api/users/me")
@@ -83,6 +91,30 @@ export function TopBar() {
 
   const hasName = user?.name && user.name.trim().length > 0;
   const userRole = (user?.role as UserRole) || "staff";
+  const canManageUsers = userRole === "owner" || userRole === "admin";
+
+  const getThemeIcon = () => {
+    if (!mounted) return <Monitor className="h-4 w-4" />;
+    switch (theme) {
+      case "light":
+        return <Sun className="h-4 w-4" />;
+      case "dark":
+        return <Moon className="h-4 w-4" />;
+      default:
+        return <Monitor className="h-4 w-4" />;
+    }
+  };
+
+  const handleThemeToggle = () => {
+    if (!mounted) return;
+    if (theme === "light") {
+      setTheme("dark");
+    } else if (theme === "dark") {
+      setTheme("system");
+    } else {
+      setTheme("light");
+    }
+  };
 
   const UserMenu = () => {
     if (isLoading) {
@@ -122,6 +154,23 @@ export function TopBar() {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
+            {canManageUsers && (
+              <>
+                <DropdownMenuItem asChild>
+                  <Link href="/users">
+                    <Users className="mr-2 h-4 w-4" />
+                    <span>Users</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/activity">
+                    <Activity className="mr-2 h-4 w-4" />
+                    <span>Activity</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+              </>
+            )}
             <DropdownMenuItem
               className="text-destructive focus:text-destructive"
               onClick={() => setShowLogoutDialog(true)}
@@ -137,7 +186,7 @@ export function TopBar() {
 
   return (
     <>
-      {/* Mobile: Show logo and title with install button and user menu */}
+      {/* Mobile: Show logo and title with theme toggle, install button and user menu */}
       <div className="md:hidden flex items-center gap-2 flex-1 min-w-0">
         <Link
           href="/dashboard"
@@ -152,6 +201,16 @@ export function TopBar() {
           />
           <h2 className="text-base font-semibold truncate">RPS Micro</h2>
         </Link>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8"
+          onClick={handleThemeToggle}
+          disabled={!mounted}
+        >
+          {getThemeIcon()}
+          <span className="sr-only">Toggle theme</span>
+        </Button>
         <InstallButton />
         <UserMenu />
       </div>

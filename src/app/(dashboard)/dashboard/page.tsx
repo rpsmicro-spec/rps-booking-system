@@ -51,22 +51,22 @@ export default async function DashboardPage() {
       <div className="grid gap-3 md:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Jobs</CardTitle>
-            <Briefcase className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-xs sm:text-sm font-medium">Total Jobs</CardTitle>
+            <Briefcase className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalJobs}</div>
+            <div className="text-xl sm:text-2xl font-bold">{totalJobs}</div>
             <p className="text-xs text-muted-foreground">All time jobs</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Jobs</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-xs sm:text-sm font-medium">Active Jobs</CardTitle>
+            <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{activeJobs}</div>
+            <div className="text-xl sm:text-2xl font-bold">{activeJobs}</div>
             <p className="text-xs text-muted-foreground">
               In progress or collected
             </p>
@@ -75,13 +75,13 @@ export default async function DashboardPage() {
 
         <Card className="sm:col-span-2 lg:col-span-1">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
+            <CardTitle className="text-xs sm:text-sm font-medium">
               Completed Today
             </CardTitle>
-            <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
+            <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{completedToday}</div>
+            <div className="text-xl sm:text-2xl font-bold">{completedToday}</div>
             <p className="text-xs text-muted-foreground">
               Jobs completed today
             </p>

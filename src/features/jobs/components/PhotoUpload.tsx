@@ -245,7 +245,7 @@ export function PhotoUpload({
 
       {/* Dropzone */}
       {photos.length < maxPhotos && (
-        <Dropzone {...uploadHook}>
+        <Dropzone {...uploadHook} enableCamera={true}>
           <DropzoneEmptyState />
           <DropzoneContent />
         </Dropzone>

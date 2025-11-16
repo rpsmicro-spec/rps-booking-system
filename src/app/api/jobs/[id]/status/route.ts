@@ -2,16 +2,9 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth/helpers'
-import { JOB_STATUS, STATUS_WORKFLOW, STATUS_LABELS } from '@/lib/constants'
+import { JOB_STATUS, STATUS_WORKFLOW } from '@/lib/constants'
 import { headers } from 'next/headers'
-import { resend, FROM_EMAIL, FROM_NAME } from '@/lib/email/resend'
-import {
-  generateStatusChangeEmail,
-  generateCompletionEmail,
-  generateStatusChangeEmailText,
-  generateCompletionEmailText,
-} from '@/lib/email/templates'
-import { getJobViewUrl, getWhatsAppLink, generateWhatsAppMessage, generateCompletionWhatsAppMessage } from '@/lib/notifications/utils'
+// Email sending is now manual only - removed automatic email imports
 
 export async function PATCH(
   request: Request,
@@ -100,58 +93,8 @@ export async function PATCH(
       user_agent: headersList.get('user-agent') || null,
     })
 
-    // Send email notification if job has email and public_token
-    if (data.email && data.public_token && resend) {
-      try {
-        const notificationType = status === JOB_STATUS.COMPLETED ? 'completion' : 'status_change'
-        const viewLink = getJobViewUrl(data)
-        const whatsappLink = getWhatsAppLink(
-          notificationType === 'completion'
-            ? generateCompletionWhatsAppMessage(data)
-            : generateWhatsAppMessage(data, STATUS_LABELS[status as keyof typeof STATUS_LABELS] || 'Unknown')
-        )
-
-        const emailData = {
-          job: data,
-          viewLink,
-          whatsappLink: whatsappLink ?? undefined,
-        }
-
-        let subject: string
-        let html: string
-        let text: string
-
-        if (notificationType === 'completion') {
-          subject = `Job ${data.job_number} Completed - RPS Micro Electronics`
-          html = generateCompletionEmail(emailData)
-          text = generateCompletionEmailText(emailData)
-        } else {
-          const statusLabel = STATUS_LABELS[status as keyof typeof STATUS_LABELS] || 'Unknown'
-          subject = `Job ${data.job_number} Status Update - ${statusLabel}`
-          html = generateStatusChangeEmail(emailData)
-          text = generateStatusChangeEmailText(emailData)
-        }
-
-        const { data: emailResult, error: emailError } = await resend.emails.send({
-          from: `${FROM_NAME} <${FROM_EMAIL}>`,
-          to: data.email,
-          subject,
-          html,
-          text,
-        })
-
-        if (emailError) {
-          console.error('Email send error:', emailError)
-        } else {
-          console.log('Email notification sent successfully:', emailResult?.id)
-        }
-      } catch (error) {
-        // Don't fail the status update if notification fails
-        console.error('Failed to send email notification:', error)
-      }
-    } else if (data.email && data.public_token && !resend) {
-      console.warn('Email service not configured. RESEND_API_KEY is missing.')
-    }
+    // Email notifications are now sent manually via the "Send Email" button
+    // No automatic email sending on status change
 
     return NextResponse.json({ job: data }, { status: 200 })
   } catch {

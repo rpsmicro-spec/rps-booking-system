@@ -66,7 +66,7 @@ export async function getNextJobNumberPreview(): Promise<string | null> {
 
   return generateJobNumber({
     prefix: settingsData.prefix,
-    number_base: settingsData.number_base as 'sequence' | 'year',
+    number_base: settingsData.number_base as 'sequence' | 'year', // Kept for backward compatibility
     next_number: settingsData.next_number,
     year: settingsData.year ?? undefined,
   })

@@ -80,6 +80,7 @@ export function CityCombobox({
           aria-expanded={open}
           aria-invalid={ariaInvalid}
           disabled={disabled}
+          suppressHydrationWarning
           className={cn(
             "w-full justify-between",
             !value && "text-muted-foreground",

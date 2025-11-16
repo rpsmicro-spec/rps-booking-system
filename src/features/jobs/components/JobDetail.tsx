@@ -8,7 +8,7 @@ import { StatusTimeline, type StatusHistory } from "./StatusTimeline";
 import { StatusUpdate } from "./StatusUpdate";
 import { format } from "date-fns";
 import type { Job, JobStatus } from "@/types/types";
-import { MessageCircle, Mail, Hash, Calendar, Package, FileText, Image } from "lucide-react";
+import { MessageCircle, Mail, Hash, Calendar, Package, FileText, Image, UserCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   getCustomerWhatsAppLink,
@@ -25,6 +25,7 @@ import { InvoiceUploadDetail } from "./InvoiceUploadDetail";
 import { AllPhotosDialog } from "./AllPhotosDialog";
 import { InvoiceDialog } from "./InvoiceDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ShareJobButton } from "./ShareJobButton";
 
 interface JobDetailProps {
   job: Job;
@@ -108,9 +109,9 @@ export function JobDetail({
     return (
       <>
         <Card className="w-full">
-          <CardContent className="pt-6">
+          <CardContent className="pt-4 sm:pt-6">
             {job.status && (
-              <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+              <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3 sm:gap-4">
                 <div className="w-full lg:flex-1 lg:min-w-0">
                   <p className="text-xs font-medium text-muted-foreground mb-2">Update Status</p>
                   <StatusUpdate
@@ -119,7 +120,7 @@ export function JobDetail({
                     onStatusUpdate={onStatusUpdate}
                   />
                 </div>
-                <div className="flex flex-col lg:flex-row gap-2 w-full lg:w-auto lg:flex-shrink-0">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-row gap-2 w-full lg:w-auto lg:flex-shrink-0">
                   {job.email && job.public_token && (
                     <Button
                       variant="outline"
@@ -128,8 +129,9 @@ export function JobDetail({
                       disabled={isSendingEmail}
                       className="w-full lg:w-auto"
                     >
-                      <Mail className="hidden lg:inline mr-2 h-4 w-4" />
-                      {isSendingEmail ? 'Sending...' : 'Send Email'}
+                      <Mail className="mr-2 h-4 w-4" />
+                      <span className="hidden sm:inline">{isSendingEmail ? 'Sending...' : 'Send Email'}</span>
+                      <span className="sm:hidden">{isSendingEmail ? 'Sending...' : 'Email'}</span>
                     </Button>
                   )}
                   {whatsAppLink && (
@@ -139,11 +141,13 @@ export function JobDetail({
                         target="_blank"
                         rel="noopener noreferrer"
                       >
-                        <MessageCircle className="hidden lg:inline mr-2 h-4 w-4" />
-                        Send WhatsApp Message
+                        <MessageCircle className="mr-2 h-4 w-4" />
+                        <span className="hidden sm:inline">Send WhatsApp Message</span>
+                        <span className="sm:hidden">WhatsApp</span>
                       </a>
                     </Button>
                   )}
+                  <ShareJobButton job={job} jobNumber={job.job_number} />
                   {hasPhotos && (
                     <Button
                       variant="outline"
@@ -152,8 +156,9 @@ export function JobDetail({
                       className="w-full lg:w-auto"
                     >
                       {/* eslint-disable-next-line jsx-a11y/alt-text */}
-                      <Image className="hidden lg:inline mr-2 h-4 w-4" />
-                      View All Photos
+                      <Image className="mr-2 h-4 w-4" />
+                      <span className="hidden sm:inline">View All Photos</span>
+                      <span className="sm:hidden">Photos</span>
                     </Button>
                   )}
                   {hasInvoice && (
@@ -163,8 +168,9 @@ export function JobDetail({
                       onClick={() => setInvoiceDialogOpen(true)}
                       className="w-full lg:w-auto"
                     >
-                      <FileText className="hidden lg:inline mr-2 h-4 w-4" />
-                      View Invoice
+                      <FileText className="mr-2 h-4 w-4" />
+                      <span className="hidden sm:inline">View Invoice</span>
+                      <span className="sm:hidden">Invoice</span>
                     </Button>
                   )}
                 </div>
@@ -188,37 +194,37 @@ export function JobDetail({
 
   // Otherwise, show the rest of the content
   return (
-    <div className="space-y-4 w-full">
+    <div className="space-y-3 sm:space-y-4 w-full">
       {/* Job Details and Status Timeline - Side by Side on Desktop */}
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-3 sm:gap-4 lg:grid-cols-2">
         {/* Job Details Card */}
         <Card>
-          <CardHeader>
+          <CardHeader className="pb-3 sm:pb-6">
             <CardTitle className="text-base sm:text-lg">Job Details</CardTitle>
           </CardHeader>
           <Separator />
-          <CardContent className="pt-6">
-            <div className="grid gap-6">
-              <div className="flex items-start gap-4">
+          <CardContent className="pt-4 sm:pt-6">
+            <div className="grid gap-4 sm:gap-6">
+              <div className="flex items-start gap-3 sm:gap-4">
                 <div className="flex-shrink-0 mt-0.5">
-                  <div className="rounded-full bg-muted p-2">
-                    <Hash className="h-4 w-4 text-muted-foreground" />
+                  <div className="rounded-full bg-muted p-1.5 sm:p-2">
+                    <Hash className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
                   </div>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-muted-foreground mb-1.5">Job Number</p>
-                  <p className="text-sm font-medium">{job.job_number}</p>
+                  <p className="text-xs font-medium text-muted-foreground mb-1 sm:mb-1.5">Job Number</p>
+                  <p className="text-sm font-medium break-words">{job.job_number}</p>
                 </div>
               </div>
               {job.booking_date && (
-                <div className="flex items-start gap-4">
+                <div className="flex items-start gap-3 sm:gap-4">
                   <div className="flex-shrink-0 mt-0.5">
-                    <div className="rounded-full bg-muted p-2">
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <div className="rounded-full bg-muted p-1.5 sm:p-2">
+                      <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-muted-foreground mb-1.5">Booking Date</p>
+                    <p className="text-xs font-medium text-muted-foreground mb-1 sm:mb-1.5">Booking Date</p>
                     <p className="text-sm font-medium">
                       {format(new Date(job.booking_date), "MMM dd, yyyy")}
                     </p>
@@ -226,14 +232,14 @@ export function JobDetail({
                 </div>
               )}
               {job.delivery_date && (
-                <div className="flex items-start gap-4">
+                <div className="flex items-start gap-3 sm:gap-4">
                   <div className="flex-shrink-0 mt-0.5">
-                    <div className="rounded-full bg-muted p-2">
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <div className="rounded-full bg-muted p-1.5 sm:p-2">
+                      <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-muted-foreground mb-1.5">Delivery Date</p>
+                    <p className="text-xs font-medium text-muted-foreground mb-1 sm:mb-1.5">Delivery Date</p>
                     <p className="text-sm font-medium">
                       {format(new Date(job.delivery_date), "MMM dd, yyyy")}
                     </p>
@@ -241,28 +247,61 @@ export function JobDetail({
                 </div>
               )}
               {job.material_type && (
-                <div className="flex items-start gap-4">
+                <div className="flex items-start gap-3 sm:gap-4">
                   <div className="flex-shrink-0 mt-0.5">
-                    <div className="rounded-full bg-muted p-2">
-                      <Package className="h-4 w-4 text-muted-foreground" />
+                    <div className="rounded-full bg-muted p-1.5 sm:p-2">
+                      <Package className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-muted-foreground mb-1.5">Material Type</p>
-                    <p className="text-sm">{job.material_type}</p>
+                    <p className="text-xs font-medium text-muted-foreground mb-1 sm:mb-1.5">Material Type</p>
+                    <p className="text-sm break-words">{job.material_type}</p>
+                  </div>
+                </div>
+              )}
+              {(job as Job & { contact_person_name?: string }).contact_person_name && (
+                <div className="flex items-start gap-3 sm:gap-4">
+                  <div className="flex-shrink-0 mt-0.5">
+                    <div className="rounded-full bg-muted p-1.5 sm:p-2">
+                      <UserCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-muted-foreground mb-1 sm:mb-1.5">Contact Person</p>
+                    <p className="text-sm font-medium break-words">
+                      {(job as Job & { contact_person_name?: string }).contact_person_name}
+                      {(job as Job & { contact_person_designation?: string }).contact_person_designation && (
+                        <span className="text-xs font-normal text-muted-foreground ml-1.5 sm:ml-2 block sm:inline">
+                          ({(job as Job & { contact_person_designation?: string }).contact_person_designation})
+                        </span>
+                      )}
+                    </p>
                   </div>
                 </div>
               )}
               {job.special_requirements && (
-                <div className="flex items-start gap-4">
+                <div className="flex items-start gap-3 sm:gap-4">
                   <div className="flex-shrink-0 mt-0.5">
-                    <div className="rounded-full bg-muted p-2">
-                      <FileText className="h-4 w-4 text-muted-foreground" />
+                    <div className="rounded-full bg-muted p-1.5 sm:p-2">
+                      <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-muted-foreground mb-1.5">Special Requirements</p>
-                    <p className="text-sm whitespace-pre-wrap">{job.special_requirements}</p>
+                    <p className="text-xs font-medium text-muted-foreground mb-1 sm:mb-1.5">Special Requirements</p>
+                    <p className="text-sm whitespace-pre-wrap break-words">{job.special_requirements}</p>
+                  </div>
+                </div>
+              )}
+              {(job as Job & { notes?: string }).notes && (
+                <div className="flex items-start gap-3 sm:gap-4">
+                  <div className="flex-shrink-0 mt-0.5">
+                    <div className="rounded-full bg-muted p-1.5 sm:p-2">
+                      <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-muted-foreground mb-1 sm:mb-1.5">Internal Notes</p>
+                    <p className="text-sm whitespace-pre-wrap break-words">{(job as Job & { notes?: string }).notes}</p>
                   </div>
                 </div>
               )}
@@ -273,11 +312,11 @@ export function JobDetail({
         {/* Status Timeline Card */}
         {job.status && (
           <Card>
-            <CardHeader>
+            <CardHeader className="pb-3 sm:pb-6">
               <CardTitle className="text-base sm:text-lg">Status Timeline</CardTitle>
             </CardHeader>
             <Separator />
-            <CardContent className="pt-6">
+            <CardContent className="pt-4 sm:pt-6">
               <StatusTimeline
                 currentStatus={job.status as JobStatus}
                 statusHistory={statusHistory}
@@ -290,28 +329,32 @@ export function JobDetail({
       {/* Photos - Show before and after in tabs */}
       {(job.before_photos?.length || job.after_photos?.length) && (
         <Card>
-          <CardHeader>
-            <CardTitle>Photos</CardTitle>
+          <CardHeader className="pb-3 sm:pb-6">
+            <CardTitle className="text-base sm:text-lg">Photos</CardTitle>
           </CardHeader>
           <Separator />
-          <CardContent className="pt-6">
+          <CardContent className="pt-4 sm:pt-6">
             {(job.before_photos?.length || 0) > 0 && (job.after_photos?.length || 0) > 0 ? (
               <Tabs defaultValue="before" className="w-full">
                 <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="before">
-                    Before Photos ({job.before_photos?.length || 0})
+                  <TabsTrigger value="before" className="text-xs sm:text-sm">
+                    <span className="hidden sm:inline">Before Photos</span>
+                    <span className="sm:hidden">Before</span>
+                    <span className="ml-1">({job.before_photos?.length || 0})</span>
                   </TabsTrigger>
-                  <TabsTrigger value="after">
-                    After Photos ({job.after_photos?.length || 0})
+                  <TabsTrigger value="after" className="text-xs sm:text-sm">
+                    <span className="hidden sm:inline">After Photos</span>
+                    <span className="sm:hidden">After</span>
+                    <span className="ml-1">({job.after_photos?.length || 0})</span>
                   </TabsTrigger>
                 </TabsList>
-                <TabsContent value="before" className="mt-4">
+                <TabsContent value="before" className="mt-3 sm:mt-4">
                   <JobPhotoViewer
                     photos={job.before_photos || []}
                     title="Before Photos"
                   />
                 </TabsContent>
-                <TabsContent value="after" className="mt-4">
+                <TabsContent value="after" className="mt-3 sm:mt-4">
                   <JobPhotoViewer
                     photos={job.after_photos || []}
                     title="After Photos"
@@ -360,11 +403,11 @@ export function JobDetail({
        job.status !== JOB_STATUS.IN_PROGRESS && 
        job.status !== JOB_STATUS.COMPLETED && (
         <Card>
-          <CardHeader>
-            <CardTitle>Invoice</CardTitle>
+          <CardHeader className="pb-3 sm:pb-6">
+            <CardTitle className="text-base sm:text-lg">Invoice</CardTitle>
           </CardHeader>
           <Separator />
-          <CardContent className="pt-6">
+          <CardContent className="pt-4 sm:pt-6">
             <PDFViewer
               url={job.invoice_file_path}
               title="Invoice PDF"

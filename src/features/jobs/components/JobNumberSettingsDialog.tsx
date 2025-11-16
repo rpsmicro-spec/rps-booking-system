@@ -11,22 +11,15 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { toast } from 'sonner'
 import { Loader2 } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
+import { getFinancialYearString } from '@/lib/job-number'
 
 const settingsSchema = z.object({
   prefix: z.string().max(20, 'Prefix must be less than 20 characters').optional().or(z.literal('')),
-  number_base: z.enum(['sequence', 'year']),
   next_number: z.number().int().min(1, 'Next number must be at least 1'),
 })
 
@@ -55,20 +48,38 @@ export function JobNumberSettingsDialog({
   const {
     register,
     handleSubmit,
-    setValue,
     watch,
     formState: { errors },
     reset,
   } = useForm<SettingsFormValues>({
     resolver: zodResolver(settingsSchema),
     defaultValues: {
-      prefix: '',
-      number_base: 'sequence',
+      prefix: 'RPS',
       next_number: 1,
     },
   })
 
-  const numberBase = watch('number_base')
+  const prefix = watch('prefix') || 'RPS'
+  const nextNumber = watch('next_number') || 1
+  const financialYear = getFinancialYearString()
+  
+  // Calculate next reset date (April 1st of next financial year)
+  const getNextResetDate = () => {
+    const now = new Date()
+    const currentYear = now.getFullYear()
+    const currentMonth = now.getMonth() + 1
+    
+    if (currentMonth >= 4) {
+      // Currently in financial year, next reset is April 1st of next year
+      return new Date(currentYear + 1, 3, 1) // Month 3 = April (0-indexed)
+    } else {
+      // Currently before April, next reset is April 1st of current year
+      return new Date(currentYear, 3, 1) // Month 3 = April (0-indexed)
+    }
+  }
+  
+  const nextResetDate = getNextResetDate()
+  const previewJobNumber = `${prefix}-${nextNumber}/${financialYear}`
 
   // Fetch current settings
   useEffect(() => {
@@ -89,8 +100,7 @@ export function JobNumberSettingsDialog({
       const settings: JobNumberSettings = data.settings
 
       reset({
-        prefix: settings.prefix || '',
-        number_base: settings.number_base,
+        prefix: settings.prefix || 'RPS',
         next_number: settings.next_number,
       })
     } catch (error) {
@@ -131,7 +141,7 @@ export function JobNumberSettingsDialog({
         <DialogHeader>
           <DialogTitle>Job Number Settings</DialogTitle>
           <DialogDescription>
-            Configure how job numbers are auto-generated. These settings will be used when creating new jobs.
+            Configure job number prefix. Job numbers use financial year format (April 1 - March 31). Numbers automatically reset each April 1st.
           </DialogDescription>
         </DialogHeader>
 
@@ -141,40 +151,33 @@ export function JobNumberSettingsDialog({
           </div>
         ) : (
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            {/* Preview Section */}
+            <div className="rounded-lg border bg-muted/50 p-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium">Next Job Number Preview</Label>
+                <span className="text-sm font-mono font-semibold text-foreground">
+                  {previewJobNumber}
+                </span>
+              </div>
+              <div className="text-xs text-muted-foreground space-y-1">
+                <p>Current Financial Year: <span className="font-medium">{financialYear}</span> (April 1 - March 31)</p>
+                <p>Next Reset: <span className="font-medium">{nextResetDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span></p>
+              </div>
+            </div>
+
             <div className="space-y-2">
-              <Label htmlFor="prefix">Prefix (Optional)</Label>
+              <Label htmlFor="prefix">Prefix</Label>
               <Input
                 id="prefix"
                 {...register('prefix')}
-                placeholder="e.g., JOB, RPS, CNC"
+                placeholder="e.g., RPS"
                 maxLength={20}
               />
               {errors.prefix && (
                 <p className="text-sm text-destructive">{errors.prefix.message}</p>
               )}
               <p className="text-xs text-muted-foreground">
-                A prefix to add before the number (e.g., JOB-001, RPS-2024-001)
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="number_base">Number Base</Label>
-              <Select
-                value={numberBase}
-                onValueChange={(value: 'sequence' | 'year') => setValue('number_base', value)}
-              >
-                <SelectTrigger id="number_base">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="sequence">Sequence (1, 2, 3...)</SelectItem>
-                  <SelectItem value="year">Year-based (2024-001, 2024-002...)</SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                {numberBase === 'sequence'
-                  ? 'Numbers will increment sequentially: 1, 2, 3...'
-                  : 'Numbers will include the year and reset each year: 2024-001, 2024-002...'}
+                Prefix for job numbers. Default: RPS. Format: <span className="font-mono">{prefix}-1/{financialYear}</span>
               </p>
             </div>
 
@@ -190,7 +193,7 @@ export function JobNumberSettingsDialog({
                 <p className="text-sm text-destructive">{errors.next_number.message}</p>
               )}
               <p className="text-xs text-muted-foreground">
-                The next number to use when generating a new job number. This will automatically increment after each job is created.
+                The next sequential number to use when generating a new job number. This will automatically increment after each job is created and reset to 1 on April 1st each year.
               </p>
             </div>
 

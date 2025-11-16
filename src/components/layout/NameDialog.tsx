@@ -14,7 +14,11 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import {
+  Field,
+  FieldError,
+  FieldLabel,
+} from "@/components/ui/field";
 import { toast } from "sonner";
 
 const nameSchema = z.object({
@@ -42,6 +46,7 @@ export function NameDialog({ open, onNameSet }: NameDialogProps) {
     reset,
   } = useForm<NameFormValues>({
     resolver: zodResolver(nameSchema),
+    mode: "onChange",
   });
 
   const onSubmit = async (data: NameFormValues) => {
@@ -93,19 +98,26 @@ export function NameDialog({ open, onNameSet }: NameDialogProps) {
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)}>
           <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="name">Name</Label>
+            <Field data-invalid={!!errors.name}>
+              <FieldLabel htmlFor="name">
+                Name <span className="text-red-500">*</span>
+              </FieldLabel>
               <Input
                 id="name"
                 placeholder="Enter your name"
                 {...register("name")}
                 disabled={isLoading}
                 autoFocus
+                aria-invalid={!!errors.name}
               />
-              {errors.name && (
-                <p className="text-sm text-red-500">{errors.name.message}</p>
-              )}
-            </div>
+              <FieldError
+                errors={
+                  errors.name
+                    ? [{ message: errors.name.message }]
+                    : undefined
+                }
+              />
+            </Field>
           </div>
           <DialogFooter>
             <Button type="submit" disabled={isLoading}>

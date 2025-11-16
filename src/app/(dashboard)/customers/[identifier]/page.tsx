@@ -25,16 +25,25 @@ export default async function CustomerDetailPage({
     notFound()
   }
 
+  const firstJob = jobs[0] as typeof jobs[0] & { 
+    contact_person_name?: string | null
+    contact_person_designation?: string | null
+    notes?: string | null
+  }
+  
   const customerInfo = {
-    customer_name: jobs[0].customer_name,
-    email: jobs[0].email,
-    contact_number: jobs[0].contact_number,
-    address_street: jobs[0].address_street,
-    address_area: jobs[0].address_area,
-    address_city: jobs[0].address_city,
-    address_state: jobs[0].address_state,
-    address_pincode: jobs[0].address_pincode,
-    address: jobs[0].address, // Legacy field
+    customer_name: firstJob.customer_name,
+    email: firstJob.email,
+    contact_number: firstJob.contact_number,
+    address_street: firstJob.address_street,
+    address_area: firstJob.address_area,
+    address_city: firstJob.address_city,
+    address_state: firstJob.address_state,
+    address_pincode: firstJob.address_pincode,
+    address: firstJob.address, // Legacy field
+    contact_person_name: firstJob.contact_person_name,
+    contact_person_designation: firstJob.contact_person_designation,
+    notes: firstJob.notes,
   }
 
   return (

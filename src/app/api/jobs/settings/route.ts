@@ -40,10 +40,15 @@ export async function GET() {
         return NextResponse.json({
           settings: {
             id: '',
-            prefix: '',
+            prefix: 'RPS',
             number_base: 'sequence',
             next_number: 1,
-            year: new Date().getFullYear(),
+            year: (() => {
+              const now = new Date()
+              const currentYear = now.getFullYear()
+              const currentMonth = now.getMonth() + 1
+              return currentMonth >= 4 ? currentYear : currentYear - 1
+            })(),
           },
         })
       }
@@ -80,16 +85,9 @@ export async function PUT(request: Request) {
     }
 
     const body = await request.json()
-    const { prefix, number_base, next_number } = body
+    const { prefix, next_number } = body
 
     // Validate input
-    if (number_base && !['sequence', 'year'].includes(number_base)) {
-      return NextResponse.json(
-        { error: 'Invalid number_base. Must be "sequence" or "year".' },
-        { status: 400 }
-      )
-    }
-
     if (next_number !== undefined && (next_number < 1 || !Number.isInteger(next_number))) {
       return NextResponse.json(
         { error: 'next_number must be a positive integer.' },
@@ -104,13 +102,19 @@ export async function PUT(request: Request) {
       .limit(1)
       .maybeSingle() as { data: { id: string } | null; error: unknown }
 
+    // Calculate financial year start year (April 1 - March 31)
+    const now = new Date()
+    const currentYear = now.getFullYear()
+    const currentMonth = now.getMonth() + 1 // getMonth() returns 0-11
+    const financialYearStartYear = currentMonth >= 4 ? currentYear : currentYear - 1
+
     const updateData: JobNumberSettingsUpdate = {}
-    if (prefix !== undefined) updateData.prefix = prefix || ''
-    if (number_base) updateData.number_base = number_base
+    if (prefix !== undefined) updateData.prefix = prefix || 'RPS'
+    // Keep number_base for backward compatibility, but always use 'sequence' (not used in new format)
+    updateData.number_base = 'sequence'
     if (next_number !== undefined) updateData.next_number = next_number
-    if (number_base === 'year') {
-      updateData.year = new Date().getFullYear()
-    }
+    // Always update year to current financial year start year
+    updateData.year = financialYearStartYear
 
     let result: JobNumberSettings
     const adminClient = createAdminClient()
@@ -128,12 +132,18 @@ export async function PUT(request: Request) {
       if (!data) throw new Error('Failed to update settings')
       result = data
     } else {
+      // Calculate financial year start year
+      const now = new Date()
+      const currentYear = now.getFullYear()
+      const currentMonth = now.getMonth() + 1
+      const financialYearStartYear = currentMonth >= 4 ? currentYear : currentYear - 1
+
       // Create new settings - use admin client to bypass RLS for INSERT
       const insertData: JobNumberSettingsInsert = {
-        prefix: prefix || '',
-        number_base: number_base || 'sequence',
+        prefix: prefix || 'RPS',
+        number_base: 'sequence', // Kept for backward compatibility
         next_number: next_number || 1,
-        year: number_base === 'year' ? new Date().getFullYear() : null,
+        year: financialYearStartYear,
       }
       const { data, error } = await adminClient
         .from('job_number_settings')

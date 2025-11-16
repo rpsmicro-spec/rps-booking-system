@@ -22,6 +22,8 @@ import {
 } from '@/components/ui/empty'
 import { TableSkeleton } from '@/components/ui/skeletons'
 import { format } from 'date-fns'
+import { useIsMobile } from '@/hooks/use-mobile'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
 
 interface Customer {
   customer_name: string
@@ -32,6 +34,8 @@ interface Customer {
   address_city: string | null
   address_state: string | null
   address_pincode: string | null
+  contact_person_name: string | null
+  contact_person_designation: string | null
   job_count: number
   last_job_date: string | null
   created_at: string | null
@@ -46,6 +50,7 @@ interface CustomersTableProps {
 
 export function CustomersTable({ search, limit = 50, offset = 0, onTotalChange }: CustomersTableProps) {
   const router = useRouter()
+  const isMobile = useIsMobile()
   const [customers, setCustomers] = useState<Customer[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
@@ -96,9 +101,132 @@ export function CustomersTable({ search, limit = 50, offset = 0, onTotalChange }
   }
 
   if (isLoading) {
-    return <TableSkeleton rows={5} columns={5} />
+    return isMobile ? (
+      <div className="space-y-3">
+        {[...Array(5)].map((_, i) => (
+          <Card key={i} className="animate-pulse">
+            <CardHeader>
+              <div className="h-4 bg-muted rounded w-1/3"></div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <div className="h-3 bg-muted rounded w-2/3"></div>
+                <div className="h-3 bg-muted rounded w-1/2"></div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    ) : (
+      <TableSkeleton rows={5} columns={5} />
+    )
   }
 
+  const emptyState = (
+    <div className="p-8 sm:p-12">
+      <Empty>
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <Users className="h-6 w-6" />
+          </EmptyMedia>
+          <EmptyTitle>
+            {search ? 'No Customers Found' : 'No Customers Yet'}
+          </EmptyTitle>
+          <EmptyDescription>
+            {search
+              ? 'No customers match your search criteria. Try adjusting your search terms.'
+              : 'Get started by creating your first job. Customers will be automatically added when you create jobs.'}
+          </EmptyDescription>
+        </EmptyHeader>
+      </Empty>
+    </div>
+  )
+
+  // Mobile Card View
+  if (isMobile) {
+    return (
+      <div className="space-y-3">
+        {customers.length === 0 ? (
+          emptyState
+        ) : (
+          customers.map((customer, index) => {
+            const customerKey = encodeURIComponent(customer.customer_name)
+            return (
+              <Card
+                key={`${customer.customer_name}-${index}`}
+                className="cursor-pointer hover:shadow-md transition-shadow"
+                onClick={() => handleRowClick(customer.customer_name)}
+              >
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-base truncate">{customer.customer_name}</h3>
+                      <div className="mt-0.5 space-y-0.5">
+                        {customer.contact_person_name && (
+                          <p className="text-xs text-muted-foreground truncate">
+                            {customer.contact_person_name}
+                            {customer.contact_person_designation && (
+                              <span className="ml-1">({customer.contact_person_designation})</span>
+                            )}
+                          </p>
+                        )}
+                        {(customer.address_city || customer.address_state) && (
+                          <p className="text-xs text-muted-foreground truncate">
+                            {customer.address_city}
+                            {customer.address_city && customer.address_state && ', '}
+                            {customer.address_state}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <Briefcase className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-medium text-sm">{customer.job_count}</span>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-2 pt-0">
+                  {customer.email && (
+                    <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                      <Mail className="h-3.5 w-3.5 flex-shrink-0" />
+                      <span className="truncate">{customer.email}</span>
+                    </div>
+                  )}
+                  {customer.contact_number && (
+                    <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                      <Phone className="h-3.5 w-3.5 flex-shrink-0" />
+                      <span className="truncate">{customer.contact_number}</span>
+                    </div>
+                  )}
+                  {customer.created_at && (
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground pt-1">
+                      <span>Created {format(new Date(customer.created_at), 'MMM dd, yyyy')}</span>
+                    </div>
+                  )}
+                  <div className="pt-2 border-t" onClick={(e) => e.stopPropagation()}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full text-xs"
+                      asChild
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Link href={`/customers/${customerKey}`}>
+                        <Eye className="mr-1.5 h-3.5 w-3.5" />
+                        View Jobs
+                      </Link>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          })
+        )}
+      </div>
+    )
+  }
+
+  // Desktop Table View
   return (
     <div className="rounded-md border">
       <Table>
@@ -115,23 +243,7 @@ export function CustomersTable({ search, limit = 50, offset = 0, onTotalChange }
           {customers.length === 0 ? (
             <TableRow>
               <TableCell colSpan={5} className="p-0">
-                <div className="p-12">
-                  <Empty>
-                    <EmptyHeader>
-                      <EmptyMedia variant="icon">
-                        <Users className="h-6 w-6" />
-                      </EmptyMedia>
-                      <EmptyTitle>
-                        {search ? 'No Customers Found' : 'No Customers Yet'}
-                      </EmptyTitle>
-                      <EmptyDescription>
-                        {search
-                          ? 'No customers match your search criteria. Try adjusting your search terms.'
-                          : 'Get started by creating your first job. Customers will be automatically added when you create jobs.'}
-                      </EmptyDescription>
-                    </EmptyHeader>
-                  </Empty>
-                </div>
+                {emptyState}
               </TableCell>
             </TableRow>
           ) : (

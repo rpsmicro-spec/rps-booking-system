@@ -110,10 +110,10 @@ export function JobPhotoViewer({
           <Button
             variant="ghost"
             size="icon"
-            className="absolute top-4 right-4 z-10 text-white hover:bg-white/20"
+            className="absolute top-2 right-2 sm:top-4 sm:right-4 z-10 text-white hover:bg-white/20 h-9 w-9 sm:h-10 sm:w-10"
             onClick={closeLightbox}
           >
-            <X className="h-6 w-6" />
+            <X className="h-5 w-5 sm:h-6 sm:w-6" />
           </Button>
 
           {/* Previous Button */}
@@ -121,13 +121,13 @@ export function JobPhotoViewer({
             <Button
               variant="ghost"
               size="icon"
-              className="absolute left-4 top-1/2 -translate-y-1/2 z-10 text-white hover:bg-white/20"
+              className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-10 text-white hover:bg-white/20 h-10 w-10 sm:h-12 sm:w-12"
               onClick={(e) => {
                 e.stopPropagation();
                 navigatePhoto("prev");
               }}
             >
-              <ChevronLeft className="h-8 w-8" />
+              <ChevronLeft className="h-6 w-6 sm:h-8 sm:w-8" />
             </Button>
           )}
 
@@ -136,19 +136,19 @@ export function JobPhotoViewer({
             <Button
               variant="ghost"
               size="icon"
-              className="absolute right-4 top-1/2 -translate-y-1/2 z-10 text-white hover:bg-white/20"
+              className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-10 text-white hover:bg-white/20 h-10 w-10 sm:h-12 sm:w-12"
               onClick={(e) => {
                 e.stopPropagation();
                 navigatePhoto("next");
               }}
             >
-              <ChevronRight className="h-8 w-8" />
+              <ChevronRight className="h-6 w-6 sm:h-8 sm:w-8" />
             </Button>
           )}
 
           {/* Image */}
           <div
-            className="relative w-full h-full flex items-center justify-center p-4"
+            className="relative w-full h-full flex items-center justify-center p-2 sm:p-4"
             onClick={(e) => e.stopPropagation()}
           >
             <Image
@@ -169,7 +169,7 @@ export function JobPhotoViewer({
 
           {/* Photo Counter */}
           {photos.length > 1 && (
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white text-sm bg-black/50 px-4 py-2 rounded">
+            <div className="absolute bottom-2 sm:bottom-4 left-1/2 -translate-x-1/2 text-white text-xs sm:text-sm bg-black/50 px-3 sm:px-4 py-1.5 sm:py-2 rounded">
               {selectedIndex + 1} / {photos.length}
             </div>
           )}

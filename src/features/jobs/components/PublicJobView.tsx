@@ -7,7 +7,7 @@ import { JobPhotoViewer } from "./JobPhotoViewer";
 import { StatusTimeline, type StatusHistory } from "./StatusTimeline";
 import { format } from "date-fns";
 import type { Job, JobStatus } from "@/types/types";
-import { Calendar, Package, Hash } from "lucide-react";
+import { Calendar, Package, Hash, FileText } from "lucide-react";
 import { PDFViewer } from "@/components/pdf/PDFViewer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import confetti from "canvas-confetti";
@@ -53,10 +53,11 @@ export function PublicJobView({ job, statusHistory = [] }: PublicJobViewProps) {
       {/* Job Header */}
       <div className="text-center space-y-2">
         <h1 className="text-3xl font-bold">{job.job_number}</h1>
-        {job.created_at && (
-          <p className="text-sm text-muted-foreground">
-            {format(new Date(job.created_at), "MMM dd, yyyy")}
-          </p>
+        {job.booking_date && (
+          <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+            <Calendar className="h-4 w-4" />
+            <span>Booking Date: {format(new Date(job.booking_date), "MMM dd, yyyy")}</span>
+          </div>
         )}
         <p className="text-muted-foreground">
           Status:{" "}
@@ -132,6 +133,21 @@ export function PublicJobView({ job, statusHistory = [] }: PublicJobViewProps) {
                     Material Type
                   </p>
                   <p className="text-sm">{job.material_type}</p>
+                </div>
+              </div>
+            )}
+            {job.special_requirements && (
+              <div className="flex items-start gap-4">
+                <div className="shrink-0 mt-0.5">
+                  <div className="rounded-full bg-muted p-2">
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-muted-foreground mb-1.5">
+                    Special Requirements
+                  </p>
+                  <p className="text-sm whitespace-pre-wrap">{job.special_requirements}</p>
                 </div>
               </div>
             )}
@@ -213,7 +229,6 @@ export function PublicJobView({ job, statusHistory = [] }: PublicJobViewProps) {
         </Card>
       )}
 
-      {/* Note: Special Requirements are hidden from public view as per requirements */}
     </div>
   );
 }

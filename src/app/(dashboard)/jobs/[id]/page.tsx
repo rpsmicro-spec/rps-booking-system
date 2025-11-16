@@ -57,19 +57,19 @@ export default async function JobDetailPage({
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
       {/* Top Row: Job Number with # Icon, Status Badge, and Edit/Delete Buttons */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <Hash className="h-8 w-8 text-muted-foreground" />
-          <h1 className="text-3xl font-bold">{job.job_number}</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <Hash className="h-6 w-6 sm:h-8 sm:w-8 text-muted-foreground flex-shrink-0" />
+          <h1 className="text-2xl sm:text-3xl font-bold truncate">{job.job_number}</h1>
           {job.status && (
             <StatusBadge status={job.status as JobStatus} />
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <CustomerDetailsDialog job={jobWithSignedInvoice} />
           <Link href={`/jobs/${id}/edit`}>
-            <Button variant="outline">
-              <Edit className="mr-2 h-4 w-4" />
+            <Button variant="outline" size="sm" className="text-xs sm:text-sm">
+              <Edit className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
               Edit
             </Button>
           </Link>

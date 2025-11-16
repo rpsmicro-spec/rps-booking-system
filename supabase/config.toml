@@ -97,8 +97,8 @@ port = 54324
 # Uncomment to expose additional ports for testing user applications that send emails.
 # smtp_port = 54325
 # pop3_port = 54326
-# admin_email = "admin@email.com"
-# sender_name = "Admin"
+# admin_email = "noreply@rpsmicro.com"
+# sender_name = "RPS Job Manager"
 
 [storage]
 enabled = true
@@ -140,16 +140,15 @@ additional_redirect_urls = [
   "https://rps-booking-system.vercel.app/setup-password",
   "https://rps-booking-system.vercel.app/reset-password",
   "https://rps-booking-system.vercel.app/login",
-  "https://rpsmicrosystems.com",
-  "https://rpsmicrosystems.com/",
-  "https://rpsmicrosystems.com/setup-password",
-  "https://rpsmicrosystems.com/reset-password",
-  "https://rpsmicrosystems.com/login",
-  "http://rpsmicrosystems.com",
-  "http://rpsmicrosystems.com/",
-  "http://rpsmicrosystems.com/setup-password",
-  "http://rpsmicrosystems.com/reset-password",
-  "http://rpsmicrosystems.com/login"
+  "https://www.rpsmicro.com/",
+  "https://www.rpsmicro.com/setup-password",
+  "https://www.rpsmicro.com/reset-password",
+  "https://www.rpsmicro.com/login",
+  "http://www.rpsmicro.com",
+  "http://www.rpsmicro.com/",
+  "http://www.rpsmicro.com/setup-password",
+  "http://www.rpsmicro.com/reset-password",
+  "http://www.rpsmicro.com/login"
 ]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
@@ -213,15 +212,15 @@ otp_length = 6
 # Number of seconds before the email OTP expires (defaults to 1 hour).
 otp_expiry = 3600
 
-# Use a production-ready SMTP server
-# [auth.email.smtp]
-# enabled = true
-# host = "smtp.sendgrid.net"
-# port = 587
-# user = "apikey"
-# pass = "env(SENDGRID_API_KEY)"
-# admin_email = "admin@email.com"
-# sender_name = "Admin"
+# Use Resend SMTP server for email delivery
+[auth.email.smtp]
+enabled = true
+host = "smtp.resend.com"
+port = 465
+user = "resend"
+pass = "env(RESEND_API_KEY)"
+admin_email = "noreply@rpsmicro.com"
+sender_name = "RPS Micro Electronics"
 
 # Customize email templates
 [auth.email.template.invite]

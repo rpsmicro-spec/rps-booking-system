@@ -66,6 +66,7 @@ export function SimpleDatePicker({
           id={id}
           disabled={disabled}
           aria-invalid={ariaInvalid}
+          suppressHydrationWarning
           className={cn(
             "w-full justify-between font-normal",
             !date && "text-muted-foreground",

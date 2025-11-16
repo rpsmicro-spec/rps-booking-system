@@ -18,8 +18,10 @@ import {
 import Link from "next/link";
 import { Plus, Settings } from "lucide-react";
 import { JobNumberSettingsDialog } from "./JobNumberSettingsDialog";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export function JobsPageClient() {
+  const isMobile = useIsMobile();
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -27,7 +29,7 @@ export function JobsPageClient() {
   const [dateTo, setDateTo] = useState<string | null>(null);
   const [offset, setOffset] = useState(0);
   const [total, setTotal] = useState(0);
-  const limit = 50;
+  const limit = isMobile ? 20 : 50;
 
   const handleStatusChange = (newStatus: string | null) => {
     setStatus(newStatus);
@@ -127,13 +129,13 @@ export function JobsPageClient() {
 
           {/* Pagination */}
           {total > limit && (
-            <div className="flex flex-col gap-4">
-              <p className="text-sm text-muted-foreground text-center">
+            <div className="flex flex-col gap-3 sm:gap-4">
+              <p className="text-xs sm:text-sm text-muted-foreground text-center">
                 Showing {offset + 1}-{Math.min(offset + limit, total)} of{" "}
                 {total} jobs
               </p>
               <Pagination>
-                <PaginationContent>
+                <PaginationContent className="flex-wrap">
                   <PaginationItem>
                     <PaginationPrevious
                       href="#"
@@ -156,7 +158,10 @@ export function JobsPageClient() {
                     const currentPage = Math.floor(offset / limit) + 1;
                     const pages: (number | "ellipsis")[] = [];
 
-                    if (totalPages <= 7) {
+                    // On mobile, show fewer page numbers
+                    const maxPagesToShow = isMobile ? 3 : 7;
+
+                    if (totalPages <= maxPagesToShow) {
                       // Show all pages
                       for (let i = 1; i <= totalPages; i++) {
                         pages.push(i);
@@ -167,20 +172,30 @@ export function JobsPageClient() {
 
                       if (currentPage <= 4) {
                         // Show pages 2-5, then ellipsis, then last
-                        for (let i = 2; i <= 5; i++) {
+                        const endPage = maxPagesToShow === 3 ? 3 : 5;
+                        for (let i = 2; i <= endPage; i++) {
                           pages.push(i);
                         }
-                        pages.push("ellipsis");
-                        pages.push(totalPages);
+                        if (maxPagesToShow > 3) {
+                          pages.push("ellipsis");
+                          pages.push(totalPages);
+                        }
                       } else if (currentPage >= totalPages - 3) {
-                        // Show first, ellipsis, then last 5 pages
-                        pages.push("ellipsis");
-                        for (let i = totalPages - 4; i <= totalPages; i++) {
+                        // Show first, ellipsis, then last pages
+                        if (maxPagesToShow > 3) {
+                          pages.push("ellipsis");
+                        }
+                        const startPage = maxPagesToShow === 3 
+                          ? Math.max(2, totalPages - 1)
+                          : totalPages - 4;
+                        for (let i = startPage; i <= totalPages; i++) {
                           pages.push(i);
                         }
                       } else {
                         // Show first, ellipsis, current-1, current, current+1, ellipsis, last
-                        pages.push("ellipsis");
+                        if (maxPagesToShow > 3) {
+                          pages.push("ellipsis");
+                        }
                         for (
                           let i = currentPage - 1;
                           i <= currentPage + 1;
@@ -188,8 +203,10 @@ export function JobsPageClient() {
                         ) {
                           pages.push(i);
                         }
-                        pages.push("ellipsis");
-                        pages.push(totalPages);
+                        if (maxPagesToShow > 3) {
+                          pages.push("ellipsis");
+                          pages.push(totalPages);
+                        }
                       }
                     }
 
@@ -211,7 +228,7 @@ export function JobsPageClient() {
                               setOffset((page - 1) * limit);
                             }}
                             isActive={currentPage === page}
-                            className="cursor-pointer"
+                            className="cursor-pointer text-xs sm:text-sm min-w-[2rem] sm:min-w-[2.5rem]"
                           >
                             {page}
                           </PaginationLink>

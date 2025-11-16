@@ -27,6 +27,7 @@ export interface Customer {
   address_city: string | null;
   address_state: string | null;
   address_pincode: string | null;
+  contact_person_name: string | null;
   job_count?: number;
 }
 
@@ -112,6 +113,7 @@ export function CustomerCombobox({
           aria-expanded={open}
           aria-invalid={ariaInvalid}
           disabled={disabled}
+          suppressHydrationWarning
           className={cn(
             "w-full justify-between",
             !value && "text-muted-foreground",
@@ -169,18 +171,26 @@ export function CustomerCombobox({
                               : "opacity-0"
                           )}
                         />
-                        <div className="flex flex-col flex-1">
-                          <span>{customer.customer_name}</span>
-                          {(customer.email || customer.contact_number) && (
-                            <span className="text-xs text-muted-foreground">
-                              {customer.email && customer.contact_number
-                                ? `${customer.email} • ${customer.contact_number}`
-                                : customer.email || customer.contact_number}
-                              {customer.job_count
-                                ? ` • ${customer.job_count} job${customer.job_count > 1 ? "s" : ""}`
-                                : ""}
-                            </span>
-                          )}
+                        <div className="flex flex-col flex-1 min-w-0">
+                          <span className="font-medium truncate">{customer.customer_name}</span>
+                          <div className="flex flex-col gap-0.5 mt-0.5">
+                            {customer.email && (
+                              <span className="text-xs text-muted-foreground truncate">
+                                {customer.email}
+                              </span>
+                            )}
+                            {customer.contact_person_name && (
+                              <span className="text-xs text-muted-foreground truncate">
+                                {customer.contact_person_name}
+                              </span>
+                            )}
+                            {customer.address_city && (
+                              <span className="text-xs text-muted-foreground truncate">
+                                {customer.address_city}
+                                {customer.address_state && `, ${customer.address_state}`}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </CommandItem>
                     ))}

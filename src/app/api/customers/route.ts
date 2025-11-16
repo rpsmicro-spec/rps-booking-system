@@ -15,7 +15,7 @@ export async function GET(request: Request) {
     // Get all unique customers by grouping jobs
     let query = supabase
       .from('jobs')
-      .select('customer_name, email, contact_number, address_street, address_area, address_city, address_state, address_pincode, created_at')
+      .select('customer_name, email, contact_number, address_street, address_area, address_city, address_state, address_pincode, contact_person_name, contact_person_designation, created_at')
       .is('deleted_at', null)
       .order('customer_name', { ascending: true })
 
@@ -45,6 +45,8 @@ export async function GET(request: Request) {
       address_city: string | null
       address_state: string | null
       address_pincode: string | null
+      contact_person_name: string | null
+      contact_person_designation: string | null
       job_count: number
       last_job_date: string | null
       created_at: string | null
@@ -59,6 +61,8 @@ export async function GET(request: Request) {
       address_city: string | null
       address_state: string | null
       address_pincode: string | null
+      contact_person_name: string | null
+      contact_person_designation: string | null
       created_at: string | null
     }
 
@@ -77,6 +81,8 @@ export async function GET(request: Request) {
           address_city: jobWithAddress.address_city || null,
           address_state: jobWithAddress.address_state || null,
           address_pincode: jobWithAddress.address_pincode || null,
+          contact_person_name: jobWithAddress.contact_person_name || null,
+          contact_person_designation: jobWithAddress.contact_person_designation || null,
           job_count: 0,
           last_job_date: null,
           created_at: job.created_at || null,

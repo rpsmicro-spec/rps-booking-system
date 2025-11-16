@@ -8,11 +8,14 @@ export function ServiceWorkerRegistration() {
       typeof window !== 'undefined' &&
       'serviceWorker' in navigator
     ) {
-      // Register service worker
+      // Register service worker with updateViaCache: 'none' to always check for updates
       navigator.serviceWorker
-        .register('/sw.js')
+        .register('/sw.js', { updateViaCache: 'none' })
         .then((registration) => {
           console.log('Service Worker registered:', registration.scope)
+
+          // Check for updates on page load
+          registration.update()
 
           // Check for updates periodically
           setInterval(() => {
@@ -28,8 +31,9 @@ export function ServiceWorkerRegistration() {
                   newWorker.state === 'installed' &&
                   navigator.serviceWorker.controller
                 ) {
-                  // New service worker available, prompt user to refresh
-                  console.log('New service worker available')
+                  // New service worker available - it will activate automatically
+                  // due to skipWaiting() in the service worker
+                  console.log('New service worker available and activating')
                 }
               })
             }
@@ -39,9 +43,14 @@ export function ServiceWorkerRegistration() {
           console.error('Service Worker registration failed:', error)
         })
 
-      // Handle service worker controller changes
+      // Handle service worker controller changes (when new SW takes control)
+      let refreshing = false
       navigator.serviceWorker.addEventListener('controllerchange', () => {
-        window.location.reload()
+        if (!refreshing) {
+          refreshing = true
+          // Reload to use the new service worker
+          window.location.reload()
+        }
       })
     }
   }, [])

@@ -178,6 +178,8 @@ export type Database = {
           before_photos: string[] | null
           booking_date: string
           contact_number: string | null
+          contact_person_designation: string | null
+          contact_person_name: string | null
           created_at: string | null
           created_by: string | null
           customer_name: string
@@ -189,6 +191,7 @@ export type Database = {
           invoice_url: string | null
           job_number: string
           material_type: string | null
+          notes: string | null
           public_token: string | null
           special_requirements: string | null
           status: string | null
@@ -206,6 +209,8 @@ export type Database = {
           before_photos?: string[] | null
           booking_date: string
           contact_number?: string | null
+          contact_person_designation?: string | null
+          contact_person_name?: string | null
           created_at?: string | null
           created_by?: string | null
           customer_name: string
@@ -217,6 +222,7 @@ export type Database = {
           invoice_url?: string | null
           job_number: string
           material_type?: string | null
+          notes?: string | null
           public_token?: string | null
           special_requirements?: string | null
           status?: string | null
@@ -234,6 +240,8 @@ export type Database = {
           before_photos?: string[] | null
           booking_date?: string
           contact_number?: string | null
+          contact_person_designation?: string | null
+          contact_person_name?: string | null
           created_at?: string | null
           created_by?: string | null
           customer_name?: string
@@ -245,6 +253,7 @@ export type Database = {
           invoice_url?: string | null
           job_number?: string
           material_type?: string | null
+          notes?: string | null
           public_token?: string | null
           special_requirements?: string | null
           status?: string | null
@@ -310,6 +319,11 @@ export type Database = {
           year: number
         }[]
       }
+      get_financial_year: { Args: { input_date?: string }; Returns: string }
+      get_financial_year_start_year: {
+        Args: { input_date?: string }
+        Returns: number
+      }
       log_audit_event: {
         Args: {
           p_action: string
@@ -322,6 +336,22 @@ export type Database = {
         }
         Returns: string
       }
+      uuid_generate_v1: { Args: never; Returns: string }
+      uuid_generate_v1mc: { Args: never; Returns: string }
+      uuid_generate_v3: {
+        Args: { name: string; namespace: string }
+        Returns: string
+      }
+      uuid_generate_v4: { Args: never; Returns: string }
+      uuid_generate_v5: {
+        Args: { name: string; namespace: string }
+        Returns: string
+      }
+      uuid_nil: { Args: never; Returns: string }
+      uuid_ns_dns: { Args: never; Returns: string }
+      uuid_ns_oid: { Args: never; Returns: string }
+      uuid_ns_url: { Args: never; Returns: string }
+      uuid_ns_x500: { Args: never; Returns: string }
     }
     Enums: {
       [_ in never]: never

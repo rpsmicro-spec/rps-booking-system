@@ -15,6 +15,13 @@ export function EditJobFormClient({ job }: EditJobFormClientProps) {
   const handleSubmit = async (data: {
     customer_name: string
     job_number: string
+    contact_person_name?: string
+    contact_person_designation?: string
+    address_street?: string
+    address_area?: string
+    address_city?: string
+    address_state?: string
+    address_pincode?: string
     address?: string
     contact_number?: string
     email?: string
@@ -22,13 +29,20 @@ export function EditJobFormClient({ job }: EditJobFormClientProps) {
     booking_date: string
     delivery_date?: string
     special_requirements?: string
-    invoice_url?: string
+    notes?: string
+    before_photos?: (string | File)[]
+    after_photos?: (string | File)[]
+    invoice_file_path?: string
   }) => {
     try {
+      // Prepare the update data - exclude job_number as it cannot be changed
+      // Photos are already uploaded and converted to URLs by JobForm, so include them
+      const { job_number: _job_number, ...updateData } = data
+
       const response = await fetch(`/api/jobs/${job.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify(updateData),
       })
 
       const result = await response.json()
@@ -40,7 +54,9 @@ export function EditJobFormClient({ job }: EditJobFormClientProps) {
 
       toast.success('Job updated successfully!')
       router.push(`/jobs/${job.id}`)
-    } catch {
+      router.refresh()
+    } catch (error) {
+      console.error('Error updating job:', error)
       toast.error('An unexpected error occurred')
     }
   }

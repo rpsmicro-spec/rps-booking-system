@@ -14,7 +14,8 @@ import {
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Briefcase, Eye, MoreHorizontal, Edit, Trash2, User, Mail, Phone, MapPin, BarChart3, CheckCircle2, Package, Truck } from 'lucide-react'
+import { Briefcase, Eye, MoreHorizontal, Edit, Trash2, User, Mail, Phone, MapPin, BarChart3, CheckCircle2, Package, Truck, Calendar, FileText, UserCircle } from 'lucide-react'
+import { useIsMobile } from '@/hooks/use-mobile'
 import {
   Empty,
   EmptyContent,
@@ -59,16 +60,26 @@ interface CustomerDetailProps {
     address_city?: string | null
     address_state?: string | null
     address_pincode?: string | null
+    contact_person_name?: string | null
+    contact_person_designation?: string | null
+    notes?: string | null
   }
   jobs: Job[]
 }
 
 export function CustomerDetail({ customer, jobs }: CustomerDetailProps) {
   const router = useRouter()
+  const isMobile = useIsMobile()
   const address = formatAddress(customer)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [jobToDelete, setJobToDelete] = useState<Job | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  
+  // Get contact person info from first job (since customer data comes from jobs)
+  const firstJob = jobs[0] as Job & { contact_person_name?: string; contact_person_designation?: string; notes?: string }
+  const contactPersonName = customer.contact_person_name || firstJob?.contact_person_name
+  const contactPersonDesignation = customer.contact_person_designation || firstJob?.contact_person_designation
+  const customerNotes = customer.notes || firstJob?.notes
 
   // Calculate stats
   const totalJobs = jobs.length
@@ -116,66 +127,99 @@ export function CustomerDetail({ customer, jobs }: CustomerDetailProps) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Customer Information and Stats - Side by Side on Desktop */}
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-3 sm:gap-4 lg:grid-cols-2">
         {/* Left Column: Customer Info and Quick Actions (on mobile) */}
-        <div className="space-y-4 flex flex-col lg:space-y-0 lg:h-full">
+        <div className="space-y-3 sm:space-y-4 flex flex-col lg:space-y-0 lg:h-full">
           {/* Customer Information Card */}
           <Card className="lg:h-full">
-            <CardHeader>
+            <CardHeader className="pb-3 sm:pb-6">
               <CardTitle className="text-base sm:text-lg">Customer Info</CardTitle>
             </CardHeader>
             <Separator />
-            <CardContent className="pt-6">
-              <div className="grid gap-6">
-                <div className="flex items-start gap-4">
+            <CardContent className="pt-4 sm:pt-6">
+              <div className="grid gap-4 sm:gap-6">
+                <div className="flex items-start gap-3 sm:gap-4">
                   <div className="flex-shrink-0 mt-0.5">
-                    <div className="rounded-full bg-muted p-2">
-                      <User className="h-4 w-4 text-muted-foreground" />
+                    <div className="rounded-full bg-muted p-1.5 sm:p-2">
+                      <User className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-muted-foreground mb-1.5">Customer Name</p>
-                    <p className="text-base font-semibold">{customer.customer_name}</p>
+                    <p className="text-xs font-medium text-muted-foreground mb-1 sm:mb-1.5">Customer Name</p>
+                    <p className="text-sm sm:text-base font-semibold break-words">{customer.customer_name}</p>
                   </div>
                 </div>
-                {customer.email && (
-                  <div className="flex items-start gap-4">
+                {contactPersonName && (
+                  <div className="flex items-start gap-3 sm:gap-4">
                     <div className="flex-shrink-0 mt-0.5">
-                      <div className="rounded-full bg-muted p-2">
-                        <Mail className="h-4 w-4 text-muted-foreground" />
+                      <div className="rounded-full bg-muted p-1.5 sm:p-2">
+                        <UserCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
                       </div>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-muted-foreground mb-1.5">Email Address</p>
-                      <p className="text-sm font-medium break-all">{customer.email}</p>
+                      <p className="text-xs font-medium text-muted-foreground mb-1 sm:mb-1.5">Contact Person</p>
+                      <p className="text-sm font-semibold break-words">
+                        {contactPersonName}
+                        {contactPersonDesignation && (
+                          <span className="text-xs font-normal text-muted-foreground ml-1.5 sm:ml-2 block sm:inline">
+                            ({contactPersonDesignation})
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                )}
+                {customer.email && (
+                  <div className="flex items-start gap-3 sm:gap-4">
+                    <div className="flex-shrink-0 mt-0.5">
+                      <div className="rounded-full bg-muted p-1.5 sm:p-2">
+                        <Mail className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
+                      </div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium text-muted-foreground mb-1 sm:mb-1.5">Email Address</p>
+                      <p className="text-xs sm:text-sm font-medium break-all">{customer.email}</p>
                     </div>
                   </div>
                 )}
                 {customer.contact_number && (
-                  <div className="flex items-start gap-4">
+                  <div className="flex items-start gap-3 sm:gap-4">
                     <div className="flex-shrink-0 mt-0.5">
-                      <div className="rounded-full bg-muted p-2">
-                        <Phone className="h-4 w-4 text-muted-foreground" />
+                      <div className="rounded-full bg-muted p-1.5 sm:p-2">
+                        <Phone className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
                       </div>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-muted-foreground mb-1.5">Contact Number</p>
-                      <p className="text-sm font-medium">{customer.contact_number}</p>
+                      <p className="text-xs font-medium text-muted-foreground mb-1 sm:mb-1.5">Contact Number</p>
+                      <p className="text-xs sm:text-sm font-medium break-words">{customer.contact_number}</p>
                     </div>
                   </div>
                 )}
                 {address && (
-                  <div className="flex items-start gap-4">
+                  <div className="flex items-start gap-3 sm:gap-4">
                     <div className="flex-shrink-0 mt-0.5">
-                      <div className="rounded-full bg-muted p-2">
-                        <MapPin className="h-4 w-4 text-muted-foreground" />
+                      <div className="rounded-full bg-muted p-1.5 sm:p-2">
+                        <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
                       </div>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-muted-foreground mb-1.5">Address</p>
-                      <p className="text-sm whitespace-pre-line leading-relaxed">{address}</p>
+                      <p className="text-xs font-medium text-muted-foreground mb-1 sm:mb-1.5">Address</p>
+                      <p className="text-xs sm:text-sm whitespace-pre-line leading-relaxed break-words">{address}</p>
+                    </div>
+                  </div>
+                )}
+                {customerNotes && (
+                  <div className="flex items-start gap-3 sm:gap-4">
+                    <div className="flex-shrink-0 mt-0.5">
+                      <div className="rounded-full bg-muted p-1.5 sm:p-2">
+                        <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
+                      </div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium text-muted-foreground mb-1 sm:mb-1.5">Notes</p>
+                      <p className="text-xs sm:text-sm whitespace-pre-wrap leading-relaxed break-words">{customerNotes}</p>
                     </div>
                   </div>
                 )}
@@ -186,24 +230,24 @@ export function CustomerDetail({ customer, jobs }: CustomerDetailProps) {
           {/* Quick Actions - Below Customer Info on mobile, in right column on desktop */}
           {(phoneLink || emailLink) && (
             <Card className="lg:hidden">
-              <CardHeader>
+              <CardHeader className="pb-3 sm:pb-6">
                 <CardTitle className="text-base sm:text-lg">Quick Actions</CardTitle>
               </CardHeader>
               <Separator />
-              <CardContent className="pt-6">
-                <div className="flex flex-col sm:flex-row gap-2">
+              <CardContent className="pt-4 sm:pt-6">
+                <div className="flex flex-col gap-2">
                   {phoneLink && (
-                    <Button variant="outline" className="flex-1" asChild>
+                    <Button variant="outline" size="sm" className="w-full text-xs sm:text-sm" asChild>
                       <a href={phoneLink}>
-                        <Phone className="mr-2 h-4 w-4" />
+                        <Phone className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
                         Call Customer
                       </a>
                     </Button>
                   )}
                   {emailLink && (
-                    <Button variant="outline" className="flex-1" asChild>
+                    <Button variant="outline" size="sm" className="w-full text-xs sm:text-sm" asChild>
                       <a href={emailLink}>
-                        <Mail className="mr-2 h-4 w-4" />
+                        <Mail className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
                         Send Email
                       </a>
                     </Button>
@@ -247,58 +291,58 @@ export function CustomerDetail({ customer, jobs }: CustomerDetailProps) {
           )}
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-2 gap-4 flex-1">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 flex-1">
             <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-3">
-                  <div className="rounded-full bg-muted p-2">
-                    <BarChart3 className="h-4 w-4 text-muted-foreground" />
+              <CardContent className="pt-4 sm:pt-6">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="rounded-full bg-muted p-1.5 sm:p-2">
+                    <BarChart3 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
                   </div>
                   <div>
-                    <p className="text-xs font-medium text-muted-foreground">Total Jobs</p>
-                    <p className="text-2xl font-bold">{totalJobs}</p>
+                    <p className="text-[10px] sm:text-xs font-medium text-muted-foreground">Total Jobs</p>
+                    <p className="text-xl sm:text-2xl font-bold">{totalJobs}</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-3">
-                  <div className="rounded-full bg-muted p-2">
-                    <Package className="h-4 w-4 text-muted-foreground" />
+              <CardContent className="pt-4 sm:pt-6">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="rounded-full bg-muted p-1.5 sm:p-2">
+                    <Package className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
                   </div>
                   <div>
-                    <p className="text-xs font-medium text-muted-foreground">Active Jobs</p>
-                    <p className="text-2xl font-bold">{activeJobs}</p>
+                    <p className="text-[10px] sm:text-xs font-medium text-muted-foreground">Active Jobs</p>
+                    <p className="text-xl sm:text-2xl font-bold">{activeJobs}</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-3">
-                  <div className="rounded-full bg-muted p-2">
-                    <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
+              <CardContent className="pt-4 sm:pt-6">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="rounded-full bg-muted p-1.5 sm:p-2">
+                    <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
                   </div>
                   <div>
-                    <p className="text-xs font-medium text-muted-foreground">Completed</p>
-                    <p className="text-2xl font-bold">{completedJobs}</p>
+                    <p className="text-[10px] sm:text-xs font-medium text-muted-foreground">Completed</p>
+                    <p className="text-xl sm:text-2xl font-bold">{completedJobs}</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-3">
-                  <div className="rounded-full bg-muted p-2">
-                    <Truck className="h-4 w-4 text-muted-foreground" />
+              <CardContent className="pt-4 sm:pt-6">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="rounded-full bg-muted p-1.5 sm:p-2">
+                    <Truck className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
                   </div>
                   <div>
-                    <p className="text-xs font-medium text-muted-foreground">Delivered</p>
-                    <p className="text-2xl font-bold">{deliveredJobs}</p>
+                    <p className="text-[10px] sm:text-xs font-medium text-muted-foreground">Delivered</p>
+                    <p className="text-xl sm:text-2xl font-bold">{deliveredJobs}</p>
                   </div>
                 </div>
               </CardContent>
@@ -309,13 +353,13 @@ export function CustomerDetail({ customer, jobs }: CustomerDetailProps) {
 
       {/* Jobs Table */}
       <Card>
-        <CardHeader>
-          <CardTitle>All Jobs ({jobs.length})</CardTitle>
+        <CardHeader className="pb-3 sm:pb-6">
+          <CardTitle className="text-base sm:text-lg">All Jobs ({jobs.length})</CardTitle>
         </CardHeader>
         <Separator />
-        <CardContent className="pt-6">
+        <CardContent className="pt-4 sm:pt-6">
           {jobs.length === 0 ? (
-            <div className="p-12">
+            <div className="p-8 sm:p-12">
               <Empty>
                 <EmptyHeader>
                   <EmptyMedia variant="icon">
@@ -327,7 +371,7 @@ export function CustomerDetail({ customer, jobs }: CustomerDetailProps) {
                   </EmptyDescription>
                 </EmptyHeader>
                 <EmptyContent>
-                  <Button asChild>
+                  <Button size="sm" asChild>
                     <Link href="/jobs/new">
                       Create New Job
                     </Link>
@@ -335,7 +379,97 @@ export function CustomerDetail({ customer, jobs }: CustomerDetailProps) {
                 </EmptyContent>
               </Empty>
             </div>
+          ) : isMobile ? (
+            // Mobile Card View
+            <div className="space-y-3">
+              {jobs.map((job) => (
+                <Card
+                  key={job.id}
+                  className="cursor-pointer hover:shadow-md transition-shadow"
+                  onClick={() => router.push(`/jobs/${job.id}`)}
+                >
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <Link
+                          href={`/jobs/${job.id}`}
+                          className="hover:underline"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <h3 className="font-semibold text-base truncate">{job.job_number}</h3>
+                        </Link>
+                      </div>
+                      {job.status && (
+                        <StatusBadge status={job.status as JobStatus} />
+                      )}
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-2 pt-0">
+                    {job.booking_date && (
+                      <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                        <Calendar className="h-3.5 w-3.5 flex-shrink-0" />
+                        <span className="truncate">
+                          Booking: {format(new Date(job.booking_date), 'MMM dd, yyyy')}
+                        </span>
+                      </div>
+                    )}
+                    {job.delivery_date && (
+                      <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                        <Truck className="h-3.5 w-3.5 flex-shrink-0" />
+                        <span className="truncate">
+                          Delivery: {format(new Date(job.delivery_date), 'MMM dd, yyyy')}
+                        </span>
+                      </div>
+                    )}
+                    {job.material_type && (
+                      <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                        <Package className="h-3.5 w-3.5 flex-shrink-0" />
+                        <span className="truncate">{job.material_type}</span>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2 pt-2 border-t" onClick={(e) => e.stopPropagation()}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 text-xs"
+                        asChild
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Link href={`/jobs/${job.id}`}>
+                          <Eye className="mr-1.5 h-3.5 w-3.5" />
+                          View
+                        </Link>
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 text-xs"
+                        asChild
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Link href={`/jobs/${job.id}/edit`}>
+                          <Edit className="mr-1.5 h-3.5 w-3.5" />
+                          Edit
+                        </Link>
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-xs text-destructive hover:text-destructive"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleDeleteClick(e, job)
+                        }}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           ) : (
+            // Desktop Table View
             <div className="rounded-md border">
               <Table>
                 <TableHeader>

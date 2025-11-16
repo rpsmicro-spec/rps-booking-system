@@ -47,9 +47,9 @@ export async function POST(request: Request) {
       )
     }
 
-    if (!job.email) {
+    if (!job.email || !job.email.trim()) {
       return NextResponse.json(
-        { error: 'Job does not have customer email' },
+        { error: 'Cannot send email: Job does not have a customer email address. Please add an email address to the job to send notifications.' },
         { status: 400 }
       )
     }
