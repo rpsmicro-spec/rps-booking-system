@@ -134,7 +134,22 @@ additional_redirect_urls = [
   "https://localhost:3000",
   "https://localhost:3000/setup-password",
   "https://localhost:3000/reset-password",
-  "https://localhost:3000/login"
+  "https://localhost:3000/login",
+  "https://rps-booking-system.vercel.app",
+  "https://rps-booking-system.vercel.app/",
+  "https://rps-booking-system.vercel.app/setup-password",
+  "https://rps-booking-system.vercel.app/reset-password",
+  "https://rps-booking-system.vercel.app/login",
+  "https://rpsmicrosystems.com",
+  "https://rpsmicrosystems.com/",
+  "https://rpsmicrosystems.com/setup-password",
+  "https://rpsmicrosystems.com/reset-password",
+  "https://rpsmicrosystems.com/login",
+  "http://rpsmicrosystems.com",
+  "http://rpsmicrosystems.com/",
+  "http://rpsmicrosystems.com/setup-password",
+  "http://rpsmicrosystems.com/reset-password",
+  "http://rpsmicrosystems.com/login"
 ]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
