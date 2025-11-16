@@ -281,7 +281,25 @@ export function JobForm({ job, onSubmit, isSubmitting = false }: JobFormProps) {
     if (!job && isInitialMountRef.current) {
       isInitialMountRef.current = false;
       const savedData = loadFormData();
-      if (savedData && Object.keys(savedData).length > 0) {
+      
+      // Check if there's meaningful data to restore (not just empty values)
+      const hasMeaningfulData = (data: Partial<JobFormValues> | null): boolean => {
+        if (!data || Object.keys(data).length === 0) return false;
+        
+        // Check if any field has a non-empty value
+        const hasValue = (value: unknown): boolean => {
+          if (value === null || value === undefined) return false;
+          if (typeof value === "string") return value.trim().length > 0;
+          if (typeof value === "number") return true;
+          if (Array.isArray(value)) return value.length > 0;
+          if (typeof value === "object") return Object.keys(value).length > 0;
+          return Boolean(value);
+        };
+        
+        return Object.values(data).some(hasValue);
+      };
+      
+      if (savedData && hasMeaningfulData(savedData)) {
         // Filter photos to only include strings (File objects can't be restored from localStorage)
         const beforePhotos = Array.isArray(savedData.before_photos)
           ? savedData.before_photos.filter(
@@ -317,7 +335,7 @@ export function JobForm({ job, onSubmit, isSubmitting = false }: JobFormProps) {
         } as JobFormValues);
         hasRestoredRef.current = true;
 
-        // Show appropriate message
+        // Show appropriate message only when data was actually restored
         toast.info("Session restored", {
           description: hasRestoredPhotos
             ? "Your form data was restored. Note: Only uploaded photos are restored - any pending uploads need to be re-selected."
