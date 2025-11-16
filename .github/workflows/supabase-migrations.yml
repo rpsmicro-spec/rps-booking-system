@@ -57,7 +57,7 @@ jobs:
       - name: Push migrations to Supabase
         run: |
           echo "Pushing migrations to Supabase..."
-          supabase db push --linked --no-confirm
+          supabase db push --yes
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
