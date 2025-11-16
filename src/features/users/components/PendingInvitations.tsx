@@ -59,7 +59,7 @@ export function PendingInvitations({ refreshTrigger }: PendingInvitationsProps) 
     }
   }
 
-  const handleResendInvitation = async () => {
+  const handleResendInvitation = async (user: User) => {
     try {
       // TODO: Implement resend invitation API
       toast.info('Resend invitation feature coming soon')
