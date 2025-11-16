@@ -152,7 +152,7 @@ const useSupabaseUpload = (options: UseSupabaseUploadOptions) => {
     setSuccesses(newSuccesses)
 
     setLoading(false)
-  }, [files, path, bucketName, errors, successes, cacheControl, upsert])
+  }, [files, path, bucketName, errors, successes, cacheControl, upsert, setLoading, setErrors, setSuccesses])
 
   useEffect(() => {
     // If the number of files doesn't exceed the maxFiles parameter, remove the error 'Too many files' from each file
@@ -166,6 +166,7 @@ const useSupabaseUpload = (options: UseSupabaseUploadOptions) => {
         return file
       })
       if (changed) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setFiles(newFiles)
       }
     }
@@ -174,6 +175,7 @@ const useSupabaseUpload = (options: UseSupabaseUploadOptions) => {
   // Clear errors when files array becomes empty
   useEffect(() => {
     if (prevFilesLengthRef.current > 0 && files.length === 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setErrors([])
     }
     prevFilesLengthRef.current = files.length

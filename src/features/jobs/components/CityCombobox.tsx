@@ -17,7 +17,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import { INDIAN_CITIES, getCitiesByState } from "@/lib/data/indian-cities"
+import { getCitiesByState } from "@/lib/data/indian-cities"
 
 interface CityComboboxProps {
   value?: string

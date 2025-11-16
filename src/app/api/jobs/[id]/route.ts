@@ -54,14 +54,6 @@ export async function PATCH(
 
     const body = await request.json()
 
-    // Get current job data before update
-    const { data: oldJob } = await supabase
-      .from('jobs')
-      .select('job_number, customer_name')
-      .eq('id', id)
-      .is('deleted_at', null)
-      .single()
-
     // Update job
     const { data, error } = await supabase
       .from('jobs')

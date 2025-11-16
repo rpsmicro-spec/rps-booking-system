@@ -33,7 +33,6 @@ import {
 } from '@/components/ui/alert-dialog'
 import {
   Empty,
-  EmptyContent,
   EmptyDescription,
   EmptyHeader,
   EmptyMedia,
@@ -75,7 +74,6 @@ export function JobsTable({
   const router = useRouter()
   const [jobs, setJobs] = useState<Job[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [total, setTotal] = useState(0)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [jobToDelete, setJobToDelete] = useState<Job | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -105,7 +103,6 @@ export function JobsTable({
       }
 
       setJobs(result.jobs || [])
-      setTotal(result.total || 0)
       onTotalChange?.(result.total || 0)
     } catch (error) {
       console.error('Error fetching jobs:', error)

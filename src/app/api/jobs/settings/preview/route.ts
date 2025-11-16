@@ -1,4 +1,3 @@
-import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth/helpers'
 import { getNextJobNumberPreview } from '@/lib/job-number-generator'

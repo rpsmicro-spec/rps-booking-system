@@ -37,10 +37,9 @@ import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
 import { USER_ROLES, ROLE_LABELS, type UserRole } from '@/lib/constants/roles'
 import type { User } from '@/types/types'
-import { MoreHorizontal, Edit, Trash2, History, Mail, Users } from 'lucide-react'
+import { MoreHorizontal, Edit, Trash2, History, Users } from 'lucide-react'
 import {
   Empty,
-  EmptyContent,
   EmptyDescription,
   EmptyHeader,
   EmptyMedia,
@@ -162,7 +161,6 @@ export function UsersTable({ refreshTrigger }: UsersTableProps) {
   }
 
   const activeUsers = users.filter((u) => u.invitation_accepted_at !== null || !u.invited_at)
-  const pendingInvitations = users.filter((u) => u.invited_at && !u.invitation_accepted_at)
 
   return (
     <>

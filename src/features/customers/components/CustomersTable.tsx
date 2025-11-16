@@ -15,7 +15,6 @@ import { Button } from '@/components/ui/button'
 import { Mail, Phone, MapPin, Briefcase, Users, Eye } from 'lucide-react'
 import {
   Empty,
-  EmptyContent,
   EmptyDescription,
   EmptyHeader,
   EmptyMedia,

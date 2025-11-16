@@ -75,6 +75,7 @@ export function JobNumberSettingsDialog({
     if (open) {
       fetchSettings()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
 
   const fetchSettings = async () => {

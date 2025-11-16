@@ -18,7 +18,6 @@ import {
 } from "@/lib/notifications/utils";
 import { STATUS_LABELS, JOB_STATUS } from "@/lib/constants";
 import { PDFViewer } from "@/components/pdf/PDFViewer";
-import { formatAddress } from "@/lib/utils/address";
 import { toast } from "sonner";
 import { useState } from "react";
 import { AfterPhotosUpload } from "./AfterPhotosUpload";
@@ -94,7 +93,7 @@ export function JobDetail({
       }
 
       toast.success('Email sent successfully');
-    } catch (error) {
+    } catch {
       toast.error('An unexpected error occurred');
     } finally {
       setIsSendingEmail(false);
@@ -152,6 +151,7 @@ export function JobDetail({
                       onClick={() => setPhotosDialogOpen(true)}
                       className="w-full lg:w-auto"
                     >
+                      {/* eslint-disable-next-line jsx-a11y/alt-text */}
                       <Image className="hidden lg:inline mr-2 h-4 w-4" />
                       View All Photos
                     </Button>

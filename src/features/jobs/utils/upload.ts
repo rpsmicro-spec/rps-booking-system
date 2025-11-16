@@ -41,12 +41,13 @@ export async function uploadFile(
     }
   }
 
-  // Generate unique filename
+  // Generate unique filename (will be updated if converted to WebP)
   const timestamp = Date.now()
   const randomString = Math.random().toString(36).substring(2, 15)
+  // Default to jpg, but will be updated to webp if compression converts it
   const fileExtension = file.name.split('.').pop() || 'jpg'
-  const fileName = `${timestamp}-${randomString}.${fileExtension}`
-  const filePath = folder ? `${folder}/${fileName}` : fileName
+  let fileName = `${timestamp}-${randomString}.${fileExtension}`
+  let filePath = folder ? `${folder}/${fileName}` : fileName
 
   // Prepare file for upload
   let fileToUpload: File = file
@@ -55,8 +56,16 @@ export async function uploadFile(
     // Compress image and convert Blob back to File
     // Supabase standard upload expects a File object
     const compressedBlob = await compressImage(file)
-    fileToUpload = new File([compressedBlob], file.name, {
-      type: file.type || 'image/jpeg',
+    // Determine MIME type from blob (WebP or JPEG)
+    const mimeType = compressedBlob.type || 'image/webp'
+    // Update file extension and path if converted to WebP
+    if (mimeType === 'image/webp') {
+      const nameWithoutExt = fileName.substring(0, fileName.lastIndexOf('.')) || fileName
+      fileName = `${nameWithoutExt}.webp`
+      filePath = folder ? `${folder}/${fileName}` : fileName
+    }
+    fileToUpload = new File([compressedBlob], fileName, {
+      type: mimeType,
       lastModified: Date.now(),
     })
   }
@@ -68,7 +77,7 @@ export async function uploadFile(
     .from(bucket)
     .upload(filePath, fileToUpload, {
       upsert: false,
-      contentType: file.type || 'image/jpeg',
+      contentType: fileToUpload.type || 'image/jpeg',
     })
 
   if (error) {

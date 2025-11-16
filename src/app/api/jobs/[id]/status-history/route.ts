@@ -26,7 +26,7 @@ export async function GET(
     }
 
     return NextResponse.json({ statusHistory: statusHistory || [] }, { status: 200 })
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: 'An unexpected error occurred' },
       { status: 500 }

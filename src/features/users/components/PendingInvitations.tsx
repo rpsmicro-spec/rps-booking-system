@@ -15,7 +15,6 @@ import { Button } from '@/components/ui/button'
 import { Mail, X } from 'lucide-react'
 import {
   Empty,
-  EmptyContent,
   EmptyDescription,
   EmptyHeader,
   EmptyMedia,
@@ -60,7 +59,7 @@ export function PendingInvitations({ refreshTrigger }: PendingInvitationsProps) 
     }
   }
 
-  const handleResendInvitation = async (user: User) => {
+  const handleResendInvitation = async () => {
     try {
       // TODO: Implement resend invitation API
       toast.info('Resend invitation feature coming soon')

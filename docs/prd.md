@@ -186,7 +186,7 @@ Streamline the repair business workflow by digitizing job tracking, customer man
   - Embedded PDF viewer in job detail view (internal)
   - Embedded PDF viewer in public job view (customer-facing)
   - Download button available
-- **Retention:** Invoices kept for 7 years (tax compliance)
+- **Retention:** Invoices kept for 2 weeks after job completion
 
 ### 4.6 Public Job View (Customer Access)
 
@@ -260,8 +260,8 @@ Streamline the repair business workflow by digitizing job tracking, customer man
 ### 4.8 Storage Management
 
 - **Automatic Cleanup (via cron job):**
-  - Photos: Delete 1 year after job completion
-  - Invoices: Keep for 7 years (tax compliance)
+  - Photos: Delete 1 month after job completion
+  - Invoices: Delete 2 weeks after job completion
   - Temp files: Delete after 7 days
   - Orphaned files: Delete after 30 days
 - **Storage Buckets:**
@@ -589,7 +589,7 @@ CREATE TABLE users (
 
    - Max file size: 5MB
    - Allowed types: application/pdf
-   - Retention: 7 years
+   - Retention: 2 weeks after job completion
 
 3. **temp-uploads** (private)
    - Max file size: 5MB

@@ -14,13 +14,11 @@ import { Badge } from '@/components/ui/badge'
 import { Activity, FileText } from 'lucide-react'
 import {
   Empty,
-  EmptyContent,
   EmptyDescription,
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
 } from '@/components/ui/empty'
-import { TableSkeleton, SearchAndFiltersSkeleton } from '@/components/ui/skeletons'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ActivityFilters } from './ActivityFilters'
 

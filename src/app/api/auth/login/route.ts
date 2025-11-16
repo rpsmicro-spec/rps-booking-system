@@ -47,7 +47,8 @@ export async function POST(request: Request) {
                   } else {
                     // For session cookies, explicitly remove maxAge and expires
                     // to ensure they expire when browser closes
-                    const { maxAge, expires, ...sessionOptions } = options || {}
+                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                    const { maxAge: _maxAge, expires: _expires, ...sessionOptions } = options || {}
                     cookieStore.set(name, value, {
                       ...sessionOptions,
                       path: '/',

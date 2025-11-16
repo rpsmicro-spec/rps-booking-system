@@ -10,10 +10,10 @@ export interface CompressOptions {
 }
 
 const DEFAULT_OPTIONS: Required<CompressOptions> = {
-  maxWidth: 1920,
-  maxHeight: 1920,
-  quality: 0.8,
-  maxSizeKB: 500, // 500KB
+  maxWidth: 1200, // Reduced from 1920 for better compression
+  maxHeight: 1200, // Reduced from 1920 for better compression
+  quality: 0.7, // Reduced from 0.8 for better compression
+  maxSizeKB: 250, // Reduced from 500KB to 250KB target
 }
 
 /**
@@ -60,36 +60,75 @@ export async function compressImage(
 
         ctx.drawImage(img, 0, 0, width, height)
 
-        // Convert to blob with compression
-        canvas.toBlob(
-          (blob) => {
-            if (!blob) {
-              reject(new Error('Failed to compress image'))
-              return
-            }
+        // Try WebP first (better compression), fallback to JPEG
+        const tryWebP = () => {
+          canvas.toBlob(
+            (webpBlob) => {
+              if (webpBlob) {
+                const sizeKB = webpBlob.size / 1024
+                if (sizeKB <= opts.maxSizeKB) {
+                  resolve(webpBlob)
+                  return
+                }
+                // If WebP is still too large, try with lower quality
+                if (opts.quality > 0.3) {
+                  canvas.toBlob(
+                    (lowerQualityWebP) => {
+                      if (lowerQualityWebP) {
+                        resolve(lowerQualityWebP)
+                      } else {
+                        tryJPEG()
+                      }
+                    },
+                    'image/webp',
+                    Math.max(0.3, opts.quality - 0.15)
+                  )
+                } else {
+                  tryJPEG()
+                }
+              } else {
+                tryJPEG()
+              }
+            },
+            'image/webp',
+            opts.quality
+          )
+        }
 
-            // If still too large, reduce quality further
-            const sizeKB = blob.size / 1024
-            if (sizeKB > opts.maxSizeKB && opts.quality > 0.3) {
-              // Recursively compress with lower quality
-              canvas.toBlob(
-                (lowerQualityBlob) => {
-                  if (!lowerQualityBlob) {
-                    resolve(blob)
-                    return
-                  }
-                  resolve(lowerQualityBlob)
-                },
-                file.type,
-                Math.max(0.3, opts.quality - 0.2)
-              )
-            } else {
-              resolve(blob)
-            }
-          },
-          file.type || 'image/jpeg',
-          opts.quality
-        )
+        const tryJPEG = () => {
+          canvas.toBlob(
+            (jpegBlob) => {
+              if (!jpegBlob) {
+                reject(new Error('Failed to compress image'))
+                return
+              }
+
+              // If still too large, reduce quality further
+              const sizeKB = jpegBlob.size / 1024
+              if (sizeKB > opts.maxSizeKB && opts.quality > 0.3) {
+                // Recursively compress with lower quality
+                canvas.toBlob(
+                  (lowerQualityBlob) => {
+                    if (!lowerQualityBlob) {
+                      resolve(jpegBlob)
+                      return
+                    }
+                    resolve(lowerQualityBlob)
+                  },
+                  'image/jpeg',
+                  Math.max(0.3, opts.quality - 0.2)
+                )
+              } else {
+                resolve(jpegBlob)
+              }
+            },
+            'image/jpeg',
+            opts.quality
+          )
+        }
+
+        // Try WebP first (better compression), fallback to JPEG if not supported
+        tryWebP()
       }
 
       img.onerror = () => {

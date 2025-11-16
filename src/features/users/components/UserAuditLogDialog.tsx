@@ -20,7 +20,6 @@ import { Badge } from '@/components/ui/badge'
 import { History } from 'lucide-react'
 import {
   Empty,
-  EmptyContent,
   EmptyDescription,
   EmptyHeader,
   EmptyMedia,
@@ -61,6 +60,7 @@ export function UserAuditLogDialog({
     if (open && user.id) {
       fetchAuditLogs()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, user.id])
 
   const fetchAuditLogs = async () => {

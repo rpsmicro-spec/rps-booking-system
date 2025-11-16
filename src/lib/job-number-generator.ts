@@ -4,7 +4,7 @@
  */
 
 import { createAdminClient } from '@/lib/supabase/admin'
-import { generateJobNumber, getNextSettings, type JobNumberSettings } from './job-number'
+import { generateJobNumber, getNextSettings } from './job-number'
 import type { Database } from '@/types/database.types'
 
 type JobNumberSettingsRow = Database['public']['Tables']['job_number_settings']['Row']
@@ -82,7 +82,7 @@ async function generateJobNumberWithRetry(
       if (updateError) {
         throw updateError
       }
-    } catch (error) {
+    } catch {
       if (attempt === maxRetries - 1) {
         // Last attempt failed, use timestamp-based fallback
         return `JOB-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`

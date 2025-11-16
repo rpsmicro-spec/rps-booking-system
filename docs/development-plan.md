@@ -670,8 +670,8 @@ This document outlines the phased development approach for building the Job Mana
 
 - [ ] Create storage cleanup API route
 - [ ] Implement cleanup logic:
-  - Delete photos 1 year after completion
-  - Delete invoices after 7 years (tax compliance)
+  - Delete photos 1 month after completion
+  - Delete invoices 2 weeks after completion
   - Delete temp files after 7 days
   - Delete orphaned files after 30 days
   - Note: PDF summaries are not stored, so no cleanup needed

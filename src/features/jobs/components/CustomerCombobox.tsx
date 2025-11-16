@@ -77,10 +77,6 @@ export function CustomerCombobox({
     return () => clearTimeout(timeoutId)
   }, [searchValue, open])
 
-  const selectedCustomer = customers.find(
-    (customer) => customer.customer_name.toLowerCase() === value?.toLowerCase()
-  )
-
   const handleSelect = (customerName: string) => {
     const customer = customers.find(
       (c) => c.customer_name.toLowerCase() === customerName.toLowerCase()

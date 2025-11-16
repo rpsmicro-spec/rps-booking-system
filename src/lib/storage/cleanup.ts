@@ -16,19 +16,19 @@ interface CleanupResult {
 }
 
 /**
- * Clean up old job photos (1 year after completion)
+ * Clean up old job photos (1 month after completion)
  */
 async function cleanupOldPhotos(): Promise<number> {
   const supabase = await createClient()
-  const oneYearAgo = new Date()
-  oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1)
+  const oneMonthAgo = new Date()
+  oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1)
 
-  // Find completed jobs older than 1 year
+  // Find completed jobs older than 1 month
   const { data: oldJobs } = await supabase
     .from('jobs')
     .select('id, before_photos, after_photos, updated_at, status')
     .eq('status', 'completed')
-    .lt('updated_at', oneYearAgo.toISOString())
+    .lt('updated_at', oneMonthAgo.toISOString())
     .is('deleted_at', null)
 
   if (!oldJobs || oldJobs.length === 0) {
@@ -56,19 +56,19 @@ async function cleanupOldPhotos(): Promise<number> {
 }
 
 /**
- * Clean up old invoices (7 years after completion for tax compliance)
+ * Clean up old invoices (2 weeks after completion)
  */
 async function cleanupOldInvoices(): Promise<number> {
   const supabase = await createClient()
-  const sevenYearsAgo = new Date()
-  sevenYearsAgo.setFullYear(sevenYearsAgo.getFullYear() - 7)
+  const twoWeeksAgo = new Date()
+  twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14)
 
-  // Find completed jobs older than 7 years
+  // Find completed jobs older than 2 weeks
   const { data: oldJobs } = await supabase
     .from('jobs')
     .select('id, invoice_file_path, updated_at, status')
     .eq('status', 'completed')
-    .lt('updated_at', sevenYearsAgo.toISOString())
+    .lt('updated_at', twoWeeksAgo.toISOString())
     .is('deleted_at', null)
     .not('invoice_file_path', 'is', null)
 

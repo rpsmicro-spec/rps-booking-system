@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Plus, Briefcase, Users, Contact } from "lucide-react"
+import { Plus, Briefcase, Contact } from "lucide-react"
 
 export function QuickActions() {
   return (

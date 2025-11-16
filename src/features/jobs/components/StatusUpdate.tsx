@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { Button } from '@/components/ui/button'
 import {
   Select,
   SelectContent,
@@ -9,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { JOB_STATUS, STATUS_LABELS, STATUS_WORKFLOW } from '@/lib/constants'
+import { STATUS_LABELS, STATUS_WORKFLOW } from '@/lib/constants'
 import type { JobStatus } from '@/types/types'
 import { toast } from 'sonner'
 import { Loader2 } from 'lucide-react'
