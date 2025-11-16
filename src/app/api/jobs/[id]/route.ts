@@ -131,15 +131,18 @@ export async function DELETE(
       .is('deleted_at', null)
       .single()
 
-    // Soft delete
+    if (!job) {
+      return NextResponse.json(
+        { error: 'Job not found' },
+        { status: 404 }
+      )
+    }
+
+    // Hard delete - permanently remove the job from the database
     const { error } = await supabase
       .from('jobs')
-      .update({
-        deleted_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
+      .delete()
       .eq('id', id)
-      .is('deleted_at', null)
 
     if (error) {
       if (error.code === 'PGRST116') {

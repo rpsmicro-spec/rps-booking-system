@@ -37,7 +37,7 @@ import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
 import { USER_ROLES, ROLE_LABELS, type UserRole } from '@/lib/constants/roles'
 import type { User } from '@/types/types'
-import { MoreHorizontal, Edit, Trash2, History, Users } from 'lucide-react'
+import { MoreHorizontal, Edit, Trash2, History, Users, Mail, User as UserIcon, Calendar } from 'lucide-react'
 import {
   Empty,
   EmptyDescription,
@@ -47,12 +47,15 @@ import {
 } from '@/components/ui/empty'
 import { TableSkeleton } from '@/components/ui/skeletons'
 import { UserAuditLogDialog } from './UserAuditLogDialog'
+import { useIsMobile } from '@/hooks/use-mobile'
+import { Card, CardHeader } from '@/components/ui/card'
 
 interface UsersTableProps {
   refreshTrigger?: number
 }
 
 export function UsersTable({ refreshTrigger }: UsersTableProps) {
+  const isMobile = useIsMobile()
   const [users, setUsers] = useState<User[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [updatingRoles, setUpdatingRoles] = useState<Set<string>>(new Set())
@@ -162,6 +165,137 @@ export function UsersTable({ refreshTrigger }: UsersTableProps) {
 
   const activeUsers = users.filter((u) => u.invitation_accepted_at !== null || !u.invited_at)
 
+  const emptyState = (
+    <div className="p-12">
+      <Empty>
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <Users className="h-6 w-6" />
+          </EmptyMedia>
+          <EmptyTitle>No Users Found</EmptyTitle>
+          <EmptyDescription>
+            No active users in the system. Invite users to get started.
+          </EmptyDescription>
+        </EmptyHeader>
+      </Empty>
+    </div>
+  )
+
+  // Mobile Card View
+  if (isMobile) {
+    return (
+      <>
+        <div className="space-y-3">
+          {activeUsers.length === 0 ? (
+            emptyState
+          ) : (
+            activeUsers.map((user) => (
+              <Card key={user.id}>
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Mail className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        <h3 className="font-semibold text-base truncate">{user.email}</h3>
+                      </div>
+                      {user.name && (
+                        <div className="flex items-center gap-2 mb-2">
+                          <UserIcon className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                          <p className="text-sm text-muted-foreground truncate">{user.name}</p>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-2 flex-wrap mt-2">
+                        <Select
+                          value={user.role || USER_ROLES.STAFF}
+                          onValueChange={(value) =>
+                            updateUserRole(user.id, value as UserRole)
+                          }
+                          disabled={updatingRoles.has(user.id)}
+                        >
+                          <SelectTrigger className="w-32 h-8 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Object.values(USER_ROLES).map((role) => (
+                              <SelectItem key={role} value={role}>
+                                {ROLE_LABELS[role]}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Badge variant="secondary" className="text-xs">Active</Badge>
+                      </div>
+                      <div className="flex items-center gap-2 mt-2">
+                        <Calendar className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                        <p className="text-xs text-muted-foreground">
+                          Joined: {new Date(user.created_at).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => setEditingUser(user)}>
+                          <Edit className="mr-2 h-4 w-4" />
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setAuditLogUser(user)}>
+                          <History className="mr-2 h-4 w-4" />
+                          View Audit Log
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => setDeleteUser(user)}
+                          className="text-destructive"
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Remove
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </CardHeader>
+              </Card>
+            ))
+          )}
+        </div>
+
+        {/* Edit User Dialog */}
+        {editingUser && (
+          <EditUserDialog
+            user={editingUser}
+            open={!!editingUser}
+            onOpenChange={(open) => !open && setEditingUser(null)}
+            onSave={handleEditUser}
+          />
+        )}
+
+        {/* Delete User Dialog */}
+        {deleteUser && (
+          <DeleteUserDialog
+            user={deleteUser}
+            open={!!deleteUser}
+            onOpenChange={(open) => !open && setDeleteUser(null)}
+            onConfirm={handleDeleteUser}
+          />
+        )}
+
+        {/* Audit Log Dialog */}
+        {auditLogUser && (
+          <UserAuditLogDialog
+            user={auditLogUser}
+            open={!!auditLogUser}
+            onOpenChange={(open) => !open && setAuditLogUser(null)}
+          />
+        )}
+      </>
+    )
+  }
+
+  // Desktop Table View
   return (
     <>
       <div className="rounded-md border">
@@ -180,19 +314,7 @@ export function UsersTable({ refreshTrigger }: UsersTableProps) {
             {activeUsers.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="p-0">
-                  <div className="p-12">
-                    <Empty>
-                      <EmptyHeader>
-                        <EmptyMedia variant="icon">
-                          <Users className="h-6 w-6" />
-                        </EmptyMedia>
-                        <EmptyTitle>No Users Found</EmptyTitle>
-                        <EmptyDescription>
-                          No active users in the system. Invite users to get started.
-                        </EmptyDescription>
-                      </EmptyHeader>
-                    </Empty>
-                  </div>
+                  {emptyState}
                 </TableCell>
               </TableRow>
             ) : (

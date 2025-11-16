@@ -90,9 +90,9 @@ export function NameDialog({ open, onNameSet }: NameDialogProps) {
         onEscapeKeyDown={(e) => e.preventDefault()}
       >
         <DialogHeader>
-          <DialogTitle>Set Your Display Name</DialogTitle>
+          <DialogTitle>Set Your Full Name</DialogTitle>
           <DialogDescription>
-            Please enter your name to continue. This will be displayed in
+            Please enter your full name to continue. This will be displayed in
             the sidebar and throughout the application.
           </DialogDescription>
         </DialogHeader>
@@ -100,11 +100,11 @@ export function NameDialog({ open, onNameSet }: NameDialogProps) {
           <div className="grid gap-4 py-4">
             <Field data-invalid={!!errors.name}>
               <FieldLabel htmlFor="name">
-                Name <span className="text-red-500">*</span>
+                Full Name <span className="text-red-500">*</span>
               </FieldLabel>
               <Input
                 id="name"
-                placeholder="Enter your name"
+                placeholder="Enter your full name"
                 {...register("name")}
                 disabled={isLoading}
                 autoFocus
