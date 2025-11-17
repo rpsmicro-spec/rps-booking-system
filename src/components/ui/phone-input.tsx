@@ -6,6 +6,11 @@ import { cn } from "@/lib/utils";
 import { Contact, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   isContactsPickerAvailable,
   selectContact,
   extractPhoneFromContact,
@@ -135,21 +140,6 @@ export function PhoneInput({
     const checkAvailability = () => {
       const available = isContactsPickerAvailable();
       setIsContactPickerAvailable(available);
-
-      // Debug logging (remove in production if needed)
-      if (typeof window !== "undefined") {
-        console.log("Contacts Picker API check:", {
-          available,
-          hasNavigator: typeof navigator !== "undefined",
-          hasContacts: "contacts" in navigator,
-          hasSelect: typeof navigator.contacts?.select === "function",
-          hasContactsManager: "ContactsManager" in window,
-          userAgent: navigator.userAgent,
-          isSecureContext: window.isSecureContext,
-          protocol: window.location.protocol,
-          hostname: window.location.hostname,
-        });
-      }
     };
 
     checkAvailability();
@@ -157,7 +147,18 @@ export function PhoneInput({
 
   // Handle contact selection
   const handleContactSelect = React.useCallback(async () => {
-    if (!isContactPickerAvailable || isLoadingContact || props.disabled) {
+    // If API is not available, show informative message
+    if (!isContactPickerAvailable) {
+      toast.info(
+        "Contact picker is not available in this browser. Please enter the phone number manually.",
+        {
+          duration: 3000,
+        }
+      );
+      return;
+    }
+
+    if (isLoadingContact || props.disabled) {
       return;
     }
 
@@ -224,35 +225,47 @@ export function PhoneInput({
       <Input
         {...props}
         type="tel"
+        autoComplete="tel"
         value={displayValue}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
-        className={cn(className, isContactPickerAvailable && "pr-10")}
+        className={cn(className, "pr-10")}
         placeholder={defaultCountryCode + " XXXXX XXXXX"}
       />
-      {isContactPickerAvailable && (
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className={cn(
-            "absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 z-10",
-            "hover:bg-muted",
-            "disabled:opacity-50 disabled:cursor-not-allowed",
-            props.disabled && "pointer-events-none"
-          )}
-          onClick={handleContactSelect}
-          disabled={isLoadingContact || props.disabled}
-          aria-label="Select contact from phone"
-          title="Select contact from phone"
-        >
-          {isLoadingContact ? (
-            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-          ) : (
-            <Contact className="h-4 w-4 text-muted-foreground" />
-          )}
-        </Button>
-      )}
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className={cn(
+              "absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 z-10",
+              "hover:bg-muted",
+              "disabled:opacity-50 disabled:cursor-not-allowed",
+              !isContactPickerAvailable && "opacity-60",
+              props.disabled && "pointer-events-none"
+            )}
+            onClick={handleContactSelect}
+            disabled={isLoadingContact || props.disabled}
+            aria-label={
+              isContactPickerAvailable
+                ? "Select contact from phone"
+                : "Contact picker not available in this browser"
+            }
+          >
+            {isLoadingContact ? (
+              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+            ) : (
+              <Contact className="h-4 w-4 text-muted-foreground" />
+            )}
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>
+          {isContactPickerAvailable
+            ? "Select contact from phone"
+            : "Contact picker not available. Please enter phone number manually."}
+        </TooltipContent>
+      </Tooltip>
     </div>
   );
 }

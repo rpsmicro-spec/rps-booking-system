@@ -22,7 +22,7 @@ import { SimpleDatePicker } from "./SimpleDatePicker";
 import { StateCombobox } from "./StateCombobox";
 import { CityCombobox } from "./CityCombobox";
 import { CustomerCombobox, type Customer } from "./CustomerCombobox";
-import { PhoneInput } from "@/components/ui/phone-input";
+import { EnhancedPhoneInput } from "@/components/ui/enhanced-phone-input";
 import { Separator } from "@/components/ui/separator";
 import {
   AlertDialog,
@@ -889,12 +889,19 @@ export function JobForm({ job, onSubmit, isSubmitting = false }: JobFormProps) {
                   name="contact_number"
                   control={control}
                   render={({ field }) => (
-                    <PhoneInput
+                    <EnhancedPhoneInput
                       id="contact_number"
+                      name="contact_number"
                       value={field.value || ""}
                       onChange={(value) => field.onChange(value || "")}
                       disabled={isFormDisabled}
                       aria-invalid={!!errors.contact_number}
+                      contactName={watch("customer_name") || watch("contact_person_name")}
+                      placeholder="Enter phone number"
+                      showContactPicker={true}
+                      showClipboardPaste={true}
+                      showValidation={true}
+                      showRecentContacts={true}
                     />
                   )}
                 />
