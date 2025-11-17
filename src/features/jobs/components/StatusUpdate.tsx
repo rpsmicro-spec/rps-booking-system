@@ -83,7 +83,7 @@ export function StatusUpdate({
           onValueChange={(value) => handleStatusChange(value as JobStatus)}
           disabled={isUpdating}
         >
-          <SelectTrigger className="w-full">
+          <SelectTrigger size="sm" className="w-full">
             <SelectValue placeholder="Select status" />
           </SelectTrigger>
           <SelectContent>

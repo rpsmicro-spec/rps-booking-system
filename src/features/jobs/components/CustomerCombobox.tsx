@@ -52,6 +52,9 @@ export function CustomerCombobox({
   const [searchValue, setSearchValue] = React.useState("");
   const [customers, setCustomers] = React.useState<Customer[]>([]);
   const [loading, setLoading] = React.useState(false);
+  // Track the selected customer's unique identifier to show correct checkmark
+  const [selectedCustomerUniqueId, setSelectedCustomerUniqueId] =
+    React.useState<string | null>(null);
 
   // Fetch customers when search value changes
   React.useEffect(() => {
@@ -80,10 +83,20 @@ export function CustomerCombobox({
     return () => clearTimeout(timeoutId);
   }, [searchValue, open]);
 
-  const handleSelect = (customerName: string) => {
-    const customer = customers.find(
-      (c) => c.customer_name.toLowerCase() === customerName.toLowerCase()
-    );
+  const handleSelect = (selectedValue: string) => {
+    // The value is a unique identifier: "customer_name|email|contact_number"
+    // Extract the customer name (first part before |)
+    const customerName = selectedValue.split("|")[0];
+
+    // Find the customer by matching the unique value
+    const customer = customers.find((c) => {
+      const uniqueValue = `${c.customer_name}|${c.email || ""}|${c.contact_number || ""}`;
+      return uniqueValue === selectedValue;
+    });
+
+    // Store the unique identifier for checkmark display
+    setSelectedCustomerUniqueId(selectedValue);
+
     onChange(customerName, customer);
     setOpen(false);
   };
@@ -102,6 +115,22 @@ export function CustomerCombobox({
       setSearchValue("");
     }
   }, [open]);
+
+  // Update selected customer unique ID when value changes externally
+  React.useEffect(() => {
+    if (value && customers.length > 0) {
+      // Find the customer that matches the current value
+      const matchingCustomer = customers.find(
+        (c) => c.customer_name.toLowerCase() === value.toLowerCase()
+      );
+      if (matchingCustomer) {
+        const uniqueId = `${matchingCustomer.customer_name}|${matchingCustomer.email || ""}|${matchingCustomer.contact_number || ""}`;
+        setSelectedCustomerUniqueId(uniqueId);
+      }
+    } else if (!value) {
+      setSelectedCustomerUniqueId(null);
+    }
+  }, [value, customers]);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -125,7 +154,7 @@ export function CustomerCombobox({
         </Button>
       </PopoverTrigger>
       <PopoverContent
-        className="w-[var(--radix-popover-trigger-width)] p-0"
+        className="w-(--radix-popover-trigger-width) p-0"
         align="start"
       >
         <Command shouldFilter={false}>
@@ -155,45 +184,55 @@ export function CustomerCombobox({
                 </CommandEmpty>
                 {customers.length > 0 && (
                   <CommandGroup heading="Existing Customers">
-                    {customers.map((customer) => (
-                      <CommandItem
-                        key={`${customer.customer_name}_${customer.email || ""}_${customer.contact_number || ""}`}
-                        value={customer.customer_name}
-                        onSelect={handleSelect}
-                        className="cursor-pointer"
-                      >
-                        <Check
-                          className={cn(
-                            "mr-2 h-4 w-4",
-                            value?.toLowerCase() ===
-                              customer.customer_name.toLowerCase()
-                              ? "opacity-100"
-                              : "opacity-0"
-                          )}
-                        />
-                        <div className="flex flex-col flex-1 min-w-0">
-                          <span className="font-medium truncate">{customer.customer_name}</span>
-                          <div className="flex flex-col gap-0.5 mt-0.5">
-                            {customer.email && (
-                              <span className="text-xs text-muted-foreground truncate">
-                                {customer.email}
-                              </span>
+                    {customers.map((customer) => {
+                      // Create a unique value for each customer to prevent hover issues
+                      // Format: "customer_name|email|contact_number"
+                      const uniqueValue = `${customer.customer_name}|${customer.email || ""}|${customer.contact_number || ""}`;
+
+                      // Check if this specific customer is selected by comparing unique values
+                      const isSelected =
+                        uniqueValue === selectedCustomerUniqueId;
+
+                      return (
+                        <CommandItem
+                          key={`${customer.customer_name}_${customer.email || ""}_${customer.contact_number || ""}`}
+                          value={uniqueValue}
+                          onSelect={handleSelect}
+                          className="cursor-pointer"
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              isSelected ? "opacity-100" : "opacity-0"
                             )}
-                            {customer.contact_person_name && (
-                              <span className="text-xs text-muted-foreground truncate">
-                                {customer.contact_person_name}
-                              </span>
-                            )}
-                            {customer.address_city && (
-                              <span className="text-xs text-muted-foreground truncate">
-                                {customer.address_city}
-                                {customer.address_state && `, ${customer.address_state}`}
-                              </span>
-                            )}
+                          />
+                          <div className="flex flex-col flex-1 min-w-0">
+                            <span className="font-medium truncate">
+                              {customer.customer_name}
+                            </span>
+                            <div className="flex flex-col gap-0.5 mt-0.5">
+                              {customer.email && (
+                                <span className="text-xs text-muted-foreground truncate">
+                                  {customer.email}
+                                </span>
+                              )}
+                              {customer.contact_person_name && (
+                                <span className="text-xs text-muted-foreground truncate">
+                                  {customer.contact_person_name}
+                                </span>
+                              )}
+                              {customer.address_city && (
+                                <span className="text-xs text-muted-foreground truncate">
+                                  {customer.address_city}
+                                  {customer.address_state &&
+                                    `, ${customer.address_state}`}
+                                </span>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      </CommandItem>
-                    ))}
+                        </CommandItem>
+                      );
+                    })}
                   </CommandGroup>
                 )}
                 {searchValue.trim() && (
