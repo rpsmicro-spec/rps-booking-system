@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PhotoUpload } from "./PhotoUpload";
+import { MediaUpload } from "./MediaUpload";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Upload, Loader2 } from "lucide-react";
@@ -15,16 +15,16 @@ interface AfterPhotosUploadProps {
   onUpdate?: () => void;
 }
 
-type PhotoItem = File | string;
+type MediaItem = File | string;
 
 export function AfterPhotosUpload({ job, onUpdate }: AfterPhotosUploadProps) {
-  const [photos, setPhotos] = useState<PhotoItem[]>(job.after_photos || []);
+  const [media, setMedia] = useState<MediaItem[]>(job.after_photos || []);
   const [isUploading, setIsUploading] = useState(false);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
 
-  // Update photos when job changes
+  // Update media when job changes
   useEffect(() => {
-    setPhotos(job.after_photos || []);
+    setMedia(job.after_photos || []);
   }, [job.after_photos]);
 
   // Show component only when status is in_progress (not completed)
@@ -32,29 +32,29 @@ export function AfterPhotosUpload({ job, onUpdate }: AfterPhotosUploadProps) {
     return null;
   }
 
-  const handlePhotosChange = (newPhotos: PhotoItem[]) => {
+  const handleMediaChange = (newMedia: MediaItem[]) => {
     // Separate files from URLs
-    const files = newPhotos.filter((p) => p instanceof File) as File[];
-    const urls = newPhotos.filter((p) => typeof p === "string") as string[];
+    const files = newMedia.filter((p) => p instanceof File) as File[];
+    const urls = newMedia.filter((p) => typeof p === "string") as string[];
 
     // Get current uploaded URLs
-    const currentUrls = photos.filter((p) => typeof p === "string") as string[];
+    const currentUrls = media.filter((p) => typeof p === "string") as string[];
     
-    // Check if any uploaded photos were removed
+    // Check if any uploaded media were removed
     const removedUrls = currentUrls.filter((url) => !urls.includes(url));
     
-    // If photos were removed (not just files added), save immediately
+    // If media were removed (not just files added), save immediately
     if (removedUrls.length > 0) {
-      handleSavePhotos(urls, files);
+      handleSaveMedia(urls, files);
       return;
     }
 
     // Keep existing URLs and add new files
-    setPhotos([...urls, ...files]);
+    setMedia([...urls, ...files]);
     setPendingFiles(files);
   };
 
-  const handleSavePhotos = async (urls: string[], files: File[] = []) => {
+  const handleSaveMedia = async (urls: string[], files: File[] = []) => {
     setIsUploading(true);
     try {
       let allUrls = [...urls];
@@ -64,7 +64,7 @@ export function AfterPhotosUpload({ job, onUpdate }: AfterPhotosUploadProps) {
         const uploadPromises = files.map((file) =>
           uploadFile(file, {
             bucket: "job-photos",
-            compress: true,
+            compress: file.type.startsWith('image/'), // Only compress images, not videos
             maxSizeMB: 5,
           })
         );
@@ -90,10 +90,10 @@ export function AfterPhotosUpload({ job, onUpdate }: AfterPhotosUploadProps) {
 
       toast.success(
         files.length > 0
-          ? "After photos updated successfully"
-          : "Photo removed successfully"
+          ? "After media updated successfully"
+          : "Media removed successfully"
       );
-      setPhotos(allUrls);
+      setMedia(allUrls);
       setPendingFiles([]);
       onUpdate?.();
     } catch (error) {
@@ -101,10 +101,10 @@ export function AfterPhotosUpload({ job, onUpdate }: AfterPhotosUploadProps) {
       toast.error(
         error instanceof Error
           ? error.message
-          : "Failed to update photos. Please try again."
+          : "Failed to update media. Please try again."
       );
-      // Reset to current job photos on error
-      setPhotos(job.after_photos || []);
+      // Reset to current job media on error
+      setMedia(job.after_photos || []);
     } finally {
       setIsUploading(false);
     }
@@ -112,14 +112,14 @@ export function AfterPhotosUpload({ job, onUpdate }: AfterPhotosUploadProps) {
 
   const handleSave = async () => {
     if (pendingFiles.length === 0) {
-      toast.info("No new photos to upload");
+      toast.info("No new media to upload");
       return;
     }
 
-    const existingUrls = photos.filter(
+    const existingUrls = media.filter(
       (p) => typeof p === "string"
     ) as string[];
-    await handleSavePhotos(existingUrls, pendingFiles);
+    await handleSaveMedia(existingUrls, pendingFiles);
   };
 
   const hasPendingUploads = pendingFiles.length > 0;
@@ -127,21 +127,23 @@ export function AfterPhotosUpload({ job, onUpdate }: AfterPhotosUploadProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>After Photos</CardTitle>
+        <CardTitle>After Photos & Videos</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <PhotoUpload
-          photos={photos}
-          onPhotosChange={handlePhotosChange}
-          label="Upload After Photos"
-          maxPhotos={10}
+        <MediaUpload
+          media={media}
+          onMediaChange={handleMediaChange}
+          label="Upload After Photos & Videos"
+          maxFiles={10}
           bucket="job-photos"
           disabled={isUploading}
+          allowImages={true}
+          allowVideos={true}
         />
         {hasPendingUploads && (
           <div className="flex items-center justify-between pt-2 border-t">
             <p className="text-sm text-muted-foreground">
-              {pendingFiles.length} photo{pendingFiles.length > 1 ? "s" : ""}{" "}
+              {pendingFiles.length} file{pendingFiles.length > 1 ? "s" : ""}{" "}
               ready to upload
             </p>
             <Button
@@ -157,7 +159,7 @@ export function AfterPhotosUpload({ job, onUpdate }: AfterPhotosUploadProps) {
               ) : (
                 <>
                   <Upload className="mr-2 h-4 w-4" />
-                  Upload {pendingFiles.length} Photo
+                  Upload {pendingFiles.length} File
                   {pendingFiles.length > 1 ? "s" : ""}
                 </>
               )}

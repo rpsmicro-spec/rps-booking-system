@@ -181,8 +181,8 @@ export function JobDetail({
                     >
                       {/* eslint-disable-next-line jsx-a11y/alt-text */}
                       <Image className="mr-2 h-4 w-4" />
-                      <span className="hidden sm:inline">View All Photos</span>
-                      <span className="sm:hidden">Photos</span>
+                      <span className="hidden sm:inline">View All Media</span>
+                      <span className="sm:hidden">Media</span>
                     </Button>
                   )}
                   {hasInvoice && (
@@ -387,11 +387,11 @@ export function JobDetail({
         )}
       </div>
 
-      {/* Photos - Show before and after in tabs */}
+      {/* Photos & Videos - Show before and after in tabs */}
       {(job.before_photos?.length || job.after_photos?.length) && (
         <Card>
           <CardHeader className="pb-3 sm:pb-6">
-            <CardTitle className="text-base sm:text-lg">Photos</CardTitle>
+            <CardTitle className="text-base sm:text-lg">Photos & Videos</CardTitle>
           </CardHeader>
           <Separator />
           <CardContent className="pt-4 sm:pt-6">
@@ -400,14 +400,14 @@ export function JobDetail({
               <Tabs defaultValue="before" className="w-full">
                 <TabsList className="grid w-full grid-cols-2">
                   <TabsTrigger value="before" className="text-xs sm:text-sm">
-                    <span className="hidden sm:inline">Before Photos</span>
+                    <span className="hidden sm:inline">Before</span>
                     <span className="sm:hidden">Before</span>
                     <span className="ml-1">
                       ({job.before_photos?.length || 0})
                     </span>
                   </TabsTrigger>
                   <TabsTrigger value="after" className="text-xs sm:text-sm">
-                    <span className="hidden sm:inline">After Photos</span>
+                    <span className="hidden sm:inline">After</span>
                     <span className="sm:hidden">After</span>
                     <span className="ml-1">
                       ({job.after_photos?.length || 0})
@@ -417,23 +417,23 @@ export function JobDetail({
                 <TabsContent value="before" className="mt-3 sm:mt-4">
                   <JobPhotoViewer
                     photos={job.before_photos || []}
-                    title="Before Photos"
+                    title="Before"
                   />
                 </TabsContent>
                 <TabsContent value="after" className="mt-3 sm:mt-4">
                   <JobPhotoViewer
                     photos={job.after_photos || []}
-                    title="After Photos"
+                    title="After"
                   />
                 </TabsContent>
               </Tabs>
             ) : job.before_photos && job.before_photos.length > 0 ? (
               <JobPhotoViewer
                 photos={job.before_photos}
-                title="Before Photos"
+                title="Before"
               />
             ) : job.after_photos && job.after_photos.length > 0 ? (
-              <JobPhotoViewer photos={job.after_photos} title="After Photos" />
+              <JobPhotoViewer photos={job.after_photos} title="After" />
             ) : null}
           </CardContent>
         </Card>

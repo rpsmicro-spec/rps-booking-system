@@ -13,6 +13,47 @@ export interface UploadOptions {
 }
 
 /**
+ * Check if a file is a video
+ */
+function isVideoFile(file: File): boolean {
+  return file.type.startsWith('video/')
+}
+
+/**
+ * Check if a file is an image
+ */
+function isImageFile(file: File): boolean {
+  return file.type.startsWith('image/')
+}
+
+/**
+ * Validate video file
+ */
+function validateVideoFile(file: File, maxSizeMB: number = 100): string | null {
+  // Check file type
+  const validTypes = [
+    'video/mp4',
+    'video/webm',
+    'video/quicktime', // .mov
+    'video/x-msvideo', // .avi
+    'video/x-matroska', // .mkv
+    'video/x-m4v', // .m4v
+  ]
+  
+  if (!validTypes.includes(file.type)) {
+    return 'Invalid video format. Please upload MP4, WebM, MOV, AVI, or MKV videos.'
+  }
+
+  // Check file size
+  const maxSizeBytes = maxSizeMB * 1024 * 1024
+  if (file.size > maxSizeBytes) {
+    return `Video size exceeds ${maxSizeMB}MB. Please choose a smaller video.`
+  }
+
+  return null
+}
+
+/**
  * Upload a file to Supabase Storage
  * @param file - The file to upload
  * @param options - Upload options
@@ -24,11 +65,22 @@ export async function uploadFile(
 ): Promise<string> {
   const { bucket, folder = '', compress = false, maxSizeMB = 5 } = options
 
-  // Validate file based on bucket type
+  // Validate file based on bucket type and file type
   if (bucket === 'job-photos') {
-    const validationError = validateImageFile(file, maxSizeMB)
-    if (validationError) {
-      throw new Error(validationError)
+    if (isVideoFile(file)) {
+      // Validate video file (100MB max by default)
+      const videoValidationError = validateVideoFile(file, 100)
+      if (videoValidationError) {
+        throw new Error(videoValidationError)
+      }
+    } else if (isImageFile(file)) {
+      // Validate image file
+      const validationError = validateImageFile(file, maxSizeMB)
+      if (validationError) {
+        throw new Error(validationError)
+      }
+    } else {
+      throw new Error('Invalid file type. Please upload an image or video file.')
     }
   } else if (bucket === 'invoices') {
     // Validate PDF file size (5MB max)
@@ -52,7 +104,8 @@ export async function uploadFile(
   // Prepare file for upload
   let fileToUpload: File = file
   
-  if (compress && bucket === 'job-photos') {
+  // Only compress images, not videos
+  if (compress && bucket === 'job-photos' && isImageFile(file)) {
     // Compress image and convert Blob back to File
     // Supabase standard upload expects a File object
     const compressedBlob = await compressImage(file)

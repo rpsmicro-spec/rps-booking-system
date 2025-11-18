@@ -16,7 +16,7 @@ import {
   FieldLabel,
   FieldSet,
 } from "@/components/ui/field";
-import { PhotoUpload } from "./PhotoUpload";
+import { MediaUpload } from "./MediaUpload";
 import { InvoiceUpload } from "./InvoiceUpload";
 import { SimpleDatePicker } from "./SimpleDatePicker";
 import { StateCombobox } from "./StateCombobox";
@@ -525,28 +525,18 @@ export function JobForm({ job, onSubmit, isSubmitting = false }: JobFormProps) {
         setOriginalCustomerData(customer);
       }
 
-      // Autofill customer fields (but not job-specific fields)
-      reset((prev) => ({
-        ...prev,
-        customer_name: customer.customer_name,
-        contact_number: customer.contact_number || prev.contact_number,
-        email: customer.email || prev.email,
-        address_street: customer.address_street || prev.address_street,
-        address_area: customer.address_area || prev.address_area,
-        address_city: customer.address_city || prev.address_city,
-        address_state: customer.address_state || prev.address_state,
-        address_pincode: customer.address_pincode || prev.address_pincode,
-        // Don't change job-specific fields
-        job_number: prev.job_number,
-        booking_date: prev.booking_date,
-        delivery_date: prev.delivery_date,
-        material_type: prev.material_type,
-        special_requirements: prev.special_requirements,
-        notes: prev.notes,
-        before_photos: prev.before_photos,
-        after_photos: prev.after_photos,
-        invoice_file_path: prev.invoice_file_path,
-      }));
+      // Autofill customer fields using setValue for smoother updates
+      // This prevents the combobox from flickering
+      setTimeout(() => {
+        if (customer.contact_number) setValue("contact_number", customer.contact_number);
+        if (customer.email) setValue("email", customer.email);
+        if (customer.address_street) setValue("address_street", customer.address_street);
+        if (customer.address_area) setValue("address_area", customer.address_area);
+        if (customer.address_city) setValue("address_city", customer.address_city);
+        if (customer.address_state) setValue("address_state", customer.address_state);
+        if (customer.address_pincode) setValue("address_pincode", customer.address_pincode);
+        if (customer.contact_person_name) setValue("contact_person_name", customer.contact_person_name);
+      }, 0);
     } else {
       // New customer - just set the name
       setSelectedCustomer(null);
@@ -1257,13 +1247,15 @@ export function JobForm({ job, onSubmit, isSubmitting = false }: JobFormProps) {
             control={control}
             render={({ field }) => (
               <>
-                <PhotoUpload
-                  photos={field.value || []}
-                  onPhotosChange={field.onChange}
-                  label="Before Photos"
+                <MediaUpload
+                  media={field.value || []}
+                  onMediaChange={field.onChange}
+                  label="Before Photos & Videos"
                   required={!job}
                   disabled={isFormDisabled}
-                  maxPhotos={10}
+                  maxFiles={10}
+                  allowImages={true}
+                  allowVideos={true}
                   bucket="job-photos"
                 />
                 <FieldError
@@ -1286,12 +1278,14 @@ export function JobForm({ job, onSubmit, isSubmitting = false }: JobFormProps) {
               control={control}
               render={({ field }) => (
                 <>
-                  <PhotoUpload
-                    photos={field.value || []}
-                    onPhotosChange={field.onChange}
-                    label="After Photos (optional)"
+                  <MediaUpload
+                    media={field.value || []}
+                    onMediaChange={field.onChange}
+                    label="After Photos & Videos (optional)"
                     disabled={isFormDisabled}
-                    maxPhotos={10}
+                    maxFiles={10}
+                    allowImages={true}
+                    allowVideos={true}
                     bucket="job-photos"
                   />
                   <FieldError

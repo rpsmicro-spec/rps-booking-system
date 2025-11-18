@@ -52,14 +52,38 @@ export function CustomerCombobox({
   const [searchValue, setSearchValue] = React.useState("");
   const [customers, setCustomers] = React.useState<Customer[]>([]);
   const [loading, setLoading] = React.useState(false);
+  const [isInitialLoad, setIsInitialLoad] = React.useState(true);
   // Track the selected customer's unique identifier to show correct checkmark
   const [selectedCustomerUniqueId, setSelectedCustomerUniqueId] =
     React.useState<string | null>(null);
 
-  // Fetch customers when search value changes
+  // Preload customers on mount for better UX
+  React.useEffect(() => {
+    const preloadCustomers = async () => {
+      try {
+        const response = await fetch('/api/customers?search=');
+        if (response.ok) {
+          const data = await response.json();
+          setCustomers(data.customers || []);
+        }
+      } catch (error) {
+        console.error('Failed to preload customers:', error);
+      } finally {
+        setIsInitialLoad(false);
+      }
+    };
+
+    preloadCustomers();
+  }, []);
+
+  // Fetch customers when search value changes or when opening the combobox
   React.useEffect(() => {
     const fetchCustomers = async () => {
-      if (!searchValue.trim() && !open) return;
+      // Only fetch when the popover is open
+      if (!open) return;
+      
+      // If there's no search value and we already have customers, don't refetch
+      if (!searchValue.trim() && customers.length > 0) return;
 
       setLoading(true);
       try {
@@ -81,7 +105,7 @@ export function CustomerCombobox({
 
     const timeoutId = setTimeout(fetchCustomers, 300); // Debounce
     return () => clearTimeout(timeoutId);
-  }, [searchValue, open]);
+  }, [searchValue, open]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSelect = (selectedValue: string) => {
     // The value is a unique identifier: "customer_name|email|contact_number"
@@ -109,10 +133,11 @@ export function CustomerCombobox({
     }
   };
 
-  // When popover closes, reset search
+  // When popover closes, reset search but keep customers cached
   React.useEffect(() => {
     if (!open) {
       setSearchValue("");
+      // Don't clear customers - keep them cached for better UX
     }
   }, [open]);
 
@@ -165,7 +190,7 @@ export function CustomerCombobox({
             onValueChange={setSearchValue}
           />
           <CommandList>
-            {loading ? (
+            {loading && !isInitialLoad ? (
               <div className="flex items-center justify-center py-6">
                 <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
               </div>

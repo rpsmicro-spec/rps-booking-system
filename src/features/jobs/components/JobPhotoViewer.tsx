@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { X, ChevronLeft, ChevronRight } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, Play, Film } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getThumbnailUrl, getFullSizeImageUrl } from "../utils/image-url";
 
@@ -10,6 +10,14 @@ interface JobPhotoViewerProps {
   photos: string[];
   title?: string;
   className?: string;
+}
+
+// Helper to check if URL is a video
+function isVideo(url: string): boolean {
+  const videoExtensions = [".mp4", ".webm", ".mov", ".avi", ".mkv", ".m4v"];
+  return videoExtensions.some((ext) =>
+    url.toLowerCase().includes(ext.toLowerCase())
+  );
 }
 
 export function JobPhotoViewer({
@@ -73,6 +81,7 @@ export function JobPhotoViewer({
         {title && <h4 className="text-sm font-medium mb-2">{title}</h4>}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {photos.map((photo, index) => {
+            const isVideoFile = isVideo(photo);
             const thumbnailUrl = getThumbnailUrl(photo);
             const isLocal =
               photo.startsWith("http://127.0.0.1") ||
@@ -86,14 +95,31 @@ export function JobPhotoViewer({
                 onClick={() => openLightbox(index)}
                 className="relative aspect-square rounded-lg overflow-hidden border hover:opacity-90 transition-opacity cursor-pointer"
               >
-                <Image
-                  src={thumbnailUrl}
-                  alt={`${title || "Photo"} ${index + 1}`}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 50vw, 25vw"
-                  unoptimized={isLocal}
-                />
+                {isVideoFile ? (
+                  <div className="relative w-full h-full bg-black flex items-center justify-center">
+                    <video
+                      src={photo}
+                      className="w-full h-full object-cover"
+                      preload="metadata"
+                    />
+                    <div className="absolute inset-0 bg-black/30 flex items-center justify-center pointer-events-none">
+                      <Play className="h-12 w-12 text-white" fill="white" />
+                    </div>
+                    <div className="absolute top-2 left-2 bg-black/60 text-white px-2 py-0.5 rounded text-xs flex items-center gap-1">
+                      <Film className="h-3 w-3" />
+                      Video
+                    </div>
+                  </div>
+                ) : (
+                  <Image
+                    src={thumbnailUrl}
+                    alt={`${title || "Photo"} ${index + 1}`}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 50vw, 25vw"
+                    unoptimized={isLocal}
+                  />
+                )}
               </button>
             );
           })}
@@ -146,31 +172,46 @@ export function JobPhotoViewer({
             </Button>
           )}
 
-          {/* Image */}
+          {/* Media Content (Image or Video) */}
           <div
             className="relative w-full h-full flex items-center justify-center p-2 sm:p-4"
             onClick={(e) => e.stopPropagation()}
           >
-            <Image
-              src={getFullSizeImageUrl(photos[selectedIndex])}
-              alt={`Photo ${selectedIndex + 1}`}
-              width={1920}
-              height={1080}
-              className="max-w-full max-h-full object-contain"
-              sizes="100vw"
-              priority
-              unoptimized={
-                photos[selectedIndex]?.startsWith("http://127.0.0.1") ||
-                photos[selectedIndex]?.startsWith("http://localhost") ||
-                photos[selectedIndex]?.startsWith("blob:")
-              }
-            />
+            {isVideo(photos[selectedIndex]) ? (
+              <video
+                src={photos[selectedIndex]}
+                controls
+                autoPlay
+                className="max-w-full max-h-full rounded-lg"
+                style={{ maxHeight: "90vh" }}
+              >
+                Your browser does not support the video tag.
+              </video>
+            ) : (
+              <Image
+                src={getFullSizeImageUrl(photos[selectedIndex])}
+                alt={`Photo ${selectedIndex + 1}`}
+                width={1920}
+                height={1080}
+                className="max-w-full max-h-full object-contain"
+                sizes="100vw"
+                priority
+                unoptimized={
+                  photos[selectedIndex]?.startsWith("http://127.0.0.1") ||
+                  photos[selectedIndex]?.startsWith("http://localhost") ||
+                  photos[selectedIndex]?.startsWith("blob:")
+                }
+              />
+            )}
           </div>
 
-          {/* Photo Counter */}
+          {/* Media Counter */}
           {photos.length > 1 && (
             <div className="absolute bottom-2 sm:bottom-4 left-1/2 -translate-x-1/2 text-white text-xs sm:text-sm bg-black/50 px-3 sm:px-4 py-1.5 sm:py-2 rounded">
               {selectedIndex + 1} / {photos.length}
+              {isVideo(photos[selectedIndex]) && (
+                <span className="ml-2 text-xs opacity-75">(Video)</span>
+              )}
             </div>
           )}
         </div>
