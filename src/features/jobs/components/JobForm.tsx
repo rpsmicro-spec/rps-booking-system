@@ -271,6 +271,7 @@ export function JobForm({ job, onSubmit, isSubmitting = false }: JobFormProps) {
     watch,
     formState: { errors, isSubmitting: isFormSubmitting },
     reset,
+    setValue,
   } = useForm<JobFormValues>({
     resolver: zodResolver(jobSchema),
     mode: "onChange",
