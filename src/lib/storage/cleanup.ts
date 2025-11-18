@@ -11,13 +11,23 @@ interface CleanupResult {
   errors: number
   details: {
     photos: number
+    videos: number
     invoices: number
     temp: number
   }
 }
 
 /**
- * Clean up old job photos (1 month after completion)
+ * Helper to check if a URL is a video file
+ */
+function isVideoFile(url: string): boolean {
+  const videoExtensions = ['.mp4', '.webm', '.mov', '.avi', '.mkv', '.m4v']
+  return videoExtensions.some((ext) => url.toLowerCase().includes(ext.toLowerCase()))
+}
+
+/**
+ * Clean up old job photos (1 month after delivery/completion)
+ * Images only - videos are handled separately with shorter retention
  */
 async function cleanupOldPhotos(): Promise<number> {
   const supabase = await createClient()
@@ -38,15 +48,18 @@ async function cleanupOldPhotos(): Promise<number> {
 
   let deletedCount = 0
   for (const job of oldJobs) {
-    const allPhotos = [
+    const allMedia = [
       ...(job.before_photos || []),
       ...(job.after_photos || []),
     ]
 
-    if (allPhotos.length > 0) {
+    // Filter to only images (not videos)
+    const photos = allMedia.filter((url) => !isVideoFile(url))
+
+    if (photos.length > 0) {
       try {
-        await deleteStorageFiles(allPhotos, 'job-photos')
-        deletedCount += allPhotos.length
+        await deleteStorageFiles(photos, 'job-photos')
+        deletedCount += photos.length
       } catch (error) {
         console.error(`Failed to delete photos for job ${job.id}:`, error)
       }
@@ -57,19 +70,62 @@ async function cleanupOldPhotos(): Promise<number> {
 }
 
 /**
- * Clean up old invoices (2 weeks after completion)
+ * Clean up old job videos (3 days after delivery/completion)
+ */
+async function cleanupOldVideos(): Promise<number> {
+  const supabase = await createClient()
+  const threeDaysAgo = new Date()
+  threeDaysAgo.setDate(threeDaysAgo.getDate() - 3)
+
+  // Find completed jobs older than 3 days
+  const { data: oldJobs } = await supabase
+    .from('jobs')
+    .select('id, before_photos, after_photos, updated_at, status')
+    .eq('status', 'completed')
+    .lt('updated_at', threeDaysAgo.toISOString())
+    .is('deleted_at', null)
+
+  if (!oldJobs || oldJobs.length === 0) {
+    return 0
+  }
+
+  let deletedCount = 0
+  for (const job of oldJobs) {
+    const allMedia = [
+      ...(job.before_photos || []),
+      ...(job.after_photos || []),
+    ]
+
+    // Filter to only videos
+    const videos = allMedia.filter((url) => isVideoFile(url))
+
+    if (videos.length > 0) {
+      try {
+        await deleteStorageFiles(videos, 'job-photos')
+        deletedCount += videos.length
+      } catch (error) {
+        console.error(`Failed to delete videos for job ${job.id}:`, error)
+      }
+    }
+  }
+
+  return deletedCount
+}
+
+/**
+ * Clean up old invoices (1 week after delivery/completion)
  */
 async function cleanupOldInvoices(): Promise<number> {
   const supabase = await createClient()
-  const twoWeeksAgo = new Date()
-  twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14)
+  const oneWeekAgo = new Date()
+  oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
 
-  // Find completed jobs older than 2 weeks
+  // Find completed jobs older than 1 week
   const { data: oldJobs } = await supabase
     .from('jobs')
     .select('id, invoice_file_path, updated_at, status')
     .eq('status', 'completed')
-    .lt('updated_at', twoWeeksAgo.toISOString())
+    .lt('updated_at', oneWeekAgo.toISOString())
     .is('deleted_at', null)
     .not('invoice_file_path', 'is', null)
 
@@ -93,12 +149,12 @@ async function cleanupOldInvoices(): Promise<number> {
 }
 
 /**
- * Clean up temp uploads (7 days old)
+ * Clean up temp uploads (3 days old)
  */
 async function cleanupTempUploads(): Promise<number> {
   const supabase = await createClient()
-  const sevenDaysAgo = new Date()
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+  const threeDaysAgo = new Date()
+  threeDaysAgo.setDate(threeDaysAgo.getDate() - 3)
 
   // List all files in temp-uploads bucket
   const { data: files, error } = await supabase.storage
@@ -117,7 +173,7 @@ async function cleanupTempUploads(): Promise<number> {
     .filter((file) => {
       if (!file.created_at) return false
       const fileDate = new Date(file.created_at)
-      return fileDate < sevenDaysAgo
+      return fileDate < threeDaysAgo
     })
     .map((file) => file.name)
 
@@ -151,6 +207,7 @@ export async function runStorageCleanup(): Promise<CleanupResult> {
     errors: 0,
     details: {
       photos: 0,
+      videos: 0,
       invoices: 0,
       temp: 0,
     },
@@ -161,6 +218,14 @@ export async function runStorageCleanup(): Promise<CleanupResult> {
     result.deletedFiles += result.details.photos
   } catch (error) {
     console.error('Error cleaning up photos:', error)
+    result.errors++
+  }
+
+  try {
+    result.details.videos = await cleanupOldVideos()
+    result.deletedFiles += result.details.videos
+  } catch (error) {
+    console.error('Error cleaning up videos:', error)
     result.errors++
   }
 

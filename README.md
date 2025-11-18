@@ -168,7 +168,7 @@ Emails include a link to the public job view page where customers can see their 
 
 ### Set up Cron Jobs
 
-Add a cron job in Vercel for storage cleanup:
+Add a cron job in Vercel for automated storage cleanup:
 
 ```json
 {
@@ -180,6 +180,12 @@ Add a cron job in Vercel for storage cleanup:
   ]
 }
 ```
+
+**Storage Cleanup Retention Periods:**
+- **Photos (images)**: 1 month after job completion
+- **Videos**: 3 days after job completion
+- **Invoices**: 1 week after job completion
+- **Temp files**: 3 days after upload
 
 ## 📝 Available Scripts
 
