@@ -2,6 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth/helpers'
+import { getUserRole } from '@/lib/auth/roles'
+import { USER_ROLES } from '@/lib/constants/roles'
 import type { Database } from '@/types/database.types'
 
 type JobNumberSettings = Database['public']['Tables']['job_number_settings']['Row']
@@ -10,22 +12,9 @@ type JobNumberSettingsInsert = Database['public']['Tables']['job_number_settings
 
 export async function GET() {
   try {
-    const { user } = await requireAuth()
+    // Allow all authenticated users to view settings (read-only)
+    await requireAuth()
     const supabase = await createClient()
-
-    // Check if user has permission (owner or admin)
-    const { data: userData } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
-    if (!userData || !['owner', 'admin'].includes(userData.role)) {
-      return NextResponse.json(
-        { error: 'Unauthorized. Only owners and admins can view settings.' },
-        { status: 403 }
-      )
-    }
 
     // Get settings (there should only be one row)
     const { data, error } = await supabase
@@ -58,6 +47,13 @@ export async function GET() {
     return NextResponse.json({ settings: data })
   } catch (error) {
     console.error('Error fetching job number settings:', error)
+    // If it's an auth error, return 401 instead of 500
+    if (error instanceof Error && error.message.includes('redirect')) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
     return NextResponse.json(
       { error: 'An unexpected error occurred' },
       { status: 500 }
@@ -67,22 +63,18 @@ export async function GET() {
 
 export async function PUT(request: Request) {
   try {
-    const { user } = await requireAuth()
-    const supabase = await createClient()
+    await requireAuth()
+    const role = await getUserRole()
 
     // Check if user has permission (owner or admin)
-    const { data: userData } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
-    if (!userData || !['owner', 'admin'].includes(userData.role)) {
+    if (!role || (role !== USER_ROLES.OWNER && role !== USER_ROLES.ADMIN)) {
       return NextResponse.json(
         { error: 'Unauthorized. Only owners and admins can update settings.' },
         { status: 403 }
       )
     }
+
+    const supabase = await createClient()
 
     const body = await request.json()
     const { prefix, next_number } = body

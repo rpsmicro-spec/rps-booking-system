@@ -14,7 +14,7 @@ import { STATUS_LABELS } from '@/lib/constants'
 export async function POST(request: Request) {
   try {
     await requireAuth()
-    const { jobId, notificationType } = await request.json()
+    const { jobId, notificationType, ccAdditionalEmails = false } = await request.json()
 
     if (!jobId || !notificationType) {
       return NextResponse.json(
@@ -90,13 +90,35 @@ export async function POST(request: Request) {
       )
     }
 
-    const { data: emailResult, error: emailError } = await resend.emails.send({
+    // Prepare CC emails if requested
+    const ccEmails: string[] = []
+    if (ccAdditionalEmails && job.emails && Array.isArray(job.emails)) {
+      // Filter out empty strings and add valid emails
+      const validCcEmails = job.emails.filter((email: string) => email && email.trim() !== '')
+      ccEmails.push(...validCcEmails)
+    }
+
+    const emailPayload: {
+      from: string
+      to: string
+      subject: string
+      html: string
+      text: string
+      cc?: string[]
+    } = {
       from: `${FROM_NAME} <${FROM_EMAIL}>`,
       to: job.email,
       subject,
       html,
       text,
-    })
+    }
+
+    // Only add cc field if there are CC emails
+    if (ccEmails.length > 0) {
+      emailPayload.cc = ccEmails
+    }
+
+    const { data: emailResult, error: emailError } = await resend.emails.send(emailPayload)
 
     if (emailError) {
       console.error('Email send error:', emailError)

@@ -4,9 +4,6 @@ import type { SupabaseDatabase } from '@/types/types'
 
 export async function createClient() {
   const cookieStore = await cookies()
-  
-  // Check if user has "remember me" enabled
-  const rememberMe = cookieStore.get('remember-me')?.value === 'true'
 
   return createServerClient<SupabaseDatabase>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -23,8 +20,9 @@ export async function createClient() {
               const isSupabaseAuthCookie = name.startsWith('sb-') && 
                 (name.includes('auth') || name.includes('code-verifier') || name.includes('code-challenge'))
               
-              if (isSupabaseAuthCookie && rememberMe) {
-                // If rememberMe is enabled, ensure cookies have 30-day expiration
+              if (isSupabaseAuthCookie) {
+                // For PWA: Always use persistent cookies with 30-day expiration
+                // This ensures users stay logged in until manual logout
                 cookieStore.set(name, value, {
                   ...options,
                   maxAge: 60 * 60 * 24 * 30, // 30 days in seconds
@@ -34,7 +32,7 @@ export async function createClient() {
                   secure: process.env.NODE_ENV === 'production',
                 })
               } else {
-                // For non-auth cookies or when rememberMe is false, use original options
+                // For non-auth cookies, use original options
                 cookieStore.set(name, value, options)
               }
             })

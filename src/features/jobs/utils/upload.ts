@@ -29,7 +29,7 @@ function isImageFile(file: File): boolean {
 /**
  * Validate video file
  */
-function validateVideoFile(file: File, maxSizeMB: number = 100): string | null {
+function validateVideoFile(file: File, maxSizeMB: number = 25): string | null {
   // Check file type
   const validTypes = [
     'video/mp4',
@@ -68,8 +68,8 @@ export async function uploadFile(
   // Validate file based on bucket type and file type
   if (bucket === 'job-photos') {
     if (isVideoFile(file)) {
-      // Validate video file (100MB max by default)
-      const videoValidationError = validateVideoFile(file, 100)
+      // Validate video file (25MB max by default)
+      const videoValidationError = validateVideoFile(file, 25)
       if (videoValidationError) {
         throw new Error(videoValidationError)
       }

@@ -22,7 +22,8 @@ import { SimpleDatePicker } from "./SimpleDatePicker";
 import { StateCombobox } from "./StateCombobox";
 import { CityCombobox } from "./CityCombobox";
 import { CustomerCombobox, type Customer } from "./CustomerCombobox";
-import { EnhancedPhoneInput } from "@/components/ui/enhanced-phone-input";
+import { MultiPhoneInput } from "@/components/ui/multi-phone-input";
+import { MultiEmailInput } from "@/components/ui/multi-email-input";
 import { Separator } from "@/components/ui/separator";
 import {
   AlertDialog,
@@ -57,6 +58,21 @@ const jobSchema = z
       .string()
       .trim()
       .max(100, "Designation must be less than 100 characters")
+      .optional()
+      .or(z.literal("")),
+    customer_dc_number: z
+      .string()
+      .trim()
+      .max(100, "DC number must be less than 100 characters")
+      .optional()
+      .or(z.literal("")),
+    customer_dc_date: z
+      .string()
+      .trim()
+      .refine(
+        (val) => !val || !isNaN(new Date(val).getTime()),
+        "Please enter a valid DC date"
+      )
       .optional()
       .or(z.literal("")),
     job_number: z
@@ -112,6 +128,7 @@ const jobSchema = z
       }, "Please enter a valid Indian phone number")
       .optional()
       .or(z.literal("")),
+    phone_numbers: z.array(z.string()).optional().or(z.literal(null)),
     email: z
       .string()
       .trim()
@@ -119,6 +136,10 @@ const jobSchema = z
       .max(255, "Email must be less than 255 characters")
       .optional()
       .or(z.literal("")),
+    emails: z
+      .array(z.string().email("Invalid email address"))
+      .optional()
+      .or(z.literal(null)),
     material_type: z
       .string()
       .trim()
@@ -201,7 +222,8 @@ const extractDate = (datetime: string | null | undefined): string => {
 
 const STORAGE_KEY = "job-form-draft";
 
-// Helper functions for localStorage
+// Helper functions for sessionStorage
+// sessionStorage persists during the session (refresh/navigation) but clears when browser/app closes
 const saveFormData = (data: Partial<JobFormValues>) => {
   try {
     // Filter out File objects - they can't be serialized to JSON
@@ -223,28 +245,28 @@ const saveFormData = (data: Partial<JobFormValues>) => {
           ? data.invoice_file_path
           : undefined,
     };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(serializableData));
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(serializableData));
   } catch (error) {
-    // Ignore localStorage errors (e.g., quota exceeded, private mode)
-    console.warn("Failed to save form data to localStorage:", error);
+    // Ignore sessionStorage errors (e.g., quota exceeded, private mode)
+    console.warn("Failed to save form data to sessionStorage:", error);
   }
 };
 
 const loadFormData = (): Partial<JobFormValues> | null => {
   try {
-    const data = localStorage.getItem(STORAGE_KEY);
+    const data = sessionStorage.getItem(STORAGE_KEY);
     return data ? JSON.parse(data) : null;
   } catch (error) {
-    console.warn("Failed to load form data from localStorage:", error);
+    console.warn("Failed to load form data from sessionStorage:", error);
     return null;
   }
 };
 
 const clearFormData = () => {
   try {
-    localStorage.removeItem(STORAGE_KEY);
+    sessionStorage.removeItem(STORAGE_KEY);
   } catch (error) {
-    console.warn("Failed to clear form data from localStorage:", error);
+    console.warn("Failed to clear form data from sessionStorage:", error);
   }
 };
 
@@ -284,6 +306,12 @@ export function JobForm({ job, onSubmit, isSubmitting = false }: JobFormProps) {
           contact_person_designation:
             (job as Job & { contact_person_designation?: string })
               .contact_person_designation || "",
+          customer_dc_number:
+            (job as Job & { customer_dc_number?: string }).customer_dc_number ||
+            "",
+          customer_dc_date: extractDate(
+            (job as Job & { customer_dc_date?: string }).customer_dc_date
+          ),
           job_number: job.job_number,
           address_street:
             (job as Job & { address_street?: string }).address_street || "",
@@ -296,7 +324,10 @@ export function JobForm({ job, onSubmit, isSubmitting = false }: JobFormProps) {
           address_pincode:
             (job as Job & { address_pincode?: string }).address_pincode || "",
           contact_number: job.contact_number || "",
+          phone_numbers:
+            (job as Job & { phone_numbers?: string[] }).phone_numbers || [],
           email: job.email || "",
+          emails: (job as Job & { emails?: string[] }).emails || [],
           material_type: job.material_type || "",
           booking_date: extractDate(job.booking_date),
           delivery_date: extractDate(job.delivery_date),
@@ -316,6 +347,10 @@ export function JobForm({ job, onSubmit, isSubmitting = false }: JobFormProps) {
           address_pincode: "",
           contact_person_name: "",
           contact_person_designation: "",
+          customer_dc_number: "",
+          customer_dc_date: "",
+          phone_numbers: [],
+          emails: [],
           notes: "",
           before_photos: [],
           after_photos: [],
@@ -325,7 +360,7 @@ export function JobForm({ job, onSubmit, isSubmitting = false }: JobFormProps) {
   // Watch all form values for persistence (only for new jobs)
   const formValues = watch();
 
-  // Restore form data from localStorage on mount (only for new jobs)
+  // Restore form data from sessionStorage on mount (only for new jobs)
   useEffect(() => {
     if (!job && isInitialMountRef.current) {
       isInitialMountRef.current = false;
@@ -351,7 +386,7 @@ export function JobForm({ job, onSubmit, isSubmitting = false }: JobFormProps) {
       };
 
       if (savedData && hasMeaningfulData(savedData)) {
-        // Filter photos to only include strings (File objects can't be restored from localStorage)
+        // Filter photos to only include strings (File objects can't be restored from sessionStorage)
         const beforePhotos = Array.isArray(savedData.before_photos)
           ? savedData.before_photos.filter(
               (photo): photo is string => typeof photo === "string"
@@ -387,6 +422,10 @@ export function JobForm({ job, onSubmit, isSubmitting = false }: JobFormProps) {
           contact_person_name: savedData.contact_person_name ?? "",
           contact_person_designation:
             savedData.contact_person_designation ?? "",
+          customer_dc_number: savedData.customer_dc_number ?? "",
+          customer_dc_date: savedData.customer_dc_date ?? "",
+          phone_numbers: savedData.phone_numbers ?? [],
+          emails: savedData.emails ?? [],
           notes: savedData.notes ?? "",
         } as JobFormValues);
         hasRestoredRef.current = true;
@@ -434,12 +473,12 @@ export function JobForm({ job, onSubmit, isSubmitting = false }: JobFormProps) {
         before_photos: job.before_photos || [],
         after_photos: job.after_photos || [],
       });
-      // Clear localStorage when editing an existing job
+      // Clear sessionStorage when editing an existing job
       clearFormData();
     }
   }, [job, reset]);
 
-  // Save form data to localStorage on change (only for new jobs, debounced)
+  // Save form data to sessionStorage on change (only for new jobs, debounced)
   useEffect(() => {
     if (!job && !isInitialMountRef.current) {
       // Don't save immediately after restore
@@ -459,9 +498,13 @@ export function JobForm({ job, onSubmit, isSubmitting = false }: JobFormProps) {
           address_state: formValues.address_state,
           address_pincode: formValues.address_pincode,
           contact_number: formValues.contact_number,
+          phone_numbers: formValues.phone_numbers,
           email: formValues.email,
+          emails: formValues.emails,
           contact_person_name: formValues.contact_person_name,
           contact_person_designation: formValues.contact_person_designation,
+          customer_dc_number: formValues.customer_dc_number,
+          customer_dc_date: formValues.customer_dc_date,
           material_type: formValues.material_type,
           booking_date: formValues.booking_date,
           delivery_date: formValues.delivery_date,
@@ -529,14 +572,21 @@ export function JobForm({ job, onSubmit, isSubmitting = false }: JobFormProps) {
       // Autofill customer fields using setValue for smoother updates
       // This prevents the combobox from flickering
       setTimeout(() => {
-        if (customer.contact_number) setValue("contact_number", customer.contact_number);
+        if (customer.contact_number)
+          setValue("contact_number", customer.contact_number);
         if (customer.email) setValue("email", customer.email);
-        if (customer.address_street) setValue("address_street", customer.address_street);
-        if (customer.address_area) setValue("address_area", customer.address_area);
-        if (customer.address_city) setValue("address_city", customer.address_city);
-        if (customer.address_state) setValue("address_state", customer.address_state);
-        if (customer.address_pincode) setValue("address_pincode", customer.address_pincode);
-        if (customer.contact_person_name) setValue("contact_person_name", customer.contact_person_name);
+        if (customer.address_street)
+          setValue("address_street", customer.address_street);
+        if (customer.address_area)
+          setValue("address_area", customer.address_area);
+        if (customer.address_city)
+          setValue("address_city", customer.address_city);
+        if (customer.address_state)
+          setValue("address_state", customer.address_state);
+        if (customer.address_pincode)
+          setValue("address_pincode", customer.address_pincode);
+        if (customer.contact_person_name)
+          setValue("contact_person_name", customer.contact_person_name);
       }, 0);
     } else {
       // New customer - just set the name
@@ -600,6 +650,9 @@ export function JobForm({ job, onSubmit, isSubmitting = false }: JobFormProps) {
         delivery_date: data.delivery_date
           ? new Date(`${data.delivery_date}T00:00:00`).toISOString()
           : undefined,
+        customer_dc_date: data.customer_dc_date
+          ? new Date(`${data.customer_dc_date}T00:00:00`).toISOString()
+          : undefined,
       };
 
       // Check if customer data was changed and needs to be synced
@@ -641,7 +694,7 @@ export function JobForm({ job, onSubmit, isSubmitting = false }: JobFormProps) {
       }
 
       await onSubmit(submitData as JobFormValues);
-      // Clear localStorage on successful submit
+      // Clear sessionStorage on successful submit
       clearFormData();
     } catch (error) {
       console.error("Error in handleFormSubmit:", error);
@@ -818,6 +871,70 @@ export function JobForm({ job, onSubmit, isSubmitting = false }: JobFormProps) {
               />
             </Field>
 
+            {/* Customer DC (Delivery Challan) Fields */}
+            <FieldGroup className="grid gap-3 md:gap-4 md:grid-cols-2">
+              <Field data-invalid={!!errors.customer_dc_number}>
+                <FieldLabel htmlFor="customer_dc_number" className="text-sm">
+                  Customer DC Number
+                  <span className="text-xs font-normal text-muted-foreground ml-1.5">
+                    (optional)
+                  </span>
+                </FieldLabel>
+                <Input
+                  id="customer_dc_number"
+                  {...register("customer_dc_number")}
+                  disabled={isFormDisabled}
+                  aria-invalid={!!errors.customer_dc_number}
+                  placeholder="Delivery Challan number"
+                  className="text-sm sm:text-base"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Enter the Delivery Challan number provided by the customer
+                </p>
+                <FieldError
+                  errors={
+                    errors.customer_dc_number
+                      ? [{ message: errors.customer_dc_number.message }]
+                      : undefined
+                  }
+                />
+              </Field>
+
+              <Field data-invalid={!!errors.customer_dc_date}>
+                <FieldLabel htmlFor="customer_dc_date" className="text-sm">
+                  DC Date
+                  <span className="text-xs font-normal text-muted-foreground ml-1.5">
+                    (optional)
+                  </span>
+                </FieldLabel>
+                <Controller
+                  name="customer_dc_date"
+                  control={control}
+                  render={({ field }) => (
+                    <SimpleDatePicker
+                      id="customer_dc_date"
+                      value={field.value || ""}
+                      onChange={(date) => field.onChange(date)}
+                      disabled={isFormDisabled}
+                      placeholder="Select DC date"
+                      aria-invalid={!!errors.customer_dc_date}
+                      className="text-sm sm:text-base"
+                    />
+                  )}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Date of the Delivery Challan
+                </p>
+                <FieldError
+                  errors={
+                    errors.customer_dc_date
+                      ? [{ message: errors.customer_dc_date.message }]
+                      : undefined
+                  }
+                />
+              </Field>
+            </FieldGroup>
+
             <FieldGroup className="grid gap-3 md:gap-4 md:grid-cols-2">
               <Field data-invalid={!!errors.contact_person_name}>
                 <FieldLabel htmlFor="contact_person_name" className="text-sm">
@@ -871,62 +988,104 @@ export function JobForm({ job, onSubmit, isSubmitting = false }: JobFormProps) {
               </Field>
             </FieldGroup>
 
-            <FieldGroup className="grid gap-3 md:gap-4 md:grid-cols-2">
-              <Field data-invalid={!!errors.contact_number}>
-                <FieldLabel htmlFor="contact_number">
-                  Phone Number (optional)
-                </FieldLabel>
-                <Controller
-                  name="contact_number"
-                  control={control}
-                  render={({ field }) => (
-                    <EnhancedPhoneInput
-                      id="contact_number"
-                      name="contact_number"
-                      value={field.value || ""}
-                      onChange={(value) => field.onChange(value || "")}
-                      disabled={isFormDisabled}
-                      aria-invalid={!!errors.contact_number}
-                      contactName={watch("customer_name") || watch("contact_person_name")}
-                      placeholder="Enter phone number"
-                      showContactPicker={true}
-                      showClipboardPaste={true}
-                      showValidation={true}
-                      showRecentContacts={true}
-                    />
-                  )}
-                />
-                <FieldError
-                  errors={
-                    errors.contact_number
-                      ? [{ message: errors.contact_number.message }]
+            {/* Phone Numbers Section */}
+            <Field
+              data-invalid={!!errors.contact_number || !!errors.phone_numbers}
+            >
+              <FieldLabel htmlFor="contact_number">
+                Phone Numbers (optional)
+              </FieldLabel>
+              <Controller
+                name="contact_number"
+                control={control}
+                render={({ field: primaryField }) => (
+                  <Controller
+                    name="phone_numbers"
+                    control={control}
+                    render={({ field: additionalField }) => (
+                      <MultiPhoneInput
+                        primaryValue={primaryField.value || ""}
+                        additionalValues={additionalField.value || []}
+                        onPrimaryChange={(value) =>
+                          primaryField.onChange(value)
+                        }
+                        onAdditionalChange={(values) => {
+                          // Filter out empty strings
+                          const filtered = values.filter(
+                            (v) => v.trim() !== ""
+                          );
+                          additionalField.onChange(
+                            filtered.length > 0 ? filtered : []
+                          );
+                        }}
+                        disabled={isFormDisabled}
+                        contactName={
+                          watch("customer_name") || watch("contact_person_name")
+                        }
+                      />
+                    )}
+                  />
+                )}
+              />
+              <FieldError
+                errors={
+                  errors.contact_number
+                    ? [{ message: errors.contact_number.message }]
+                    : errors.phone_numbers
+                      ? [{ message: errors.phone_numbers.message }]
                       : undefined
-                  }
-                />
-              </Field>
+                }
+              />
+            </Field>
 
-              <Field data-invalid={!!errors.email}>
-                <FieldLabel htmlFor="email">Email (optional)</FieldLabel>
-                <Input
-                  id="email"
-                  type="email"
-                  {...register("email")}
-                  disabled={isFormDisabled}
-                  aria-invalid={!!errors.email}
-                  placeholder="customer@email.com"
-                />
-                <p className="text-xs text-muted-foreground mt-1.5">
-                  Required for sending email notifications
-                </p>
-                <FieldError
-                  errors={
-                    errors.email
-                      ? [{ message: errors.email.message }]
+            {/* Email Addresses Section */}
+            <Field data-invalid={!!errors.email || !!errors.emails}>
+              <FieldLabel htmlFor="email">
+                Email Addresses (optional)
+              </FieldLabel>
+              <Controller
+                name="email"
+                control={control}
+                render={({ field: primaryField }) => (
+                  <Controller
+                    name="emails"
+                    control={control}
+                    render={({ field: additionalField }) => (
+                      <MultiEmailInput
+                        primaryValue={primaryField.value || ""}
+                        additionalValues={additionalField.value || []}
+                        onPrimaryChange={(value) =>
+                          primaryField.onChange(value)
+                        }
+                        onAdditionalChange={(values) => {
+                          // Filter out empty strings
+                          const filtered = values.filter(
+                            (v) => v.trim() !== ""
+                          );
+                          additionalField.onChange(
+                            filtered.length > 0 ? filtered : []
+                          );
+                        }}
+                        disabled={isFormDisabled}
+                        primaryError={errors.email?.message}
+                      />
+                    )}
+                  />
+                )}
+              />
+              <p className="text-xs text-muted-foreground mt-1.5">
+                Primary email is required for sending notifications
+              </p>
+              <FieldError
+                errors={
+                  errors.email
+                    ? [{ message: errors.email.message }]
+                    : errors.emails
+                      ? [{ message: errors.emails.message }]
                       : undefined
-                  }
-                />
-              </Field>
-            </FieldGroup>
+                }
+              />
+            </Field>
           </FieldGroup>
         </FieldSet>
       </div>
@@ -1370,8 +1529,8 @@ export function JobForm({ job, onSubmit, isSubmitting = false }: JobFormProps) {
             <AlertDialogTitle>Discard Changes?</AlertDialogTitle>
             <AlertDialogDescription>
               You have unsaved form data. If you cancel, this data will be lost.
-              However, if you just close the browser or app without canceling,
-              your data will be saved and restored when you return.
+              Note: Form data is only saved during your current session and will
+              be cleared when you close the browser or app.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

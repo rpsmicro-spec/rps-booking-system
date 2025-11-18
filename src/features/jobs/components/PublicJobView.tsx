@@ -7,7 +7,7 @@ import { JobPhotoViewer } from "./JobPhotoViewer";
 import { StatusTimeline, type StatusHistory } from "./StatusTimeline";
 import { format } from "date-fns";
 import type { Job, JobStatus } from "@/types/types";
-import { Calendar, Package, Hash, FileText } from "lucide-react";
+import { Calendar, Package, Hash, FileText, ClipboardList } from "lucide-react";
 import { PDFViewer } from "@/components/pdf/PDFViewer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import confetti from "canvas-confetti";
@@ -117,6 +117,31 @@ export function PublicJobView({ job, statusHistory = [] }: PublicJobViewProps) {
                   </p>
                   <p className="text-sm font-medium">
                     {format(new Date(job.delivery_date), "MMM dd, yyyy")}
+                  </p>
+                </div>
+              </div>
+            )}
+            {(job as Job & { customer_dc_number?: string }).customer_dc_number && (
+              <div className="flex items-start gap-4">
+                <div className="shrink-0 mt-0.5">
+                  <div className="rounded-full bg-muted p-2">
+                    <ClipboardList className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-muted-foreground mb-1.5">
+                    Customer DC Number
+                  </p>
+                  <p className="text-sm font-medium">
+                    {(job as Job & { customer_dc_number?: string }).customer_dc_number}
+                    {(job as Job & { customer_dc_date?: string }).customer_dc_date && (
+                      <span className="text-xs font-normal text-muted-foreground ml-2 block sm:inline">
+                        • {format(
+                          new Date((job as Job & { customer_dc_date?: string }).customer_dc_date!),
+                          "MMM dd, yyyy"
+                        )}
+                      </span>
+                    )}
                   </p>
                 </div>
               </div>

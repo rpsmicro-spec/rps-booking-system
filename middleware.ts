@@ -2,13 +2,10 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import type { SupabaseDatabase } from '@/types/types'
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
   })
-
-  // Check if user has "remember me" enabled
-  const rememberMe = request.cookies.get('remember-me')?.value === 'true'
 
   const supabase = createServerClient<SupabaseDatabase>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -30,27 +27,16 @@ export async function proxy(request: NextRequest) {
               (name.includes('auth') || name.includes('code-verifier') || name.includes('code-challenge'))
             
             if (isSupabaseAuthCookie) {
-              if (rememberMe) {
-                // Set persistent cookies that expire in 30 days
-                supabaseResponse.cookies.set(name, value, {
-                  ...options,
-                  maxAge: 60 * 60 * 24 * 30, // 30 days in seconds
-                  expires: new Date(Date.now() + 60 * 60 * 24 * 30 * 1000), // 30 days from now
-                  path: '/', // Ensure cookie is available site-wide
-                  sameSite: 'lax',
-                  secure: process.env.NODE_ENV === 'production',
-                })
-              } else {
-                // For session cookies, remove maxAge and expires to ensure they expire when browser closes
-                // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                const { maxAge, expires, ...sessionOptions } = options || {}
-                supabaseResponse.cookies.set(name, value, {
-                  ...sessionOptions,
-                  path: '/',
-                  sameSite: 'lax',
-                  secure: process.env.NODE_ENV === 'production',
-                })
-              }
+              // For PWA: Always set persistent cookies that expire in 30 days
+              // This ensures users stay logged in until manual logout
+              supabaseResponse.cookies.set(name, value, {
+                ...options,
+                maxAge: 60 * 60 * 24 * 30, // 30 days in seconds
+                expires: new Date(Date.now() + 60 * 60 * 24 * 30 * 1000), // 30 days from now
+                path: '/', // Ensure cookie is available site-wide
+                sameSite: 'lax',
+                secure: process.env.NODE_ENV === 'production',
+              })
             } else {
               // For non-auth cookies, preserve original options
               supabaseResponse.cookies.set(name, value, options)

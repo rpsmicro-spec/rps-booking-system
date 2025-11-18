@@ -37,9 +37,6 @@ export async function POST(request: Request) {
       { status: 200 }
     )
     
-    // Clear the remember-me cookie on logout
-    response.cookies.delete('remember-me')
-    
     return response
   } catch {
     return NextResponse.json(

@@ -98,7 +98,7 @@ export function MediaUpload({
   const uploadHook = useSupabaseUpload({
     bucketName: bucket,
     allowedMimeTypes,
-    maxFileSize: allowVideos ? 100 * 1024 * 1024 : 5 * 1024 * 1024, // 100MB for videos, 5MB for images only
+    maxFileSize: allowVideos ? 25 * 1024 * 1024 : 5 * 1024 * 1024, // 25MB for videos, 5MB for images only
     maxFiles: maxFiles - media.length,
   });
 
@@ -374,7 +374,7 @@ export function MediaUpload({
 
         {allowVideos && (
           <p className="text-xs text-muted-foreground">
-            Max file size: 100MB for videos, 5MB for images
+            Max file size: 25MB for videos, 5MB for images
           </p>
         )}
       </div>

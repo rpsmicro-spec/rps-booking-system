@@ -5,7 +5,7 @@ import type { SupabaseDatabase } from '@/types/types'
 
 export async function POST(request: Request) {
   try {
-    const { email, password, rememberMe = false } = await request.json()
+    const { email, password } = await request.json()
 
     if (!email || !password) {
       return NextResponse.json(
@@ -16,7 +16,7 @@ export async function POST(request: Request) {
 
     const cookieStore = await cookies()
     
-    // Create a custom Supabase client that sets cookie expiration based on rememberMe
+    // Create a custom Supabase client with persistent cookies for PWA
     const supabase = createServerClient<SupabaseDatabase>(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -33,29 +33,16 @@ export async function POST(request: Request) {
                   (name.includes('auth') || name.includes('code-verifier') || name.includes('code-challenge'))
                 
                 if (isSupabaseAuthCookie) {
-                  // If rememberMe is true, set cookies to expire in 30 days
-                  // If false, set as session cookies (no maxAge/expires, expires when browser closes)
-                  if (rememberMe) {
-                    cookieStore.set(name, value, {
-                      ...options,
-                      maxAge: 60 * 60 * 24 * 30, // 30 days in seconds
-                      expires: new Date(Date.now() + 60 * 60 * 24 * 30 * 1000), // 30 days from now
-                      path: '/', // Ensure cookie is available site-wide
-                      sameSite: 'lax',
-                      secure: process.env.NODE_ENV === 'production',
-                    })
-                  } else {
-                    // For session cookies, explicitly remove maxAge and expires
-                    // to ensure they expire when browser closes
-                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                    const { maxAge: _maxAge, expires: _expires, ...sessionOptions } = options || {}
-                    cookieStore.set(name, value, {
-                      ...sessionOptions,
-                      path: '/',
-                      sameSite: 'lax',
-                      secure: process.env.NODE_ENV === 'production',
-                    })
-                  }
+                  // For PWA: Always set persistent cookies with 30-day expiration
+                  // This ensures users stay logged in until manual logout
+                  cookieStore.set(name, value, {
+                    ...options,
+                    maxAge: 60 * 60 * 24 * 30, // 30 days in seconds
+                    expires: new Date(Date.now() + 60 * 60 * 24 * 30 * 1000), // 30 days from now
+                    path: '/', // Ensure cookie is available site-wide
+                    sameSite: 'lax',
+                    secure: process.env.NODE_ENV === 'production',
+                  })
                 } else {
                   // For non-auth cookies, preserve original options
                   cookieStore.set(name, value, options)
@@ -83,24 +70,10 @@ export async function POST(request: Request) {
       )
     }
 
-    // Store rememberMe preference in a cookie so middleware can respect it
     const response = NextResponse.json(
       { user: data.user, session: data.session },
       { status: 200 }
     )
-    
-    if (rememberMe) {
-      response.cookies.set('remember-me', 'true', {
-        maxAge: 60 * 60 * 24 * 30, // 30 days
-        httpOnly: true,
-        sameSite: 'lax',
-        secure: process.env.NODE_ENV === 'production',
-        path: '/', // Ensure cookie is available site-wide
-      })
-    } else {
-      // Clear the remember-me cookie if it exists
-      response.cookies.delete('remember-me')
-    }
 
     return response
   } catch {

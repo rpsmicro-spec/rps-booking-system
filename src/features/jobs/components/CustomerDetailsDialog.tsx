@@ -80,8 +80,22 @@ export function CustomerDetailsDialog({ job }: CustomerDetailsDialogProps) {
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-muted-foreground mb-1.5">Contact Number</p>
-                    <p className="text-sm font-medium">{job.contact_number}</p>
+                    <p className="text-xs font-medium text-muted-foreground mb-1.5">Phone Numbers</p>
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium">{job.contact_number}</p>
+                        <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded">
+                          Primary
+                        </span>
+                      </div>
+                      {(job as Job & { phone_numbers?: string[] }).phone_numbers
+                        ?.filter((phone) => phone.trim() !== "")
+                        .map((phone, index) => (
+                          <p key={index} className="text-sm text-muted-foreground">
+                            {phone}
+                          </p>
+                        ))}
+                    </div>
                   </div>
                 </div>
               )}
@@ -93,8 +107,22 @@ export function CustomerDetailsDialog({ job }: CustomerDetailsDialogProps) {
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-muted-foreground mb-1.5">Email Address</p>
-                    <p className="text-sm font-medium break-all">{job.email}</p>
+                    <p className="text-xs font-medium text-muted-foreground mb-1.5">Email Addresses</p>
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium break-all">{job.email}</p>
+                        <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded shrink-0">
+                          Primary
+                        </span>
+                      </div>
+                      {(job as Job & { emails?: string[] }).emails
+                        ?.filter((email) => email.trim() !== "")
+                        .map((email, index) => (
+                          <p key={index} className="text-sm text-muted-foreground break-all">
+                            {email}
+                          </p>
+                        ))}
+                    </div>
                   </div>
                 </div>
               )}
