@@ -42,6 +42,7 @@ import { TableSkeleton } from '@/components/ui/skeletons'
 import { Briefcase } from 'lucide-react'
 import type { Job, JobStatus } from '@/types/types'
 import { format } from 'date-fns'
+import { utcToIstDateObject } from "@/lib/utils/date-ist";
 import { toast } from 'sonner'
 import { STATUS_LABELS } from '@/lib/constants'
 import { useIsMobile } from '@/hooks/use-mobile'
@@ -210,8 +211,8 @@ export function JobsTable({
                 onClick={() => handleRowClick(job.id)}
               >
                 <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-2 overflow-hidden">
+                    <div className="flex-1 min-w-0 overflow-hidden">
                       <h3 className="font-semibold text-base truncate">{job.job_number}</h3>
                       <div className="mt-0.5 space-y-0.5">
                         <p className="text-sm text-muted-foreground truncate">
@@ -236,7 +237,7 @@ export function JobsTable({
                     </div>
                     <Badge
                       variant={job.status ? (STATUS_COLORS[job.status] || 'default') : 'default'}
-                      className="flex-shrink-0"
+                      className="flex-shrink-0 ml-2"
                     >
                       {job.status ? (STATUS_LABELS[job.status as JobStatus] || 'Unknown') : 'Unknown'}
                     </Badge>
@@ -264,7 +265,10 @@ export function JobsTable({
                   {job.booking_date && (
                     <div className="flex items-center gap-2 text-xs text-muted-foreground pt-1">
                       <Calendar className="h-3.5 w-3.5 flex-shrink-0" />
-                      <span>Booking: {format(new Date(job.booking_date), 'MMM dd, yyyy')}</span>
+                      <span>Booking: {(() => {
+                        const istDate = utcToIstDateObject(job.booking_date);
+                        return istDate ? format(istDate, 'MMM dd, yyyy') : '';
+                      })()}</span>
                     </div>
                   )}
                   <div className="flex items-center gap-2 pt-2 border-t" onClick={(e) => e.stopPropagation()}>
@@ -371,7 +375,10 @@ export function JobsTable({
                 </TableCell>
                 <TableCell>
                   {job.booking_date
-                    ? format(new Date(job.booking_date), 'MMM dd, yyyy')
+                    ? (() => {
+                        const istDate = utcToIstDateObject(job.booking_date);
+                        return istDate ? format(istDate, 'MMM dd, yyyy') : '-';
+                      })()
                     : '-'}
                 </TableCell>
                 <TableCell>

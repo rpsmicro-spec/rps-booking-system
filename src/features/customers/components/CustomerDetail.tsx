@@ -45,6 +45,7 @@ import Link from 'next/link'
 import type { Job } from '@/types/types'
 import { formatAddress } from '@/lib/utils/address'
 import { format } from 'date-fns'
+import { utcToIstDateObject } from "@/lib/utils/date-ist";
 import { StatusBadge } from '@/features/jobs/components/StatusBadge'
 import type { JobStatus } from '@/types/types'
 import { toast } from 'sonner'
@@ -389,18 +390,20 @@ export function CustomerDetail({ customer, jobs }: CustomerDetailProps) {
                   onClick={() => router.push(`/jobs/${job.id}`)}
                 >
                   <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2 overflow-hidden">
+                      <div className="flex-1 min-w-0 overflow-hidden">
                         <Link
                           href={`/jobs/${job.id}`}
-                          className="hover:underline"
+                          className="hover:underline block truncate"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <h3 className="font-semibold text-base truncate">{job.job_number}</h3>
                         </Link>
                       </div>
                       {job.status && (
-                        <StatusBadge status={job.status as JobStatus} />
+                        <div className="flex-shrink-0 ml-2">
+                          <StatusBadge status={job.status as JobStatus} />
+                        </div>
                       )}
                     </div>
                   </CardHeader>
@@ -409,7 +412,10 @@ export function CustomerDetail({ customer, jobs }: CustomerDetailProps) {
                       <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
                         <Calendar className="h-3.5 w-3.5 flex-shrink-0" />
                         <span className="truncate">
-                          Booking: {format(new Date(job.booking_date), 'MMM dd, yyyy')}
+                          Booking: {(() => {
+                            const istDate = utcToIstDateObject(job.booking_date);
+                            return istDate ? format(istDate, 'MMM dd, yyyy') : '';
+                          })()}
                         </span>
                       </div>
                     )}
@@ -417,7 +423,10 @@ export function CustomerDetail({ customer, jobs }: CustomerDetailProps) {
                       <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
                         <Truck className="h-3.5 w-3.5 flex-shrink-0" />
                         <span className="truncate">
-                          Delivery: {format(new Date(job.delivery_date), 'MMM dd, yyyy')}
+                          Delivery: {(() => {
+                            const istDate = utcToIstDateObject(job.delivery_date);
+                            return istDate ? format(istDate, 'MMM dd, yyyy') : '';
+                          })()}
                         </span>
                       </div>
                     )}
@@ -502,12 +511,18 @@ export function CustomerDetail({ customer, jobs }: CustomerDetailProps) {
                       </TableCell>
                       <TableCell>
                         {job.booking_date
-                          ? format(new Date(job.booking_date), 'MMM dd, yyyy')
+                          ? (() => {
+                              const istDate = utcToIstDateObject(job.booking_date);
+                              return istDate ? format(istDate, 'MMM dd, yyyy') : '-';
+                            })()
                           : '-'}
                       </TableCell>
                       <TableCell>
                         {job.delivery_date
-                          ? format(new Date(job.delivery_date), 'MMM dd, yyyy')
+                          ? (() => {
+                              const istDate = utcToIstDateObject(job.delivery_date);
+                              return istDate ? format(istDate, 'MMM dd, yyyy') : '-';
+                            })()
                           : '-'}
                       </TableCell>
                       <TableCell>

@@ -3,22 +3,12 @@
 import { useRouter } from 'next/navigation'
 import { JobForm } from './JobForm'
 import { toast } from 'sonner'
+import type { JobFormValues } from './JobForm'
 
 export function NewJobFormClient() {
   const router = useRouter()
 
-  const handleSubmit = async (data: {
-    customer_name: string
-    job_number: string
-    address?: string
-    contact_number?: string
-    email?: string
-    material_type?: string
-    booking_date: string
-    delivery_date?: string
-    special_requirements?: string
-    invoice_url?: string
-  }) => {
+  const handleSubmit = async (data: JobFormValues) => {
     try {
       const response = await fetch('/api/jobs', {
         method: 'POST',

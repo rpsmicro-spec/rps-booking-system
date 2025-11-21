@@ -7,6 +7,7 @@ import { STATUS_LABELS, JOB_STATUS } from '@/lib/constants'
 import type { Job, JobStatus } from '@/types/types'
 import { Calendar, Phone, Mail } from 'lucide-react'
 import { format } from 'date-fns'
+import { utcToIstDateObject } from "@/lib/utils/date-ist";
 
 interface JobCardProps {
   job: Job
@@ -39,15 +40,15 @@ export function JobCard({ job }: JobCardProps) {
     <Link href={`/jobs/${job.id}`}>
       <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
         <CardHeader className="pb-3">
-          <div className="flex items-start justify-between">
-            <div>
-              <h3 className="font-semibold text-lg">{job.job_number}</h3>
-              <p className="text-sm text-muted-foreground mt-1">
+          <div className="flex items-start justify-between gap-2 overflow-hidden">
+            <div className="flex-1 min-w-0 overflow-hidden">
+              <h3 className="font-semibold text-lg truncate">{job.job_number}</h3>
+              <p className="text-sm text-muted-foreground mt-1 truncate">
                 {job.customer_name}
               </p>
             </div>
             <Badge
-              className={`${getStatusColor(job.status)} text-white`}
+              className={`${getStatusColor(job.status)} text-white flex-shrink-0 ml-2`}
             >
               {getStatusLabel(job.status)}
             </Badge>
@@ -58,7 +59,10 @@ export function JobCard({ job }: JobCardProps) {
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Calendar className="h-4 w-4" />
               <span>
-                {format(new Date(job.booking_date), 'MMM dd, yyyy')}
+                {(() => {
+                  const istDate = utcToIstDateObject(job.booking_date);
+                  return istDate ? format(istDate, 'MMM dd, yyyy') : '';
+                })()}
               </span>
             </div>
           )}

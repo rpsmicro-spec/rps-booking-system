@@ -73,7 +73,7 @@ export function SimpleDatePicker({
             className
           )}
         >
-          {date ? date.toLocaleDateString() : placeholder}
+          {date ? date.toLocaleDateString("en-IN") : placeholder}
           <ChevronDownIcon className="h-4 w-4 opacity-50" />
         </Button>
       </PopoverTrigger>

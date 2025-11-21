@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { JobDetail } from './JobDetail'
 import type { Job } from '@/types/types'
 import type { StatusHistory } from './StatusTimeline'
+import { useRecentJobs } from '@/hooks/use-recent-jobs'
 
 interface JobDetailClientProps {
   job: Job
@@ -14,6 +15,9 @@ interface JobDetailClientProps {
 
 export function JobDetailClient({ job, originalJob, statusHistory = [], showStatusCard = true }: JobDetailClientProps) {
   const router = useRouter()
+
+  // Track recent job view
+  useRecentJobs(job.id, job.job_number, job.customer_name)
 
   const handleStatusUpdate = () => {
     router.refresh()

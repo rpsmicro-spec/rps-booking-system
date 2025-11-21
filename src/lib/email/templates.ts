@@ -163,7 +163,7 @@ export function generateCompletionEmail(data: EmailTemplateData): string {
                                 <td>
                                   <p style="font-size:16px;line-height:24px;color:rgb(31,41,55);margin:5px 0"><strong>Job Number:</strong> ${job.job_number}</p>
                                   ${job.material_type ? `<p style="font-size:16px;line-height:24px;color:rgb(31,41,55);margin:5px 0"><strong>Material Type:</strong> ${job.material_type}</p>` : ''}
-                                  ${job.delivery_date ? `<p style="font-size:16px;line-height:24px;color:rgb(31,41,55);margin:5px 0"><strong>Delivery Date:</strong> ${new Date(job.delivery_date).toLocaleDateString()}</p>` : ''}
+                                  ${job.delivery_date ? `<p style="font-size:16px;line-height:24px;color:rgb(31,41,55);margin:5px 0"><strong>Delivery Date:</strong> ${new Date(job.delivery_date).toLocaleDateString("en-IN")}</p>` : ''}
                                 </td>
                               </tr>
                             </tbody>
@@ -282,7 +282,7 @@ Great news! Your job has been completed successfully.
 
 Job Number: ${job.job_number}
 ${job.material_type ? `Material Type: ${job.material_type}` : ''}
-${job.delivery_date ? `Delivery Date: ${new Date(job.delivery_date).toLocaleDateString()}` : ''}
+${job.delivery_date ? `Delivery Date: ${new Date(job.delivery_date).toLocaleDateString("en-IN")}` : ''}
 
 View your completed job: ${viewLink}
 ${job.invoice_file_path ? `Invoice is available on the job details page: ${viewLink}` : ''}

@@ -6,6 +6,7 @@ import { StatusBadge } from "./StatusBadge";
 import { JobPhotoViewer } from "./JobPhotoViewer";
 import { StatusTimeline, type StatusHistory } from "./StatusTimeline";
 import { format } from "date-fns";
+import { utcToIstDateObject } from "@/lib/utils/date-ist";
 import type { Job, JobStatus } from "@/types/types";
 import { Calendar, Package, Hash, FileText, ClipboardList } from "lucide-react";
 import { PDFViewer } from "@/components/pdf/PDFViewer";
@@ -56,7 +57,10 @@ export function PublicJobView({ job, statusHistory = [] }: PublicJobViewProps) {
         {job.booking_date && (
           <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
             <Calendar className="h-4 w-4" />
-            <span>Booking Date: {format(new Date(job.booking_date), "MMM dd, yyyy")}</span>
+            <span>Booking Date: {(() => {
+              const istDate = utcToIstDateObject(job.booking_date);
+              return istDate ? format(istDate, "MMM dd, yyyy") : "";
+            })()}</span>
           </div>
         )}
         <p className="text-muted-foreground">
@@ -99,7 +103,10 @@ export function PublicJobView({ job, statusHistory = [] }: PublicJobViewProps) {
                     Booking Date
                   </p>
                   <p className="text-sm font-medium">
-                    {format(new Date(job.booking_date), "MMM dd, yyyy")}
+                    {(() => {
+                      const istDate = utcToIstDateObject(job.booking_date);
+                      return istDate ? format(istDate, "MMM dd, yyyy") : "";
+                    })()}
                   </p>
                 </div>
               </div>
@@ -116,7 +123,10 @@ export function PublicJobView({ job, statusHistory = [] }: PublicJobViewProps) {
                     Delivery Date
                   </p>
                   <p className="text-sm font-medium">
-                    {format(new Date(job.delivery_date), "MMM dd, yyyy")}
+                    {(() => {
+                      const istDate = utcToIstDateObject(job.delivery_date);
+                      return istDate ? format(istDate, "MMM dd, yyyy") : "";
+                    })()}
                   </p>
                 </div>
               </div>
@@ -136,10 +146,12 @@ export function PublicJobView({ job, statusHistory = [] }: PublicJobViewProps) {
                     {(job as Job & { customer_dc_number?: string }).customer_dc_number}
                     {(job as Job & { customer_dc_date?: string }).customer_dc_date && (
                       <span className="text-xs font-normal text-muted-foreground ml-2 block sm:inline">
-                        • {format(
-                          new Date((job as Job & { customer_dc_date?: string }).customer_dc_date!),
-                          "MMM dd, yyyy"
-                        )}
+                        • {(() => {
+                          const dcDate = (job as Job & { customer_dc_date?: string }).customer_dc_date;
+                          if (!dcDate) return "";
+                          const istDate = utcToIstDateObject(dcDate);
+                          return istDate ? format(istDate, "MMM dd, yyyy") : "";
+                        })()}
                       </span>
                     )}
                   </p>

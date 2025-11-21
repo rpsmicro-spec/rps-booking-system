@@ -8,7 +8,7 @@ self.addEventListener('install', (event) => {
     caches.open(STATIC_CACHE_NAME).then((cache) => {
       // Only cache truly static assets
       return cache.addAll([
-        '/manifest.json',
+        '/manifest.webmanifest',
       ]).catch((error) => {
         console.error('Failed to cache static resources:', error)
       })

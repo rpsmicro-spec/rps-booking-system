@@ -19,6 +19,7 @@ import Link from "next/link";
 import { Plus, Settings } from "lucide-react";
 import { JobNumberSettingsDialog } from "./JobNumberSettingsDialog";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { RecentJobs } from "./RecentJobs";
 
 export function JobsPageClient() {
   const isMobile = useIsMobile();
@@ -89,6 +90,11 @@ export function JobsPageClient() {
         </div>
 
         <div className="space-y-4">
+          {/* Recent Jobs - Show on mobile or when no filters/search */}
+          {(isMobile || (!search && !status && !dateFrom && !dateTo)) && (
+            <RecentJobs />
+          )}
+          
           <JobSearch
             search={search}
             onSearchChange={handleSearchChange}

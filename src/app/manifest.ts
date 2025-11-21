@@ -7,10 +7,11 @@ export default function manifest(): MetadataRoute.Manifest {
     description: 'Job Management System for RPS Micro Electronics',
     start_url: '/',
     display: 'standalone',
-    orientation: 'portrait',
+    orientation: 'any', // Allow both portrait and landscape for better UX
     background_color: '#ffffff',
     theme_color: '#3b82f6',
     scope: '/',
+    categories: ['business', 'productivity', 'utilities'],
     icons: [
       {
         src: '/icons/android-chrome-192x192.png',

@@ -49,6 +49,33 @@ function isVideo(item: MediaItem): boolean {
   return false;
 }
 
+// Helper to get video MIME type from URL or File
+function getVideoType(item: MediaItem | string): string {
+  if (item instanceof File) {
+    return item.type || "video/mp4";
+  }
+  if (typeof item === "string") {
+    const urlLower = item.toLowerCase();
+    if (urlLower.includes(".mp4") || urlLower.includes(".m4v")) {
+      return "video/mp4";
+    }
+    if (urlLower.includes(".webm")) {
+      return "video/webm";
+    }
+    if (urlLower.includes(".mov")) {
+      return "video/quicktime";
+    }
+    if (urlLower.includes(".avi")) {
+      return "video/x-msvideo";
+    }
+    if (urlLower.includes(".mkv")) {
+      return "video/x-matroska";
+    }
+  }
+  // Default to mp4 as it's the most common
+  return "video/mp4";
+}
+
 export function MediaUpload({
   media,
   onMediaChange,
@@ -217,7 +244,10 @@ export function MediaUpload({
                       <video
                         src={mediaUrl}
                         className="w-full h-full object-cover"
-                        preload="metadata"
+                        preload="none"
+                        muted
+                        playsInline
+                        aria-label={`Media thumbnail ${index + 1}`}
                       />
                       <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
                         <Play className="h-12 w-12 text-white" fill="white" />
@@ -256,11 +286,13 @@ export function MediaUpload({
           {label}
           {required && <span className="text-red-500 ml-1">*</span>}
           <span className="text-xs text-muted-foreground ml-2">
-            ({allowImages && allowVideos
+            (
+            {allowImages && allowVideos
               ? "Images & Videos"
               : allowImages
-              ? "Images only"
-              : "Videos only"})
+                ? "Images only"
+                : "Videos only"}
+            )
           </span>
         </FieldLabel>
 
@@ -305,7 +337,10 @@ export function MediaUpload({
                       <video
                         src={displayUrl}
                         className="w-full h-full object-cover"
-                        preload="metadata"
+                        preload="none"
+                        muted
+                        playsInline
+                        aria-label={`Media thumbnail ${index + 1}`}
                       />
                       <div className="absolute inset-0 bg-black/30 flex items-center justify-center pointer-events-none">
                         <Play className="h-12 w-12 text-white" fill="white" />
@@ -387,17 +422,26 @@ export function MediaUpload({
         <DialogContent className="max-w-4xl">
           <DialogHeader>
             <DialogTitle>
-              {previewMedia?.type === "video" ? "Video Preview" : "Image Preview"}
+              {previewMedia?.type === "video"
+                ? "Video Preview"
+                : "Image Preview"}
             </DialogTitle>
           </DialogHeader>
           <div className="relative w-full">
             {previewMedia?.type === "video" ? (
               <video
-                src={previewMedia.url}
                 controls
-                className="w-full rounded-lg"
                 autoPlay
+                muted
+                playsInline
+                preload="none"
+                className="w-full rounded-lg"
+                aria-label="Video preview"
               >
+                <source
+                  src={previewMedia.url}
+                  type={getVideoType(previewMedia.url)}
+                />
                 Your browser does not support the video tag.
               </video>
             ) : (
@@ -422,4 +466,3 @@ export function MediaUpload({
     </>
   );
 }
-

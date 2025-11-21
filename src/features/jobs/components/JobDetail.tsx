@@ -7,6 +7,7 @@ import { JobPhotoViewer } from "./JobPhotoViewer";
 import { StatusTimeline, type StatusHistory } from "./StatusTimeline";
 import { StatusUpdate } from "./StatusUpdate";
 import { format } from "date-fns";
+import { utcToIstDateObject } from "@/lib/utils/date-ist";
 import type { Job, JobStatus } from "@/types/types";
 import {
   MessageCircle,
@@ -79,7 +80,7 @@ export function JobDetail({
 
   // Generate WhatsApp message to customer based on current status
   const getWhatsAppMessageToCustomer = () => {
-    if (!job.status || !job.contact_number) return null;
+    if (!job.status) return null;
 
     const viewLink = getJobViewUrl(job);
     const statusLabel = STATUS_LABELS[job.status as JobStatus] || "Unknown";
@@ -91,11 +92,41 @@ export function JobDetail({
     }
   };
 
+  // Get all phone numbers with labels (primary + additional)
+  const getAllPhoneNumbers = () => {
+    const phoneNumbers: Array<{ number: string; label: string }> = [];
+    
+    // Add primary phone number
+    if (job.contact_number && job.contact_number.trim() !== "") {
+      phoneNumbers.push({
+        number: job.contact_number,
+        label: "Primary",
+      });
+    }
+    
+    // Add additional phone numbers
+    const additionalPhones = (job as Job & { phone_numbers?: string[] }).phone_numbers || [];
+    additionalPhones
+      .filter((phone) => phone && phone.trim() !== "")
+      .forEach((phone, index) => {
+        phoneNumbers.push({
+          number: phone,
+          label: `Additional #${index + 1}`,
+        });
+      });
+    
+    return phoneNumbers;
+  };
+
+  // Generate WhatsApp links for all phone numbers
   const whatsAppMessage = getWhatsAppMessageToCustomer();
-  const whatsAppLink =
-    job.contact_number && whatsAppMessage
-      ? getCustomerWhatsAppLink(job.contact_number, whatsAppMessage)
-      : null;
+  const allPhoneNumbers = getAllPhoneNumbers();
+  const whatsAppLinks = whatsAppMessage
+    ? allPhoneNumbers.map((phoneData) => ({
+        ...phoneData,
+        link: getCustomerWhatsAppLink(phoneData.number, whatsAppMessage),
+      }))
+    : [];
 
   const handleSendEmail = async (withCC: boolean = false) => {
     if (!job.email || !job.public_token) {
@@ -188,25 +219,55 @@ export function JobDetail({
                       </span>
                     </Button>
                   )}
-                  {whatsAppLink && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      asChild
-                      className="w-full lg:w-auto"
-                    >
-                      <a
-                        href={whatsAppLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <MessageCircle className="mr-2 h-4 w-4" />
-                        <span className="hidden sm:inline">
-                          Send WhatsApp Message
-                        </span>
-                        <span className="sm:hidden">WhatsApp</span>
-                      </a>
-                    </Button>
+                  {whatsAppLinks.length > 0 && (
+                    <div className="flex flex-col gap-2 w-full lg:w-auto">
+                      {whatsAppLinks.length === 1 ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          asChild
+                          className="w-full lg:w-auto"
+                        >
+                          <a
+                            href={whatsAppLinks[0].link || "#"}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <MessageCircle className="mr-2 h-4 w-4" />
+                            <span className="hidden sm:inline">
+                              Send WhatsApp Message
+                            </span>
+                            <span className="sm:hidden">WhatsApp</span>
+                          </a>
+                        </Button>
+                      ) : (
+                        <div className="flex flex-col gap-1.5">
+                          {whatsAppLinks.map((phoneData, index) => (
+                            <Button
+                              key={index}
+                              variant="outline"
+                              size="sm"
+                              asChild
+                              className="w-full lg:w-auto text-xs"
+                            >
+                              <a
+                                href={phoneData.link || "#"}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                <MessageCircle className="mr-2 h-3.5 w-3.5" />
+                                <span className="hidden sm:inline">
+                                  WhatsApp ({phoneData.label})
+                                </span>
+                                <span className="sm:hidden">
+                                  {phoneData.label}
+                                </span>
+                              </a>
+                            </Button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   )}
                   <ShareJobButton job={job} jobNumber={job.job_number} />
                   {hasPhotos && (
@@ -343,7 +404,10 @@ export function JobDetail({
                       Booking Date
                     </p>
                     <p className="text-sm font-medium">
-                      {format(new Date(job.booking_date), "MMM dd, yyyy")}
+                      {(() => {
+                        const istDate = utcToIstDateObject(job.booking_date);
+                        return istDate ? format(istDate, "MMM dd, yyyy") : "";
+                      })()}
                     </p>
                   </div>
                 </div>
@@ -360,7 +424,10 @@ export function JobDetail({
                       Delivery Date
                     </p>
                     <p className="text-sm font-medium">
-                      {format(new Date(job.delivery_date), "MMM dd, yyyy")}
+                      {(() => {
+                        const istDate = utcToIstDateObject(job.delivery_date);
+                        return istDate ? format(istDate, "MMM dd, yyyy") : "";
+                      })()}
                     </p>
                   </div>
                 </div>
@@ -386,13 +453,13 @@ export function JobDetail({
                         .customer_dc_date && (
                         <span className="text-xs font-normal text-muted-foreground ml-1.5 sm:ml-2 block sm:inline">
                           •{" "}
-                          {format(
-                            new Date(
-                              (job as Job & { customer_dc_date?: string })
-                                .customer_dc_date!
-                            ),
-                            "MMM dd, yyyy"
-                          )}
+                          {(() => {
+                            const dcDate = (job as Job & { customer_dc_date?: string })
+                              .customer_dc_date;
+                            if (!dcDate) return "";
+                            const istDate = utcToIstDateObject(dcDate);
+                            return istDate ? format(istDate, "MMM dd, yyyy") : "";
+                          })()}
                         </span>
                       )}
                     </p>
@@ -687,13 +754,13 @@ export function JobStatusCard({
   onStatusUpdate,
   onSendEmail,
   isSendingEmail,
-  whatsAppLink,
+  whatsAppLinks,
 }: {
   job: Job;
   onStatusUpdate?: () => void;
   onSendEmail: () => void;
   isSendingEmail: boolean;
-  whatsAppLink: string | null;
+  whatsAppLinks: Array<{ number: string; label: string; link: string | null }>;
 }) {
   return (
     <Card className="w-full lg:max-w-md">
@@ -734,14 +801,23 @@ export function JobStatusCard({
               {isSendingEmail ? "Sending..." : "Send Email"}
             </Button>
           )}
-          {whatsAppLink && (
-            <Button variant="outline" asChild className="w-full">
-              <a href={whatsAppLink} target="_blank" rel="noopener noreferrer">
+          {whatsAppLinks.map((phoneData, index) => (
+            <Button
+              key={index}
+              variant="outline"
+              asChild
+              className="w-full"
+            >
+              <a
+                href={phoneData.link || "#"}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 <MessageCircle className="mr-2 h-4 w-4" />
-                Send WhatsApp Message
+                WhatsApp ({phoneData.label})
               </a>
             </Button>
-          )}
+          ))}
         </div>
       </CardContent>
     </Card>
