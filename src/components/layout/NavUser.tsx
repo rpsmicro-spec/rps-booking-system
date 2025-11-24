@@ -126,7 +126,7 @@ export function NavUser() {
     )
   }
 
-  const hasName = user.name && user.name.trim().length > 0
+  const hasName = !!(user.name?.trim())
   const userRole = (user.role as UserRole) || "staff"
   const canManageUsers = userRole === "owner" || userRole === "admin"
 

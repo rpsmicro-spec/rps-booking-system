@@ -52,34 +52,34 @@ export function RecentJobs() {
             Recent Jobs
           </CardTitle>
           <Button
-            variant="ghost"
+            variant="outline"
             size="sm"
             onClick={handleClearRecent}
-            className="h-7 px-2 text-xs"
+            className="h-7 px-2.5 text-xs"
           >
-            <X className="h-3 w-3 mr-1" />
+            <X className="h-3 w-3 mr-1.5" />
             Clear
           </Button>
         </div>
       </CardHeader>
       <CardContent>
-        <div className="space-y-2">
+        <div className="space-y-2.5">
           {recentJobs.map((job) => (
             <Link
               key={job.jobId}
               href={`/jobs/${job.jobId}`}
-              className="block p-2 rounded-lg hover:bg-muted transition-colors"
+              className="block p-3 rounded-lg border bg-card hover:bg-muted/50 hover:border-primary/20 transition-all active:scale-[0.98]"
             >
               <div className="flex items-center justify-between">
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">
                     {job.jobNumber}
                   </p>
-                  <p className="text-xs text-muted-foreground truncate">
+                  <p className="text-xs text-muted-foreground truncate mt-0.5">
                     {job.customerName}
                   </p>
                 </div>
-                <div className="text-xs text-muted-foreground ml-2 shrink-0">
+                <div className="text-xs text-muted-foreground ml-3 shrink-0">
                   {new Date(job.viewedAt).toLocaleTimeString("en-IN", {
                     hour: "2-digit",
                     minute: "2-digit",

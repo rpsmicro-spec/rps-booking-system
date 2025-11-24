@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Briefcase, Eye, MoreHorizontal, Edit, Trash2, User, Mail, Phone, MapPin, BarChart3, CheckCircle2, Package, Truck, Calendar, FileText, UserCircle } from 'lucide-react'
+import { Briefcase, Eye, MoreHorizontal, Edit, Trash2, User, Mail, Phone, MapPin, BarChart3, CheckCircle2, Package, Truck, FileText, UserCircle } from 'lucide-react'
 import { useIsMobile } from '@/hooks/use-mobile'
 import {
   Empty,
@@ -47,6 +47,7 @@ import { formatAddress } from '@/lib/utils/address'
 import { format } from 'date-fns'
 import { utcToIstDateObject } from "@/lib/utils/date-ist";
 import { StatusBadge } from '@/features/jobs/components/StatusBadge'
+import { JobCardMobile } from '@/features/jobs/components/JobCardMobile'
 import type { JobStatus } from '@/types/types'
 import { toast } from 'sonner'
 import { JOB_STATUS } from '@/lib/constants'
@@ -133,9 +134,39 @@ export function CustomerDetail({ customer, jobs }: CustomerDetailProps) {
       <div className="grid gap-3 sm:gap-4 lg:grid-cols-2">
         {/* Left Column: Customer Info and Quick Actions (on mobile) */}
         <div className="space-y-3 sm:space-y-4 flex flex-col lg:space-y-0 lg:h-full">
+          {/* Quick Actions - Above Customer Info on mobile, in right column on desktop */}
+          {(phoneLink || emailLink) && (
+            <Card className="lg:hidden">
+              <CardHeader className="pb-1">
+                <CardTitle className="text-base sm:text-lg">Quick Actions</CardTitle>
+              </CardHeader>
+              <Separator />
+              <CardContent className="pt-4 sm:pt-6">
+                <div className="flex flex-col gap-2">
+                  {phoneLink && (
+                    <Button variant="outline" size="sm" className="w-full text-xs sm:text-sm" asChild>
+                      <a href={phoneLink}>
+                        <Phone className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                        Call Customer
+                      </a>
+                    </Button>
+                  )}
+                  {emailLink && (
+                    <Button variant="outline" size="sm" className="w-full text-xs sm:text-sm" asChild>
+                      <a href={emailLink}>
+                        <Mail className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                        Send Email
+                      </a>
+                    </Button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Customer Information Card */}
           <Card className="lg:h-full">
-            <CardHeader className="pb-3 sm:pb-6">
+            <CardHeader className="pb-1">
               <CardTitle className="text-base sm:text-lg">Customer Info</CardTitle>
             </CardHeader>
             <Separator />
@@ -227,36 +258,6 @@ export function CustomerDetail({ customer, jobs }: CustomerDetailProps) {
               </div>
             </CardContent>
           </Card>
-
-          {/* Quick Actions - Below Customer Info on mobile, in right column on desktop */}
-          {(phoneLink || emailLink) && (
-            <Card className="lg:hidden">
-              <CardHeader className="pb-3 sm:pb-6">
-                <CardTitle className="text-base sm:text-lg">Quick Actions</CardTitle>
-              </CardHeader>
-              <Separator />
-              <CardContent className="pt-4 sm:pt-6">
-                <div className="flex flex-col gap-2">
-                  {phoneLink && (
-                    <Button variant="outline" size="sm" className="w-full text-xs sm:text-sm" asChild>
-                      <a href={phoneLink}>
-                        <Phone className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                        Call Customer
-                      </a>
-                    </Button>
-                  )}
-                  {emailLink && (
-                    <Button variant="outline" size="sm" className="w-full text-xs sm:text-sm" asChild>
-                      <a href={emailLink}>
-                        <Mail className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                        Send Email
-                      </a>
-                    </Button>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          )}
         </div>
 
         {/* Right Column: Quick Actions and Stats (on desktop) */}
@@ -264,7 +265,7 @@ export function CustomerDetail({ customer, jobs }: CustomerDetailProps) {
           {/* Action Buttons - Only visible on desktop */}
           {(phoneLink || emailLink) && (
             <Card className="hidden lg:block">
-              <CardHeader>
+              <CardHeader className="pb-1">
                 <CardTitle className="text-base sm:text-lg">Quick Actions</CardTitle>
               </CardHeader>
               <Separator />
@@ -354,7 +355,7 @@ export function CustomerDetail({ customer, jobs }: CustomerDetailProps) {
 
       {/* Jobs Table */}
       <Card>
-        <CardHeader className="pb-3 sm:pb-6">
+        <CardHeader className="pb-1">
           <CardTitle className="text-base sm:text-lg">All Jobs ({jobs.length})</CardTitle>
         </CardHeader>
         <Separator />
@@ -384,97 +385,17 @@ export function CustomerDetail({ customer, jobs }: CustomerDetailProps) {
             // Mobile Card View
             <div className="space-y-3">
               {jobs.map((job) => (
-                <Card
+                <JobCardMobile
                   key={job.id}
-                  className="cursor-pointer hover:shadow-md transition-shadow"
-                  onClick={() => router.push(`/jobs/${job.id}`)}
-                >
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between gap-2 overflow-hidden">
-                      <div className="flex-1 min-w-0 overflow-hidden">
-                        <Link
-                          href={`/jobs/${job.id}`}
-                          className="hover:underline block truncate"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <h3 className="font-semibold text-base truncate">{job.job_number}</h3>
-                        </Link>
-                      </div>
-                      {job.status && (
-                        <div className="flex-shrink-0 ml-2">
-                          <StatusBadge status={job.status as JobStatus} />
-                        </div>
-                      )}
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-2 pt-0">
-                    {job.booking_date && (
-                      <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
-                        <Calendar className="h-3.5 w-3.5 flex-shrink-0" />
-                        <span className="truncate">
-                          Booking: {(() => {
-                            const istDate = utcToIstDateObject(job.booking_date);
-                            return istDate ? format(istDate, 'MMM dd, yyyy') : '';
-                          })()}
-                        </span>
-                      </div>
-                    )}
-                    {job.delivery_date && (
-                      <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
-                        <Truck className="h-3.5 w-3.5 flex-shrink-0" />
-                        <span className="truncate">
-                          Delivery: {(() => {
-                            const istDate = utcToIstDateObject(job.delivery_date);
-                            return istDate ? format(istDate, 'MMM dd, yyyy') : '';
-                          })()}
-                        </span>
-                      </div>
-                    )}
-                    {job.material_type && (
-                      <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
-                        <Package className="h-3.5 w-3.5 flex-shrink-0" />
-                        <span className="truncate">{job.material_type}</span>
-                      </div>
-                    )}
-                    <div className="flex items-center gap-2 pt-2 border-t" onClick={(e) => e.stopPropagation()}>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex-1 text-xs"
-                        asChild
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <Link href={`/jobs/${job.id}`}>
-                          <Eye className="mr-1.5 h-3.5 w-3.5" />
-                          View
-                        </Link>
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex-1 text-xs"
-                        asChild
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <Link href={`/jobs/${job.id}/edit`}>
-                          <Edit className="mr-1.5 h-3.5 w-3.5" />
-                          Edit
-                        </Link>
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-xs text-destructive hover:text-destructive"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleDeleteClick(e, job)
-                        }}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
+                  job={job}
+                  onCardClick={(jobId) => router.push(`/jobs/${jobId}`)}
+                  showActions={true}
+                  onEdit={(jobId) => router.push(`/jobs/${jobId}/edit`)}
+                  onDelete={(job) => {
+                    const e = { stopPropagation: () => {} } as React.MouseEvent
+                    handleDeleteClick(e, job)
+                  }}
+                />
               ))}
             </div>
           ) : (

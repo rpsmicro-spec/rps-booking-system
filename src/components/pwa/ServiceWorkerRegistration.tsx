@@ -1,60 +1,50 @@
-'use client'
+"use client";
 
-import { useEffect } from 'react'
+import { useEffect } from "react";
 
 export function ServiceWorkerRegistration() {
   useEffect(() => {
+    // next-pwa handles service worker registration automatically
+    // This component is kept for backward compatibility but is disabled
+    // If you need custom registration logic, set register: false in next.config.ts
     if (
-      typeof window !== 'undefined' &&
-      'serviceWorker' in navigator
+      typeof window !== "undefined" &&
+      "serviceWorker" in navigator &&
+      process.env.NODE_ENV === "development"
     ) {
-      // Register service worker with updateViaCache: 'none' to always check for updates
-      navigator.serviceWorker
-        .register('/sw.js', { updateViaCache: 'none' })
-        .then((registration) => {
-          console.log('Service Worker registered:', registration.scope)
-
-          // Check for updates on page load
-          registration.update()
-
-          // Check for updates periodically
-          setInterval(() => {
-            registration.update()
-          }, 60000) // Check every minute
+      // Only handle updates in development if next-pwa is disabled
+      // Check if service worker is already registered by next-pwa
+      navigator.serviceWorker.getRegistration().then((registration) => {
+        if (registration) {
+          console.log("Service Worker already registered by next-pwa");
 
           // Handle updates
-          registration.addEventListener('updatefound', () => {
-            const newWorker = registration.installing
+          registration.addEventListener("updatefound", () => {
+            const newWorker = registration.installing;
             if (newWorker) {
-              newWorker.addEventListener('statechange', () => {
+              newWorker.addEventListener("statechange", () => {
                 if (
-                  newWorker.state === 'installed' &&
+                  newWorker.state === "installed" &&
                   navigator.serviceWorker.controller
                 ) {
-                  // New service worker available - it will activate automatically
-                  // due to skipWaiting() in the service worker
-                  console.log('New service worker available and activating')
+                  console.log("New service worker available");
                 }
-              })
+              });
             }
-          })
-        })
-        .catch((error) => {
-          console.error('Service Worker registration failed:', error)
-        })
-
-      // Handle service worker controller changes (when new SW takes control)
-      let refreshing = false
-      navigator.serviceWorker.addEventListener('controllerchange', () => {
-        if (!refreshing) {
-          refreshing = true
-          // Reload to use the new service worker
-          window.location.reload()
+          });
         }
-      })
+      });
+
+      // Handle service worker controller changes
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        if (!refreshing) {
+          refreshing = true;
+          window.location.reload();
+        }
+      });
     }
-  }, [])
+  }, []);
 
-  return null
+  return null;
 }
-

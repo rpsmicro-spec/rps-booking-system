@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { MoreHorizontal, Eye, Edit, Trash2, Calendar, Phone, Mail, Package } from 'lucide-react'
+import { MoreHorizontal, Eye, Edit, Trash2 } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -44,16 +44,10 @@ import type { Job, JobStatus } from '@/types/types'
 import { format } from 'date-fns'
 import { utcToIstDateObject } from "@/lib/utils/date-ist";
 import { toast } from 'sonner'
-import { STATUS_LABELS } from '@/lib/constants'
+import { STATUS_LABELS, getStatusBadgeCustomClasses } from '@/lib/constants'
 import { useIsMobile } from '@/hooks/use-mobile'
+import { JobCardMobile } from './JobCardMobile'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
-
-const STATUS_COLORS: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
-  collected: 'default',
-  in_progress: 'secondary',
-  completed: 'outline',
-  delivered: 'default',
-}
 
 interface JobsTableProps {
   status?: string | null
@@ -205,111 +199,17 @@ export function JobsTable({
             emptyState
           ) : (
             jobs.map((job) => (
-              <Card
+              <JobCardMobile
                 key={job.id}
-                className="cursor-pointer hover:shadow-md transition-shadow"
-                onClick={() => handleRowClick(job.id)}
-              >
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between gap-2 overflow-hidden">
-                    <div className="flex-1 min-w-0 overflow-hidden">
-                      <h3 className="font-semibold text-base truncate">{job.job_number}</h3>
-                      <div className="mt-0.5 space-y-0.5">
-                        <p className="text-sm text-muted-foreground truncate">
-                          {job.customer_name}
-                        </p>
-                        {(job as Job & { contact_person_name?: string; contact_person_designation?: string }).contact_person_name && (
-                          <p className="text-xs text-muted-foreground truncate">
-                            {(job as Job & { contact_person_name?: string; contact_person_designation?: string }).contact_person_name}
-                            {(job as Job & { contact_person_name?: string; contact_person_designation?: string }).contact_person_designation && (
-                              <span className="ml-1">({(job as Job & { contact_person_name?: string; contact_person_designation?: string }).contact_person_designation})</span>
-                            )}
-                          </p>
-                        )}
-                        {((job as Job & { address_city?: string }).address_city || (job as Job & { address_state?: string }).address_state) && (
-                          <p className="text-xs text-muted-foreground truncate">
-                            {(job as Job & { address_city?: string }).address_city}
-                            {(job as Job & { address_city?: string }).address_city && (job as Job & { address_state?: string }).address_state && ', '}
-                            {(job as Job & { address_state?: string }).address_state}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    <Badge
-                      variant={job.status ? (STATUS_COLORS[job.status] || 'default') : 'default'}
-                      className="flex-shrink-0 ml-2"
-                    >
-                      {job.status ? (STATUS_LABELS[job.status as JobStatus] || 'Unknown') : 'Unknown'}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-2 pt-0">
-                  {job.email && (
-                    <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
-                      <Mail className="h-3.5 w-3.5 flex-shrink-0" />
-                      <span className="truncate">{job.email}</span>
-                    </div>
-                  )}
-                  {job.contact_number && (
-                    <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
-                      <Phone className="h-3.5 w-3.5 flex-shrink-0" />
-                      <span className="truncate">{job.contact_number}</span>
-                    </div>
-                  )}
-                  {job.material_type && (
-                    <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
-                      <Package className="h-3.5 w-3.5 flex-shrink-0" />
-                      <span className="truncate">{job.material_type}</span>
-                    </div>
-                  )}
-                  {job.booking_date && (
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground pt-1">
-                      <Calendar className="h-3.5 w-3.5 flex-shrink-0" />
-                      <span>Booking: {(() => {
-                        const istDate = utcToIstDateObject(job.booking_date);
-                        return istDate ? format(istDate, 'MMM dd, yyyy') : '';
-                      })()}</span>
-                    </div>
-                  )}
-                  <div className="flex items-center gap-2 pt-2 border-t" onClick={(e) => e.stopPropagation()}>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1 text-xs"
-                      asChild
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <Link href={`/jobs/${job.id}`}>
-                        <Eye className="mr-1.5 h-3.5 w-3.5" />
-                        View
-                      </Link>
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1 text-xs"
-                      asChild
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <Link href={`/jobs/${job.id}/edit`}>
-                        <Edit className="mr-1.5 h-3.5 w-3.5" />
-                        Edit
-                      </Link>
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="text-xs text-destructive hover:text-destructive"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleDeleteClick(e, job)
-                      }}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+                job={job}
+                onCardClick={handleRowClick}
+                showActions={true}
+                onEdit={(jobId) => router.push(`/jobs/${jobId}/edit`)}
+                onDelete={(job) => {
+                  const e = { stopPropagation: () => {} } as React.MouseEvent
+                  handleDeleteClick(e, job)
+                }}
+              />
             ))
           )}
         </div>
@@ -369,7 +269,7 @@ export function JobsTable({
                 <TableCell className="font-medium">{job.job_number}</TableCell>
                 <TableCell>{job.customer_name}</TableCell>
                 <TableCell>
-                  <Badge variant={job.status ? (STATUS_COLORS[job.status] || 'default') : 'default'}>
+                  <Badge className={getStatusBadgeCustomClasses(job.status as JobStatus)}>
                     {job.status ? (STATUS_LABELS[job.status as JobStatus] || 'Unknown') : 'Unknown'}
                   </Badge>
                 </TableCell>

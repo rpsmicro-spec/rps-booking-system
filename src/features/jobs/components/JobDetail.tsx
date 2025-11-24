@@ -10,7 +10,6 @@ import { format } from "date-fns";
 import { utcToIstDateObject } from "@/lib/utils/date-ist";
 import type { Job, JobStatus } from "@/types/types";
 import {
-  MessageCircle,
   Mail,
   Hash,
   Calendar,
@@ -21,6 +20,7 @@ import {
   ClipboardList,
   Phone,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   getCustomerWhatsAppLink,
@@ -37,8 +37,28 @@ import { InvoiceUploadDetail } from "./InvoiceUploadDetail";
 import { AllPhotosDialog } from "./AllPhotosDialog";
 import { InvoiceDialog } from "./InvoiceDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { ShareJobButton } from "./ShareJobButton";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ChevronDown } from "lucide-react";
+
+// WhatsApp Icon Component
+const WhatsAppIcon = ({ className }: { className?: string }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="16"
+    height="16"
+    fill="currentColor"
+    className={cn("bi bi-whatsapp", className)}
+    viewBox="0 0 16 16"
+  >
+    <path d="M13.601 2.326A7.85 7.85 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.9 7.9 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.9 7.9 0 0 0 13.6 2.326zM7.994 14.521a6.6 6.6 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.56 6.56 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592m3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.73.73 0 0 0-.529.247c-.182.198-.691.677-.691 1.654s.71 1.916.81 2.049c.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232" />
+  </svg>
+);
 import {
   AlertDialog,
   AlertDialogAction,
@@ -188,10 +208,10 @@ export function JobDetail({
     return (
       <>
         <Card className="w-full">
-          <CardContent className="pt-4 sm:pt-6">
+          <CardContent className="pt-4 px-4 pb-4">
             {job.status && (
-              <div className="flex flex-col lg:flex-row items-start lg:items-end justify-between gap-3 sm:gap-4">
-                <div className="w-full lg:flex-1 lg:min-w-0">
+              <div className="flex flex-col gap-3">
+                <div className="w-full">
                   <p className="text-xs font-medium text-muted-foreground mb-2">
                     Update Status
                   </p>
@@ -201,73 +221,60 @@ export function JobDetail({
                     onStatusUpdate={onStatusUpdate}
                   />
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-row gap-2 w-full lg:w-auto lg:shrink-0 lg:items-center">
+                <div className="flex flex-wrap items-center gap-2">
                   {job.email && job.public_token && (
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={handleEmailButtonClick}
                       disabled={isSendingEmail}
-                      className="w-full lg:w-auto"
+                      className="h-8 px-3"
                     >
-                      <Mail className="mr-2 h-4 w-4" />
-                      <span className="hidden sm:inline">
-                        {isSendingEmail ? "Sending..." : "Send Email"}
-                      </span>
-                      <span className="sm:hidden">
+                      <Mail className="h-3.5 w-3.5 mr-1.5" />
+                      <span className="text-xs">
                         {isSendingEmail ? "Sending..." : "Email"}
                       </span>
                     </Button>
                   )}
                   {whatsAppLinks.length > 0 && (
-                    <div className="flex flex-col gap-2 w-full lg:w-auto">
+                    <>
                       {whatsAppLinks.length === 1 ? (
                         <Button
                           variant="outline"
                           size="sm"
                           asChild
-                          className="w-full lg:w-auto"
+                          className="h-8 px-3"
                         >
                           <a
                             href={whatsAppLinks[0].link || "#"}
                             target="_blank"
                             rel="noopener noreferrer"
                           >
-                            <MessageCircle className="mr-2 h-4 w-4" />
-                            <span className="hidden sm:inline">
-                              Send WhatsApp Message
-                            </span>
-                            <span className="sm:hidden">WhatsApp</span>
+                            <WhatsAppIcon className="h-3.5 w-3.5 mr-1.5" />
+                            <span className="text-xs">WhatsApp</span>
                           </a>
                         </Button>
                       ) : (
-                        <div className="flex flex-col gap-1.5">
-                          {whatsAppLinks.map((phoneData, index) => (
-                            <Button
-                              key={index}
-                              variant="outline"
-                              size="sm"
-                              asChild
-                              className="w-full lg:w-auto text-xs"
+                        whatsAppLinks.map((phoneData, index) => (
+                          <Button
+                            key={index}
+                            variant="outline"
+                            size="sm"
+                            asChild
+                            className="h-8 px-3"
+                          >
+                            <a
+                              href={phoneData.link || "#"}
+                              target="_blank"
+                              rel="noopener noreferrer"
                             >
-                              <a
-                                href={phoneData.link || "#"}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                              >
-                                <MessageCircle className="mr-2 h-3.5 w-3.5" />
-                                <span className="hidden sm:inline">
-                                  WhatsApp ({phoneData.label})
-                                </span>
-                                <span className="sm:hidden">
-                                  {phoneData.label}
-                                </span>
-                              </a>
-                            </Button>
-                          ))}
-                        </div>
+                              <WhatsAppIcon className="h-3.5 w-3.5 mr-1.5" />
+                              <span className="text-xs">{phoneData.label}</span>
+                            </a>
+                          </Button>
+                        ))
                       )}
-                    </div>
+                    </>
                   )}
                   <ShareJobButton job={job} jobNumber={job.job_number} />
                   {hasPhotos && (
@@ -275,12 +282,10 @@ export function JobDetail({
                       variant="outline"
                       size="sm"
                       onClick={() => setPhotosDialogOpen(true)}
-                      className="w-full lg:w-auto"
+                      className="h-8 px-3"
                     >
-                      {/* eslint-disable-next-line jsx-a11y/alt-text */}
-                      <Image className="mr-2 h-4 w-4" />
-                      <span className="hidden sm:inline">View All Media</span>
-                      <span className="sm:hidden">Media</span>
+                      <Image className="h-3.5 w-3.5 mr-1.5" aria-hidden="true" />
+                      <span className="text-xs">Media</span>
                     </Button>
                   )}
                   {hasInvoice && (
@@ -288,11 +293,10 @@ export function JobDetail({
                       variant="outline"
                       size="sm"
                       onClick={() => setInvoiceDialogOpen(true)}
-                      className="w-full lg:w-auto"
+                      className="h-8 px-3"
                     >
-                      <FileText className="mr-2 h-4 w-4" />
-                      <span className="hidden sm:inline">View Invoice</span>
-                      <span className="sm:hidden">Invoice</span>
+                      <FileText className="h-3.5 w-3.5 mr-1.5" />
+                      <span className="text-xs">Invoice</span>
                     </Button>
                   )}
                 </div>
@@ -366,25 +370,30 @@ export function JobDetail({
 
   // Otherwise, show the rest of the content
   return (
-    <div className="space-y-3 sm:space-y-4 w-full">
+    <div className="space-y-3 w-full">
       {/* Job Details and Status Timeline - Side by Side on Desktop */}
-      <div className="grid gap-3 sm:gap-4 lg:grid-cols-2">
+      <div className="grid gap-3 lg:grid-cols-2">
         {/* Job Details Card */}
         <Card>
-          <CardHeader className="pb-3 sm:pb-6">
-            <CardTitle className="text-base sm:text-lg">Job Details</CardTitle>
+          <CardHeader className="pb-2 pt-4 px-4">
+            <div className="flex items-center gap-2">
+              <div className="rounded-full bg-muted p-1.5">
+                <ClipboardList className="h-3.5 w-3.5 text-muted-foreground" />
+              </div>
+              <CardTitle className="text-sm font-semibold">Job Details</CardTitle>
+            </div>
           </CardHeader>
           <Separator />
-          <CardContent className="pt-4 sm:pt-6">
-            <div className="grid gap-4 sm:gap-6">
-              <div className="flex items-start gap-3 sm:gap-4">
+          <CardContent className="pt-3 px-4 pb-4">
+            <div className="grid gap-3">
+              <div className="flex items-start gap-3">
                 <div className="shrink-0 mt-0.5">
-                  <div className="rounded-full bg-muted p-1.5 sm:p-2">
-                    <Hash className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
+                  <div className="rounded-full bg-muted p-1.5">
+                    <Hash className="h-3.5 w-3.5 text-muted-foreground" />
                   </div>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-muted-foreground mb-1 sm:mb-1.5">
+                  <p className="text-xs font-medium text-muted-foreground mb-1">
                     Job Number
                   </p>
                   <p className="text-sm font-medium wrap-break-word">
@@ -393,14 +402,14 @@ export function JobDetail({
                 </div>
               </div>
               {job.booking_date && (
-                <div className="flex items-start gap-3 sm:gap-4">
+                <div className="flex items-start gap-3">
                   <div className="shrink-0 mt-0.5">
-                    <div className="rounded-full bg-muted p-1.5 sm:p-2">
-                      <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
+                    <div className="rounded-full bg-muted p-1.5">
+                      <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-muted-foreground mb-1 sm:mb-1.5">
+                    <p className="text-xs font-medium text-muted-foreground mb-1">
                       Booking Date
                     </p>
                     <p className="text-sm font-medium">
@@ -413,14 +422,14 @@ export function JobDetail({
                 </div>
               )}
               {job.delivery_date && (
-                <div className="flex items-start gap-3 sm:gap-4">
+                <div className="flex items-start gap-3">
                   <div className="shrink-0 mt-0.5">
-                    <div className="rounded-full bg-muted p-1.5 sm:p-2">
-                      <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
+                    <div className="rounded-full bg-muted p-1.5">
+                      <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-muted-foreground mb-1 sm:mb-1.5">
+                    <p className="text-xs font-medium text-muted-foreground mb-1">
                       Delivery Date
                     </p>
                     <p className="text-sm font-medium">
@@ -434,14 +443,14 @@ export function JobDetail({
               )}
               {(job as Job & { customer_dc_number?: string })
                 .customer_dc_number && (
-                <div className="flex items-start gap-3 sm:gap-4">
+                <div className="flex items-start gap-3">
                   <div className="shrink-0 mt-0.5">
-                    <div className="rounded-full bg-muted p-1.5 sm:p-2">
-                      <ClipboardList className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
+                    <div className="rounded-full bg-muted p-1.5">
+                      <ClipboardList className="h-3.5 w-3.5 text-muted-foreground" />
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-muted-foreground mb-1 sm:mb-1.5">
+                    <p className="text-xs font-medium text-muted-foreground mb-1">
                       Customer DC Number
                     </p>
                     <p className="text-sm font-medium wrap-break-word">
@@ -451,7 +460,7 @@ export function JobDetail({
                       }
                       {(job as Job & { customer_dc_date?: string })
                         .customer_dc_date && (
-                        <span className="text-xs font-normal text-muted-foreground ml-1.5 sm:ml-2 block sm:inline">
+                        <span className="text-xs font-normal text-muted-foreground ml-1.5 block sm:inline">
                           •{" "}
                           {(() => {
                             const dcDate = (job as Job & { customer_dc_date?: string })
@@ -467,14 +476,14 @@ export function JobDetail({
                 </div>
               )}
               {job.material_type && (
-                <div className="flex items-start gap-3 sm:gap-4">
+                <div className="flex items-start gap-3">
                   <div className="shrink-0 mt-0.5">
-                    <div className="rounded-full bg-muted p-1.5 sm:p-2">
-                      <Package className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
+                    <div className="rounded-full bg-muted p-1.5">
+                      <Package className="h-3.5 w-3.5 text-muted-foreground" />
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-muted-foreground mb-1 sm:mb-1.5">
+                    <p className="text-xs font-medium text-muted-foreground mb-1">
                       Material Type
                     </p>
                     <p className="text-sm wrap-break-word">
@@ -485,14 +494,14 @@ export function JobDetail({
               )}
               {(job as Job & { contact_person_name?: string })
                 .contact_person_name && (
-                <div className="flex items-start gap-3 sm:gap-4">
+                <div className="flex items-start gap-3">
                   <div className="shrink-0 mt-0.5">
-                    <div className="rounded-full bg-muted p-1.5 sm:p-2">
-                      <UserCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
+                    <div className="rounded-full bg-muted p-1.5">
+                      <UserCircle className="h-3.5 w-3.5 text-muted-foreground" />
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-muted-foreground mb-1 sm:mb-1.5">
+                    <p className="text-xs font-medium text-muted-foreground mb-1">
                       Contact Person
                     </p>
                     <p className="text-sm font-medium wrap-break-word">
@@ -502,7 +511,7 @@ export function JobDetail({
                       }
                       {(job as Job & { contact_person_designation?: string })
                         .contact_person_designation && (
-                        <span className="text-xs font-normal text-muted-foreground ml-1.5 sm:ml-2 block sm:inline">
+                        <span className="text-xs font-normal text-muted-foreground ml-1.5 block sm:inline">
                           (
                           {
                             (
@@ -520,16 +529,16 @@ export function JobDetail({
               )}
               {/* Phone Numbers Section */}
               {(job.contact_number ||
-                (job as Job & { phone_numbers?: string[] }).phone_numbers
-                  ?.length) && (
-                <div className="flex items-start gap-3 sm:gap-4">
+                ((job as Job & { phone_numbers?: string[] }).phone_numbers
+                  ?.length ?? 0) > 0) && (
+                <div className="flex items-start gap-3">
                   <div className="shrink-0 mt-0.5">
-                    <div className="rounded-full bg-muted p-1.5 sm:p-2">
-                      <Phone className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
+                    <div className="rounded-full bg-muted p-1.5">
+                      <Phone className="h-3.5 w-3.5 text-muted-foreground" />
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-muted-foreground mb-1 sm:mb-1.5">
+                    <p className="text-xs font-medium text-muted-foreground mb-1">
                       Phone Numbers
                     </p>
                     <div className="space-y-1.5">
@@ -559,15 +568,15 @@ export function JobDetail({
               )}
               {/* Email Addresses Section */}
               {(job.email ||
-                (job as Job & { emails?: string[] }).emails?.length) && (
-                <div className="flex items-start gap-3 sm:gap-4">
+                ((job as Job & { emails?: string[] }).emails?.length ?? 0) > 0) && (
+                <div className="flex items-start gap-3">
                   <div className="shrink-0 mt-0.5">
-                    <div className="rounded-full bg-muted p-1.5 sm:p-2">
-                      <Mail className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
+                    <div className="rounded-full bg-muted p-1.5">
+                      <Mail className="h-3.5 w-3.5 text-muted-foreground" />
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-muted-foreground mb-1 sm:mb-1.5">
+                    <p className="text-xs font-medium text-muted-foreground mb-1">
                       Email Addresses
                     </p>
                     <div className="space-y-1.5">
@@ -596,14 +605,14 @@ export function JobDetail({
                 </div>
               )}
               {job.special_requirements && (
-                <div className="flex items-start gap-3 sm:gap-4">
+                <div className="flex items-start gap-3">
                   <div className="shrink-0 mt-0.5">
-                    <div className="rounded-full bg-muted p-1.5 sm:p-2">
-                      <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
+                    <div className="rounded-full bg-muted p-1.5">
+                      <FileText className="h-3.5 w-3.5 text-muted-foreground" />
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-muted-foreground mb-1 sm:mb-1.5">
+                    <p className="text-xs font-medium text-muted-foreground mb-1">
                       Special Requirements
                     </p>
                     <p className="text-sm whitespace-pre-wrap wrap-break-word">
@@ -613,14 +622,14 @@ export function JobDetail({
                 </div>
               )}
               {(job as Job & { notes?: string }).notes && (
-                <div className="flex items-start gap-3 sm:gap-4">
+                <div className="flex items-start gap-3">
                   <div className="shrink-0 mt-0.5">
-                    <div className="rounded-full bg-muted p-1.5 sm:p-2">
-                      <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
+                    <div className="rounded-full bg-muted p-1.5">
+                      <FileText className="h-3.5 w-3.5 text-muted-foreground" />
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-muted-foreground mb-1 sm:mb-1.5">
+                    <p className="text-xs font-medium text-muted-foreground mb-1">
                       Internal Notes
                     </p>
                     <p className="text-sm whitespace-pre-wrap wrap-break-word">
@@ -636,13 +645,18 @@ export function JobDetail({
         {/* Status Timeline Card */}
         {job.status && (
           <Card>
-            <CardHeader className="pb-3 sm:pb-6">
-              <CardTitle className="text-base sm:text-lg">
-                Status Timeline
-              </CardTitle>
+            <CardHeader className="pb-2 pt-4 px-4">
+              <div className="flex items-center gap-2">
+                <div className="rounded-full bg-muted p-1.5">
+                  <Package className="h-3.5 w-3.5 text-muted-foreground" />
+                </div>
+                <CardTitle className="text-sm font-semibold">
+                  Status Timeline
+                </CardTitle>
+              </div>
             </CardHeader>
             <Separator />
-            <CardContent className="pt-4 sm:pt-6">
+            <CardContent className="pt-3 px-4 pb-4">
               <StatusTimeline
                 currentStatus={job.status as JobStatus}
                 statusHistory={statusHistory}
@@ -653,39 +667,48 @@ export function JobDetail({
       </div>
 
       {/* Photos & Videos - Show before and after in tabs */}
-      {(job.before_photos?.length || job.after_photos?.length) && (
-        <Card>
-          <CardHeader className="pb-3 sm:pb-6">
-            <CardTitle className="text-base sm:text-lg">Photos & Videos</CardTitle>
-          </CardHeader>
-          <Separator />
-          <CardContent className="pt-4 sm:pt-6">
+      {((job.before_photos?.length ?? 0) > 0 || (job.after_photos?.length ?? 0) > 0) && (
+        <Collapsible defaultOpen={false} className="rounded-lg border bg-card group">
+          <CollapsibleTrigger className="w-full p-4 md:p-6 hover:bg-muted/50 active:bg-muted transition-colors touch-manipulation">
+            <div className="flex items-center justify-between w-full">
+              <div className="flex items-center gap-2">
+                <div className="rounded-full bg-muted p-1.5">
+                  <Image className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+                </div>
+                <CardTitle className="text-sm font-semibold">Photos & Videos</CardTitle>
+              </div>
+              <ChevronDown className="h-5 w-5 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180 shrink-0" />
+            </div>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="px-4 md:px-6 pb-4 md:pb-6">
             {(job.before_photos?.length || 0) > 0 &&
             (job.after_photos?.length || 0) > 0 ? (
               <Tabs defaultValue="before" className="w-full">
                 <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="before" className="text-xs sm:text-sm">
-                    <span className="hidden sm:inline">Before</span>
-                    <span className="sm:hidden">Before</span>
-                    <span className="ml-1">
-                      ({job.before_photos?.length || 0})
-                    </span>
+                  <TabsTrigger value="before" className="text-xs">
+                    <span>Before</span>
+                    {job.before_photos && job.before_photos.length > 0 && (
+                      <span className="ml-1">
+                        ({job.before_photos.length})
+                      </span>
+                    )}
                   </TabsTrigger>
-                  <TabsTrigger value="after" className="text-xs sm:text-sm">
-                    <span className="hidden sm:inline">After</span>
-                    <span className="sm:hidden">After</span>
-                    <span className="ml-1">
-                      ({job.after_photos?.length || 0})
-                    </span>
+                  <TabsTrigger value="after" className="text-xs">
+                    <span>After</span>
+                    {job.after_photos && job.after_photos.length > 0 && (
+                      <span className="ml-1">
+                        ({job.after_photos.length})
+                      </span>
+                    )}
                   </TabsTrigger>
                 </TabsList>
-                <TabsContent value="before" className="mt-3 sm:mt-4">
+                <TabsContent value="before" className="mt-3">
                   <JobPhotoViewer
                     photos={job.before_photos || []}
                     title="Before"
                   />
                 </TabsContent>
-                <TabsContent value="after" className="mt-3 sm:mt-4">
+                <TabsContent value="after" className="mt-3">
                   <JobPhotoViewer
                     photos={job.after_photos || []}
                     title="After"
@@ -700,8 +723,8 @@ export function JobDetail({
             ) : job.after_photos && job.after_photos.length > 0 ? (
               <JobPhotoViewer photos={job.after_photos} title="After" />
             ) : null}
-          </CardContent>
-        </Card>
+          </CollapsibleContent>
+        </Collapsible>
       )}
 
       {/* Dialogs */}
@@ -730,19 +753,26 @@ export function JobDetail({
       {job.invoice_file_path &&
         job.status !== JOB_STATUS.IN_PROGRESS &&
         job.status !== JOB_STATUS.COMPLETED && (
-          <Card>
-            <CardHeader className="pb-3 sm:pb-6">
-              <CardTitle className="text-base sm:text-lg">Invoice</CardTitle>
-            </CardHeader>
-            <Separator />
-            <CardContent className="pt-4 sm:pt-6">
+          <Collapsible defaultOpen={false} className="rounded-lg border bg-card group">
+            <CollapsibleTrigger className="w-full p-4 md:p-6 hover:bg-muted/50 active:bg-muted transition-colors touch-manipulation">
+              <div className="flex items-center justify-between w-full">
+                <div className="flex items-center gap-2">
+                  <div className="rounded-full bg-muted p-1.5">
+                    <FileText className="h-3.5 w-3.5 text-muted-foreground" />
+                  </div>
+                  <CardTitle className="text-sm font-semibold">Invoice</CardTitle>
+                </div>
+                <ChevronDown className="h-5 w-5 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180 shrink-0" />
+              </div>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="px-4 md:px-6 pb-4 md:pb-6">
               <PDFViewer
                 url={job.invoice_file_path}
                 title="Invoice PDF"
                 showDownload={true}
               />
-            </CardContent>
-          </Card>
+            </CollapsibleContent>
+          </Collapsible>
         )}
     </div>
   );
@@ -764,8 +794,13 @@ export function JobStatusCard({
 }) {
   return (
     <Card className="w-full lg:max-w-md">
-      <CardHeader>
-        <CardTitle>Status & Actions</CardTitle>
+      <CardHeader className="pb-1 pt-4 px-4">
+        <div className="flex items-center gap-2">
+          <div className="rounded-full bg-muted p-1.5">
+            <Package className="h-3.5 w-3.5 text-muted-foreground" />
+          </div>
+          <CardTitle className="text-sm font-semibold">Status & Actions</CardTitle>
+        </div>
       </CardHeader>
       <Separator />
       <CardContent className="pt-6 space-y-4">
@@ -813,7 +848,7 @@ export function JobStatusCard({
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                <MessageCircle className="mr-2 h-4 w-4" />
+                <WhatsAppIcon className="mr-2 h-4 w-4" />
                 WhatsApp ({phoneData.label})
               </a>
             </Button>

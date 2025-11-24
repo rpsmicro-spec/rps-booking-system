@@ -19,6 +19,8 @@ const routeLabels: Record<string, string> = {
   edit: "Edit",
   users: "Users",
   invite: "Invite User",
+  customers: "Customers",
+  activity: "Activity",
 };
 
 // Check if a string looks like a UUID
@@ -33,6 +35,12 @@ export function Breadcrumbs() {
   const [jobNumbers, setJobNumbers] = React.useState<Record<string, string>>(
     {}
   );
+  const [isMounted, setIsMounted] = React.useState(false);
+
+  // Ensure client-side only rendering to avoid hydration mismatch
+  React.useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Split pathname into segments
   const segments = pathname.split("/").filter(Boolean);
@@ -106,18 +114,31 @@ export function Breadcrumbs() {
     return null;
   }
 
+  // Don't render until mounted to avoid hydration mismatch
+  if (!isMounted) {
+    return (
+      <Breadcrumb className="min-w-0">
+        <BreadcrumbList className="min-w-0">
+          <BreadcrumbItem className="min-w-0 max-w-full">
+            <BreadcrumbPage className="truncate">...</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+    );
+  }
+
   return (
-    <Breadcrumb>
-      <BreadcrumbList>
+    <Breadcrumb className="min-w-0">
+      <BreadcrumbList className="min-w-0">
         {breadcrumbItems.map((item, index) => (
           <React.Fragment key={item.href}>
             {index > 0 && <BreadcrumbSeparator />}
-            <BreadcrumbItem>
+            <BreadcrumbItem className="min-w-0 max-w-full">
               {item.isLast ? (
-                <BreadcrumbPage>{item.label}</BreadcrumbPage>
+                <BreadcrumbPage className="truncate">{item.label}</BreadcrumbPage>
               ) : (
                 <BreadcrumbLink asChild>
-                  <Link href={item.href}>{item.label}</Link>
+                  <Link href={item.href} className="truncate block hover:text-foreground transition-colors">{item.label}</Link>
                 </BreadcrumbLink>
               )}
             </BreadcrumbItem>

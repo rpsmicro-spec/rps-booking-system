@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { STATUS_LABELS, JOB_STATUS } from '@/lib/constants'
+import { STATUS_LABELS, getStatusBadgeColor } from '@/lib/constants'
 import type { Job, JobStatus } from '@/types/types'
 import { Calendar, Phone, Mail } from 'lucide-react'
 import { format } from 'date-fns'
@@ -14,26 +14,9 @@ interface JobCardProps {
 }
 
 export function JobCard({ job }: JobCardProps) {
-  const getStatusColor = (status: string | null) => {
-    if (!status) return 'bg-gray-500'
-    switch (status) {
-      case JOB_STATUS.COMPLETED:
-        return 'bg-green-500'
-      case JOB_STATUS.IN_PROGRESS:
-        return 'bg-blue-500'
-      case JOB_STATUS.DELIVERED:
-        return 'bg-purple-500'
-      default:
-        return 'bg-gray-500'
-    }
-  }
-
   const getStatusLabel = (status: string | null): string => {
     if (!status) return 'Unknown'
-    if (Object.values(JOB_STATUS).includes(status as JobStatus)) {
-      return STATUS_LABELS[status as JobStatus]
-    }
-    return 'Unknown'
+    return STATUS_LABELS[status as JobStatus] || 'Unknown'
   }
 
   return (
@@ -48,7 +31,7 @@ export function JobCard({ job }: JobCardProps) {
               </p>
             </div>
             <Badge
-              className={`${getStatusColor(job.status)} text-white flex-shrink-0 ml-2`}
+              className={`${getStatusBadgeColor(job.status as JobStatus)} text-white flex-shrink-0 ml-2`}
             >
               {getStatusLabel(job.status)}
             </Badge>

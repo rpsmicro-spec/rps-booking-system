@@ -54,8 +54,12 @@ export async function syncOfflineJobs(): Promise<void> {
       );
 
       // Prepare job data with uploaded photo URLs
+      // Remove job_number so the API generates a fresh one on sync
+      // This ensures offline jobs get the next available job number when syncing
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { job_number, ...jobDataWithoutNumber } = job.data;
       const jobData = {
-        ...job.data,
+        ...jobDataWithoutNumber,
         before_photos: beforePhotos,
         after_photos: afterPhotos,
       };

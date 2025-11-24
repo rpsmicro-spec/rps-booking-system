@@ -20,7 +20,7 @@ export function CustomersList() {
   const [search, setSearch] = useState('')
   const [offset, setOffset] = useState(0)
   const [total, setTotal] = useState(0)
-  const limit = isMobile ? 20 : 50
+  const limit = 10
 
   const handleClear = () => {
     setSearch('')
@@ -30,13 +30,6 @@ export function CustomersList() {
   const handleSearchChange = (newSearch: string) => {
     setSearch(newSearch)
     setOffset(0)
-  }
-
-  const totalPages = Math.ceil(total / limit)
-  const currentPage = Math.floor(offset / limit) + 1
-
-  const handlePageChange = (page: number) => {
-    setOffset((page - 1) * limit)
   }
 
   return (
@@ -75,69 +68,81 @@ export function CustomersList() {
                   onClick={(e) => {
                     e.preventDefault()
                     if (offset > 0) {
-                      handlePageChange(currentPage - 1)
+                      setOffset(Math.max(0, offset - limit))
                     }
                   }}
-                  className={offset === 0 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                  className={
+                    offset === 0
+                      ? "pointer-events-none opacity-50"
+                      : "cursor-pointer"
+                  }
                 />
               </PaginationItem>
 
               {(() => {
-                const pages: (number | 'ellipsis')[] = []
-                const maxPagesToShow = isMobile ? 3 : 7
+                const totalPages = Math.ceil(total / limit);
+                const currentPage = Math.floor(offset / limit) + 1;
+                const pages: (number | "ellipsis")[] = [];
+
+                // On mobile, show fewer page numbers
+                const maxPagesToShow = isMobile ? 3 : 7;
 
                 if (totalPages <= maxPagesToShow) {
                   // Show all pages
                   for (let i = 1; i <= totalPages; i++) {
-                    pages.push(i)
+                    pages.push(i);
                   }
                 } else {
                   // Show first page
-                  pages.push(1)
+                  pages.push(1);
 
                   if (currentPage <= 4) {
                     // Show pages 2-5, then ellipsis, then last
-                    const endPage = maxPagesToShow === 3 ? 3 : 5
+                    const endPage = maxPagesToShow === 3 ? 3 : 5;
                     for (let i = 2; i <= endPage; i++) {
-                      pages.push(i)
+                      pages.push(i);
                     }
                     if (maxPagesToShow > 3) {
-                      pages.push('ellipsis')
-                      pages.push(totalPages)
+                      pages.push("ellipsis");
+                      pages.push(totalPages);
                     }
                   } else if (currentPage >= totalPages - 3) {
                     // Show first, ellipsis, then last pages
                     if (maxPagesToShow > 3) {
-                      pages.push('ellipsis')
+                      pages.push("ellipsis");
                     }
                     const startPage = maxPagesToShow === 3 
                       ? Math.max(2, totalPages - 1)
-                      : totalPages - 4
+                      : totalPages - 4;
                     for (let i = startPage; i <= totalPages; i++) {
-                      pages.push(i)
+                      pages.push(i);
                     }
                   } else {
                     // Show first, ellipsis, current-1, current, current+1, ellipsis, last
                     if (maxPagesToShow > 3) {
-                      pages.push('ellipsis')
+                      pages.push("ellipsis");
                     }
-                    for (let i = currentPage - 1; i <= currentPage + 1; i++) {
-                      pages.push(i)
+                    for (
+                      let i = currentPage - 1;
+                      i <= currentPage + 1;
+                      i++
+                    ) {
+                      pages.push(i);
                     }
                     if (maxPagesToShow > 3) {
-                      pages.push('ellipsis')
-                      pages.push(totalPages)
+                      pages.push("ellipsis");
+                      pages.push(totalPages);
                     }
                   }
                 }
 
                 return pages.map((page, index) => {
-                  if (page === 'ellipsis') {
+                  if (page === "ellipsis") {
                     return (
                       <PaginationItem key={`ellipsis-${index}`}>
                         <PaginationEllipsis />
                       </PaginationItem>
-                    )
+                    );
                   }
 
                   return (
@@ -145,8 +150,8 @@ export function CustomersList() {
                       <PaginationLink
                         href="#"
                         onClick={(e) => {
-                          e.preventDefault()
-                          handlePageChange(page)
+                          e.preventDefault();
+                          setOffset((page - 1) * limit);
                         }}
                         isActive={currentPage === page}
                         className="cursor-pointer text-xs sm:text-sm min-w-[2rem] sm:min-w-[2.5rem]"
@@ -154,20 +159,24 @@ export function CustomersList() {
                         {page}
                       </PaginationLink>
                     </PaginationItem>
-                  )
-                })
+                  );
+                });
               })()}
 
               <PaginationItem>
                 <PaginationNext
                   href="#"
                   onClick={(e) => {
-                    e.preventDefault()
+                    e.preventDefault();
                     if (offset + limit < total) {
-                      handlePageChange(currentPage + 1)
+                      setOffset(offset + limit);
                     }
                   }}
-                  className={offset + limit >= total ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                  className={
+                    offset + limit >= total
+                      ? "pointer-events-none opacity-50"
+                      : "cursor-pointer"
+                  }
                 />
               </PaginationItem>
             </PaginationContent>

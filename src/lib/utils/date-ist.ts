@@ -127,3 +127,71 @@ export function formatDateToIst(date: Date | null | undefined): string {
   return `${year}-${month}-${day}`;
 }
 
+/**
+ * Get current IST date/time for filtering
+ * Returns Date object representing current time in IST
+ */
+export function getCurrentIstDateTime(): Date {
+  const now = new Date();
+  return new Date(now.getTime() + IST_OFFSET_MS);
+}
+
+/**
+ * Get start of today in IST as UTC ISO string (for database queries)
+ * Returns ISO string for IST midnight (00:00:00 IST)
+ */
+export function getIstTodayStart(): string {
+  const now = new Date();
+  const istNow = new Date(now.getTime() + IST_OFFSET_MS);
+  
+  const year = istNow.getUTCFullYear();
+  const month = istNow.getUTCMonth();
+  const day = istNow.getUTCDate();
+  
+  // Create UTC date representing IST midnight
+  const istMidnight = new Date(Date.UTC(year, month, day, 0, 0, 0, 0));
+  // Convert IST midnight to UTC (subtract offset)
+  const utcEquivalent = new Date(istMidnight.getTime() - IST_OFFSET_MS);
+  
+  return utcEquivalent.toISOString();
+}
+
+/**
+ * Get end of today in IST as UTC ISO string (for database queries)
+ * Returns ISO string for IST 23:59:59.999
+ */
+export function getIstTodayEnd(): string {
+  const now = new Date();
+  const istNow = new Date(now.getTime() + IST_OFFSET_MS);
+  
+  const year = istNow.getUTCFullYear();
+  const month = istNow.getUTCMonth();
+  const day = istNow.getUTCDate();
+  
+  // Create UTC date representing IST 23:59:59.999
+  const istEndOfDay = new Date(Date.UTC(year, month, day, 23, 59, 59, 999));
+  // Convert IST end of day to UTC (subtract offset)
+  const utcEquivalent = new Date(istEndOfDay.getTime() - IST_OFFSET_MS);
+  
+  return utcEquivalent.toISOString();
+}
+
+/**
+ * Get start of week (Monday) in IST as UTC ISO string
+ */
+export function getIstWeekStart(): string {
+  const now = new Date();
+  const istNow = new Date(now.getTime() + IST_OFFSET_MS);
+  
+  const dayOfWeek = istNow.getUTCDay(); // 0 = Sunday, 1 = Monday, etc.
+  const diff = istNow.getUTCDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1); // Adjust to Monday
+  
+  const monday = new Date(istNow);
+  monday.setUTCDate(diff);
+  monday.setUTCHours(0, 0, 0, 0);
+  
+  // Convert IST Monday midnight to UTC
+  const utcEquivalent = new Date(monday.getTime() - IST_OFFSET_MS);
+  return utcEquivalent.toISOString();
+}
+

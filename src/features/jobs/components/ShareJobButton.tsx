@@ -20,7 +20,23 @@ export function ShareJobButton({ job, jobNumber }: ShareJobButtonProps) {
   const getJobUrl = () => {
     if (typeof window === "undefined") return "";
     try {
-      return getJobViewUrl(job, window.location.origin);
+      // Prefer production URL from env, fallback to current origin
+      // On mobile, window.location.origin might be localhost or IP, so we prefer env var
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
+
+      const url = getJobViewUrl(job, baseUrl);
+
+      // Validate URL is properly formatted
+      try {
+        new URL(url); // This will throw if URL is invalid
+        return url;
+      } catch {
+        // If URL parsing fails, try to fix it
+        if (!url.startsWith("http://") && !url.startsWith("https://")) {
+          return `https://${url}`;
+        }
+        return url;
+      }
     } catch (error) {
       console.error("Failed to generate public job URL:", error);
       toast.error("Job does not have a public link");
@@ -32,25 +48,36 @@ export function ShareJobButton({ job, jobNumber }: ShareJobButtonProps) {
     const url = getJobUrl();
     if (!url) return; // Exit if URL generation failed
 
+    // Validate URL is absolute
+    let absoluteUrl = url;
+    try {
+      new URL(url);
+    } catch {
+      // If invalid, try to make it absolute
+      absoluteUrl = url.startsWith("http") ? url : `https://${url}`;
+    }
+
     if (isMobile && navigator.share) {
       // Use native share sheet on mobile
       try {
+        // Only include description in text, URL should be in url field only
+        // This prevents the share sheet from combining text and URL when copying
         await navigator.share({
           title: `Job ${jobNumber}`,
           text: `View job details for ${jobNumber}`,
-          url: url,
+          url: absoluteUrl, // URL should be in url field only
         });
       } catch (error) {
         // User cancelled or error occurred
         if ((error as Error).name !== "AbortError") {
           console.error("Error sharing:", error);
           // Fallback to copy on mobile if share fails
-          await copyToClipboard(url);
+          await copyToClipboard(absoluteUrl);
         }
       }
     } else {
       // Copy to clipboard on desktop
-      await copyToClipboard(url);
+      await copyToClipboard(absoluteUrl);
     }
   };
 
@@ -71,19 +98,17 @@ export function ShareJobButton({ job, jobNumber }: ShareJobButtonProps) {
       variant="outline"
       size="sm"
       onClick={handleShare}
-      className="w-full lg:w-auto"
+      className="h-8 px-3"
     >
       {copied ? (
         <>
-          <Check className="mr-2 h-4 w-4" />
-          <span className="hidden sm:inline">Copied</span>
-          <span className="sm:hidden">Copied</span>
+          <Check className="h-3.5 w-3.5 mr-1.5" />
+          <span className="text-xs">Copied</span>
         </>
       ) : (
         <>
-          <Share2 className="mr-2 h-4 w-4" />
-          <span className="hidden sm:inline">Share Link</span>
-          <span className="sm:hidden">Share</span>
+          <Share2 className="h-3.5 w-3.5 mr-1.5" />
+          <span className="text-xs">Share</span>
         </>
       )}
     </Button>

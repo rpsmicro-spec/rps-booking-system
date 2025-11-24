@@ -146,12 +146,15 @@ const DropzoneContent = ({ className }: { className?: string }) => {
     loading,
     successes,
     errors,
-    maxFileSize,
     maxFiles,
     isSuccess,
   } = useDropzoneContext();
 
   const exceedMaxFiles = files.length > maxFiles;
+  const hasFilesToReview = files.length > 0 && !isSuccess;
+  const hasFilesToUpload = files.some(
+    (file) => !successes.includes(file.name) && file.errors.length === 0
+  );
 
   const handleRemoveFile = useCallback(
     (fileName: string) => {
@@ -176,113 +179,148 @@ const DropzoneContent = ({ className }: { className?: string }) => {
     );
   }
 
+  if (!hasFilesToReview) {
+    return null;
+  }
+
   return (
     <div className={cn("flex flex-col", className)}>
-      {files.map((file, idx) => {
-        const fileError = errors.find((e) => e.name === file.name);
-        const isSuccessfullyUploaded = !!successes.find((e) => e === file.name);
+      {/* Review Section Header */}
+      <div className="mb-3 mt-4">
+        <p className="text-sm font-medium">Review files before uploading</p>
+        <p className="text-xs text-muted-foreground">
+          {files.length} file{files.length > 1 ? "s" : ""} selected
+        </p>
+      </div>
 
-        return (
-          <div
-            key={`${file.name}-${idx}`}
-            className="flex items-center gap-x-4 border-b py-2 first:mt-4 last:mb-4 "
-          >
-            {file.type.startsWith("image/") ? (
-              <div className="h-10 w-10 rounded border overflow-hidden shrink-0 bg-muted flex items-center justify-center">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={file.preview}
-                  alt={file.name}
-                  className="object-cover"
-                />
-              </div>
-            ) : (
-              <div className="h-10 w-10 rounded border bg-muted flex items-center justify-center">
-                <File size={18} />
-              </div>
-            )}
+      {/* Files Grid - Review Mode */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mb-4">
+        {files.map((file, idx) => {
+          const fileError = errors.find((e) => e.name === file.name);
+          const isSuccessfullyUploaded = !!successes.find(
+            (e) => e === file.name
+          );
+          const isUploading = loading && !isSuccessfullyUploaded;
 
-            <div className="shrink grow flex flex-col items-start truncate gap-1 w-full min-w-0">
-              <p title={file.name} className="text-sm truncate max-w-full">
-                {file.name}
-              </p>
-              {file.errors.length > 0 ? (
-                <>
-                  <p className="text-xs text-destructive">
-                    {file.errors
-                      .map((e) =>
-                        e.message.startsWith("File is larger than")
-                          ? `File is larger than ${formatBytes(
-                              maxFileSize,
-                              2
-                            )} (Size: ${formatBytes(file.size, 2)})`
-                          : e.message
-                      )
-                      .join(", ")}
-                  </p>
-                  <Progress value={0} className="h-1.5" />
-                </>
-              ) : loading && !isSuccessfullyUploaded ? (
-                <>
-                  <div className="flex items-center gap-2 w-full">
-                    <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
-                    <p className="text-xs text-muted-foreground">
-                      Uploading...
-                    </p>
-                  </div>
-                  <Progress value={undefined} className="h-1.5" />
-                </>
-              ) : !!fileError ? (
-                <>
-                  <p className="text-xs text-destructive">
-                    Failed to upload: {fileError.message}
-                  </p>
-                  <Progress value={0} className="h-1.5" />
-                </>
-              ) : isSuccessfullyUploaded ? (
-                <>
-                  <div className="flex items-center gap-2 w-full">
-                    <CheckCircle className="h-3 w-3 text-primary" />
-                    <p className="text-xs text-primary">
-                      Successfully uploaded
-                    </p>
-                  </div>
-                  <Progress value={100} className="h-1.5" />
-                </>
+          return (
+            <div
+              key={`${file.name}-${idx}`}
+              className="relative group border rounded-lg overflow-hidden bg-card"
+            >
+              {/* Preview Thumbnail */}
+              {file.type.startsWith("image/") ? (
+                <div className="aspect-square relative bg-muted">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={file.preview}
+                    alt={file.name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
               ) : (
-                <>
+                <div className="aspect-square bg-muted flex items-center justify-center">
+                  <File size={24} className="text-muted-foreground" />
+                </div>
+              )}
+
+              {/* Overlay States */}
+              {isUploading && (
+                <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                  <Loader2 className="h-6 w-6 animate-spin text-white" />
+                </div>
+              )}
+
+              {isSuccessfullyUploaded && (
+                <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                  <CheckCircle className="h-6 w-6 text-primary" />
+                </div>
+              )}
+
+              {fileError && (
+                <div className="absolute inset-0 bg-destructive/20 flex items-center justify-center">
+                  <X className="h-6 w-6 text-destructive" />
+                </div>
+              )}
+
+              {/* File Info */}
+              <div className="p-2 space-y-1">
+                <p title={file.name} className="text-xs font-medium truncate">
+                  {file.name}
+                </p>
+                <div className="flex items-center justify-between">
                   <p className="text-xs text-muted-foreground">
-                    {formatBytes(file.size, 2)} • Ready to upload
+                    {formatBytes(file.size, 2)}
                   </p>
-                  <Progress value={0} className="h-1.5" />
-                </>
+                  {fileError && (
+                    <p className="text-xs text-destructive truncate max-w-[100px]">
+                      Error
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Remove Button */}
+              {!isUploading && !isSuccessfullyUploaded && (
+                <button
+                  type="button"
+                  onClick={() => handleRemoveFile(file.name)}
+                  className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity z-10 hover:bg-red-600 active:bg-red-700 touch-manipulation"
+                  aria-label="Remove file"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              )}
+
+              {/* Error Message */}
+              {fileError && (
+                <div className="p-2 bg-destructive/10 border-t">
+                  <p className="text-xs text-destructive line-clamp-2">
+                    {fileError.message}
+                  </p>
+                </div>
+              )}
+
+              {/* Upload Progress */}
+              {isUploading && (
+                <div className="absolute bottom-0 left-0 right-0 p-2 bg-black/50">
+                  <Progress value={undefined} className="h-1" />
+                </div>
               )}
             </div>
+          );
+        })}
+      </div>
 
-            {!loading && !isSuccessfullyUploaded && (
-              <Button
-                size="icon"
-                variant="link"
-                className="shrink-0 justify-self-end text-muted-foreground hover:text-foreground"
-                onClick={() => handleRemoveFile(file.name)}
-              >
-                <X />
-              </Button>
-            )}
-          </div>
-        );
-      })}
+      {/* Error Messages */}
       {exceedMaxFiles && (
-        <p className="text-sm text-left mt-2 text-destructive">
-          You may upload only up to {maxFiles} files, please remove{" "}
-          {files.length - maxFiles} file
-          {files.length - maxFiles > 1 ? "s" : ""}.
-        </p>
+        <div className="mb-3 p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+          <p className="text-sm text-destructive">
+            You may upload only up to {maxFiles} files, please remove{" "}
+            {files.length - maxFiles} file
+            {files.length - maxFiles > 1 ? "s" : ""}.
+          </p>
+        </div>
       )}
-      {files.length > 0 && !exceedMaxFiles && (
-        <div className="mt-2">
+
+      {files.some((file) => file.errors.length > 0) && !exceedMaxFiles && (
+        <div className="mb-3 p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+          <p className="text-sm text-destructive">
+            Some files have errors. Please remove them before uploading.
+          </p>
+        </div>
+      )}
+
+      {/* Upload Button */}
+      {hasFilesToUpload && !exceedMaxFiles && (
+        <div className="flex justify-end gap-2">
           <Button
             variant="outline"
+            onClick={() => setFiles([])}
+            disabled={loading}
+          >
+            Cancel
+          </Button>
+          <Button
             onClick={onUpload}
             disabled={files.some((file) => file.errors.length !== 0) || loading}
           >
@@ -292,7 +330,10 @@ const DropzoneContent = ({ className }: { className?: string }) => {
                 Uploading...
               </>
             ) : (
-              <>Upload files</>
+              <>
+                <Upload className="mr-2 h-4 w-4" />
+                Upload {files.length} file{files.length > 1 ? "s" : ""}
+              </>
             )}
           </Button>
         </div>
@@ -302,7 +343,14 @@ const DropzoneContent = ({ className }: { className?: string }) => {
 };
 
 const DropzoneEmptyState = ({ className }: { className?: string }) => {
-  const { maxFiles, maxFileSize, inputRef, isSuccess, enableCamera, handleCameraClick } = useDropzoneContext();
+  const {
+    maxFiles,
+    maxFileSize,
+    inputRef,
+    isSuccess,
+    enableCamera,
+    handleCameraClick,
+  } = useDropzoneContext();
 
   if (isSuccess) {
     return null;
@@ -312,8 +360,8 @@ const DropzoneEmptyState = ({ className }: { className?: string }) => {
     <div className={cn("flex flex-col items-center gap-y-2", className)}>
       <Upload size={20} className="text-muted-foreground" />
       <p className="text-sm">
-        Upload{!!maxFiles && maxFiles > 1 ? ` ${maxFiles}` : ""} file
-        {!maxFiles || maxFiles > 1 ? "s" : ""}
+        Upload{maxFiles > 1 ? ` ${maxFiles}` : ""} file
+        {maxFiles !== 1 ? "s" : ""}
       </p>
       <div className="flex flex-col items-center gap-y-1">
         <div className="flex items-center gap-2 flex-wrap justify-center">

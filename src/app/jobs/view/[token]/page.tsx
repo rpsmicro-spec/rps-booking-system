@@ -44,9 +44,9 @@ export default async function PublicJobViewPage({
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
-      <header className="border-b bg-card">
+      <header className="border-b bg-card shrink-0">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center gap-3">
             <Image
@@ -67,7 +67,7 @@ export default async function PublicJobViewPage({
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-8 flex-1">
         <PublicJobView
           job={jobWithSignedInvoice}
           statusHistory={statusHistory || []}
@@ -75,7 +75,7 @@ export default async function PublicJobViewPage({
       </main>
 
       {/* Footer */}
-      <footer className="border-t bg-card mt-12">
+      <footer className="border-t bg-card mt-auto shrink-0">
         <div className="container mx-auto px-4 py-6">
           <p className="text-center text-sm text-muted-foreground">
             &copy; {new Date().getFullYear()} RPS Micro Electronics. All rights

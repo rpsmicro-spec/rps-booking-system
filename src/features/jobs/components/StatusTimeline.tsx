@@ -4,6 +4,7 @@ import { format } from 'date-fns'
 import type { JobStatus } from '@/types/types'
 import { CheckCircle2, Circle } from 'lucide-react'
 import { STATUS_LABELS, JOB_STATUS } from '@/lib/constants'
+import { utcToIstDateObject } from '@/lib/utils/date-ist'
 
 export interface StatusHistory {
   id: string
@@ -94,7 +95,10 @@ export function StatusTimeline({
                 </div>
                 {historyEntry && historyEntry.changed_at && (
                   <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1">
-                    {format(new Date(historyEntry.changed_at), 'MMM dd, yyyy HH:mm')}
+                    {(() => {
+                      const istDate = utcToIstDateObject(historyEntry.changed_at);
+                      return istDate ? format(istDate, 'MMM dd, yyyy HH:mm') : '';
+                    })()}
                   </p>
                 )}
                 {!historyEntry && isCompleted && (

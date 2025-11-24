@@ -5,7 +5,7 @@ import Image from "next/image";
 import { PhotoProvider, PhotoView } from "react-photo-view";
 import { Play, Film } from "lucide-react";
 import { getThumbnailUrl, getFullSizeImageUrl } from "../utils/image-url";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface JobPhotoViewerProps {
   photos: string[];
@@ -143,6 +143,11 @@ export function JobPhotoViewer({
           onOpenChange={() => setSelectedVideoIndex(null)}
         >
           <DialogContent className="max-w-6xl max-h-[90vh] p-0 bg-black/95">
+            <DialogHeader className="sr-only">
+              <DialogTitle>
+                {title ? `${title} - Video ${selectedVideoIndex + 1}` : `Video ${selectedVideoIndex + 1}`}
+              </DialogTitle>
+            </DialogHeader>
             <div className="relative w-full h-full flex items-center justify-center p-4">
               <video
                 controls

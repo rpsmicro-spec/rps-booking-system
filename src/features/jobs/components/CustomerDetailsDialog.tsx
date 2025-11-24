@@ -1,14 +1,14 @@
 "use client";
 
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import { Info, User, Phone, Mail, MapPin, UserCircle } from "lucide-react";
 import { formatAddress } from "@/lib/utils/address";
 import type { Job } from "@/types/types";
@@ -18,50 +18,64 @@ interface CustomerDetailsDialogProps {
 }
 
 export function CustomerDetailsDialog({ job }: CustomerDetailsDialogProps) {
+  const contactPersonName = (job as Job & { contact_person_name?: string }).contact_person_name;
+  const contactPersonDesignation = (job as Job & { contact_person_designation?: string }).contact_person_designation;
+  const phoneNumbers = (job as Job & { phone_numbers?: string[] }).phone_numbers || [];
+  const emails = (job as Job & { emails?: string[] }).emails || [];
+  const hasAdditionalPhones = phoneNumbers.filter((p) => p && p.trim() !== "").length > 0;
+  const hasAdditionalEmails = emails.filter((e) => e && e.trim() !== "").length > 0;
+  const address = formatAddress(job);
+
   return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          <Info className="mr-2 h-4 w-4" />
-          View Customer Details
+    <Drawer>
+      <DrawerTrigger asChild>
+        <Button variant="outline" size="sm" className="text-xs sm:text-sm">
+          <Info className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
+          <span className="hidden sm:inline">View Customer Details</span>
+          <span className="sm:hidden">Customer</span>
         </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto w-[calc(100vw-2rem)] sm:w-full">
-        <DialogHeader>
-          <DialogTitle>Customer Information</DialogTitle>
-          <DialogDescription>
-            Complete customer details for this job
-          </DialogDescription>
-        </DialogHeader>
-        <div className="mt-6 space-y-6">
+      </DrawerTrigger>
+      <DrawerContent className="max-h-[90vh] sm:!max-w-4xl">
+        <div className="mx-auto w-full max-w-4xl">
+          <DrawerHeader className="pt-4 pb-2 px-4">
+            <DrawerTitle className="text-sm font-semibold">Customer Information</DrawerTitle>
+          </DrawerHeader>
+          <Separator />
+          <div className="px-4 pb-4 pt-3 space-y-3 overflow-y-auto max-h-[calc(90vh-180px)]">
           {/* Company Name */}
-          <div className="flex items-start gap-4">
-            <div className="flex-shrink-0 mt-0.5">
-              <div className="rounded-full bg-muted p-2">
-                <User className="h-4 w-4 text-muted-foreground" />
+          <div className="flex items-start gap-3 sm:gap-4">
+            <div className="shrink-0 mt-0.5">
+              <div className="rounded-full bg-muted p-1.5 sm:p-2">
+                <User className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
               </div>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-muted-foreground mb-1.5">Company Name</p>
-              <p className="text-base font-semibold">{job.customer_name}</p>
+              <p className="text-xs font-medium text-muted-foreground mb-1 sm:mb-1.5">
+                Company Name
+              </p>
+              <p className="text-sm sm:text-base font-semibold wrap-break-word">
+                {job.customer_name}
+              </p>
             </div>
           </div>
 
           {/* Contact Person Name */}
-          {(job as Job & { contact_person_name?: string }).contact_person_name && (
-            <div className="flex items-start gap-4">
-              <div className="flex-shrink-0 mt-0.5">
-                <div className="rounded-full bg-muted p-2">
-                  <UserCircle className="h-4 w-4 text-muted-foreground" />
+          {contactPersonName && (
+            <div className="flex items-start gap-3 sm:gap-4">
+              <div className="shrink-0 mt-0.5">
+                <div className="rounded-full bg-muted p-1.5 sm:p-2">
+                  <UserCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
                 </div>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium text-muted-foreground mb-1.5">Contact Person</p>
-                <p className="text-base font-semibold break-words">
-                  {(job as Job & { contact_person_name?: string }).contact_person_name}
-                  {(job as Job & { contact_person_designation?: string }).contact_person_designation && (
-                    <span className="text-sm font-normal text-muted-foreground ml-2">
-                      ({(job as Job & { contact_person_designation?: string }).contact_person_designation})
+                <p className="text-xs font-medium text-muted-foreground mb-1 sm:mb-1.5">
+                  Contact Person
+                </p>
+                <p className="text-sm sm:text-base font-semibold wrap-break-word">
+                  {contactPersonName}
+                  {contactPersonDesignation && (
+                    <span className="text-xs sm:text-sm font-normal text-muted-foreground ml-1.5 sm:ml-2 block sm:inline">
+                      ({contactPersonDesignation})
                     </span>
                   )}
                 </p>
@@ -69,86 +83,108 @@ export function CustomerDetailsDialog({ job }: CustomerDetailsDialogProps) {
             </div>
           )}
 
-          {/* Contact Information */}
-          {(job.contact_number || job.email) && (
-            <div className="space-y-4">
-              {job.contact_number && (
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 mt-0.5">
-                    <div className="rounded-full bg-muted p-2">
-                      <Phone className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-muted-foreground mb-1.5">Phone Numbers</p>
-                    <div className="space-y-1.5">
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm font-medium">{job.contact_number}</p>
-                        <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded">
-                          Primary
-                        </span>
-                      </div>
-                      {(job as Job & { phone_numbers?: string[] }).phone_numbers
-                        ?.filter((phone) => phone.trim() !== "")
-                        .map((phone, index) => (
-                          <p key={index} className="text-sm text-muted-foreground">
-                            {phone}
-                          </p>
-                        ))}
-                    </div>
-                  </div>
+          {/* Phone Numbers Section */}
+          {(job.contact_number || hasAdditionalPhones) && (
+            <div className="flex items-start gap-3 sm:gap-4">
+              <div className="shrink-0 mt-0.5">
+                <div className="rounded-full bg-muted p-1.5 sm:p-2">
+                  <Phone className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
                 </div>
-              )}
-              {job.email && (
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 mt-0.5">
-                    <div className="rounded-full bg-muted p-2">
-                      <Mail className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium text-muted-foreground mb-1 sm:mb-1.5">
+                  Phone Numbers
+                </p>
+                <div className="space-y-1.5">
+                  {job.contact_number && (
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-sm font-medium wrap-break-word">
+                        {job.contact_number}
+                      </p>
+                      <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded shrink-0">
+                        Primary
+                      </span>
                     </div>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-muted-foreground mb-1.5">Email Addresses</p>
-                    <div className="space-y-1.5">
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm font-medium break-all">{job.email}</p>
-                        <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded shrink-0">
-                          Primary
-                        </span>
-                      </div>
-                      {(job as Job & { emails?: string[] }).emails
-                        ?.filter((email) => email.trim() !== "")
-                        .map((email, index) => (
-                          <p key={index} className="text-sm text-muted-foreground break-all">
-                            {email}
-                          </p>
-                        ))}
-                    </div>
-                  </div>
+                  )}
+                  {phoneNumbers
+                    .filter((phone) => phone && phone.trim() !== "")
+                    .map((phone, index) => (
+                      <p
+                        key={index}
+                        className="text-sm text-muted-foreground wrap-break-word"
+                      >
+                        {phone}
+                      </p>
+                    ))}
                 </div>
-              )}
+              </div>
+            </div>
+          )}
+
+          {/* Email Addresses Section */}
+          {(job.email || hasAdditionalEmails) && (
+            <div className="flex items-start gap-3 sm:gap-4">
+              <div className="shrink-0 mt-0.5">
+                <div className="rounded-full bg-muted p-1.5 sm:p-2">
+                  <Mail className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
+                </div>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium text-muted-foreground mb-1 sm:mb-1.5">
+                  Email Addresses
+                </p>
+                <div className="space-y-1.5">
+                  {job.email && (
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-sm font-medium wrap-break-word break-all">
+                        {job.email}
+                      </p>
+                      <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded shrink-0">
+                        Primary
+                      </span>
+                    </div>
+                  )}
+                  {emails
+                    .filter((email) => email && email.trim() !== "")
+                    .map((email, index) => (
+                      <p
+                        key={index}
+                        className="text-sm text-muted-foreground wrap-break-word break-all"
+                      >
+                        {email}
+                      </p>
+                    ))}
+                </div>
+              </div>
             </div>
           )}
 
           {/* Address */}
-          {(() => {
-            const address = formatAddress(job);
-            return address ? (
-              <div className="flex items-start gap-4">
-                <div className="flex-shrink-0 mt-0.5">
-                  <div className="rounded-full bg-muted p-2">
-                    <MapPin className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-muted-foreground mb-1.5">Address</p>
-                  <p className="text-sm whitespace-pre-line leading-relaxed">{address}</p>
+          {address && (
+            <div className="flex items-start gap-3 sm:gap-4">
+              <div className="shrink-0 mt-0.5">
+                <div className="rounded-full bg-muted p-1.5 sm:p-2">
+                  <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
                 </div>
               </div>
-            ) : null;
-          })()}
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium text-muted-foreground mb-1 sm:mb-1.5">
+                  Address
+                </p>
+                <div className="text-sm leading-relaxed wrap-break-word">
+                  {address.split('\n').map((line, index) => (
+                    <p key={index} className={index > 0 ? 'mt-1' : ''}>
+                      {line}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+          </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </DrawerContent>
+    </Drawer>
   );
 }
 

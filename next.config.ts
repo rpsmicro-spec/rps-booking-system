@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import withPWA from "@ducanh2912/next-pwa";
 
 const nextConfig: NextConfig = {
   images: {
@@ -34,4 +35,12 @@ const nextConfig: NextConfig = {
   turbopack: {},
 };
 
-export default nextConfig;
+const pwaConfig = withPWA({
+  dest: "public",
+  register: true,
+  disable: process.env.NODE_ENV === "development", // Disable in dev to avoid caching issues
+  // Exclude API routes from caching
+  publicExcludes: ["!noprecache/**/*"],
+});
+
+export default pwaConfig(nextConfig);

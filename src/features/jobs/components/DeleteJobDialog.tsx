@@ -52,7 +52,7 @@ export function DeleteJobDialog({ jobId, jobNumber }: DeleteJobDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="destructive">
+        <Button variant="destructive" size="sm" className="text-xs sm:text-sm">
           Delete Job
         </Button>
       </DialogTrigger>

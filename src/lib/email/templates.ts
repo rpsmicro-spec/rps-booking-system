@@ -1,5 +1,7 @@
 import type { Job } from '@/types/types'
 import { STATUS_LABELS, COMPANY_INFO } from '@/lib/constants'
+import { utcToIstDateObject } from '@/lib/utils/date-ist'
+import { format } from 'date-fns'
 
 export interface EmailTemplateData {
   job: Job
@@ -163,7 +165,11 @@ export function generateCompletionEmail(data: EmailTemplateData): string {
                                 <td>
                                   <p style="font-size:16px;line-height:24px;color:rgb(31,41,55);margin:5px 0"><strong>Job Number:</strong> ${job.job_number}</p>
                                   ${job.material_type ? `<p style="font-size:16px;line-height:24px;color:rgb(31,41,55);margin:5px 0"><strong>Material Type:</strong> ${job.material_type}</p>` : ''}
-                                  ${job.delivery_date ? `<p style="font-size:16px;line-height:24px;color:rgb(31,41,55);margin:5px 0"><strong>Delivery Date:</strong> ${new Date(job.delivery_date).toLocaleDateString("en-IN")}</p>` : ''}
+                                  ${job.delivery_date ? (() => {
+                                    const istDate = utcToIstDateObject(job.delivery_date);
+                                    const formattedDate = istDate ? format(istDate, 'MMM dd, yyyy') : '';
+                                    return `<p style="font-size:16px;line-height:24px;color:rgb(31,41,55);margin:5px 0"><strong>Delivery Date:</strong> ${formattedDate}</p>`;
+                                  })() : ''}
                                 </td>
                               </tr>
                             </tbody>
@@ -282,7 +288,10 @@ Great news! Your job has been completed successfully.
 
 Job Number: ${job.job_number}
 ${job.material_type ? `Material Type: ${job.material_type}` : ''}
-${job.delivery_date ? `Delivery Date: ${new Date(job.delivery_date).toLocaleDateString("en-IN")}` : ''}
+${job.delivery_date ? (() => {
+  const istDate = utcToIstDateObject(job.delivery_date);
+  return istDate ? `Delivery Date: ${format(istDate, 'MMM dd, yyyy')}` : '';
+})() : ''}
 
 View your completed job: ${viewLink}
 ${job.invoice_file_path ? `Invoice is available on the job details page: ${viewLink}` : ''}

@@ -1,16 +1,20 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { InvoiceUpload } from "./InvoiceUpload";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Upload, Loader2, FileText, X } from "lucide-react";
+import { Upload, Loader2, FileText, X, Receipt, ChevronDown } from "lucide-react";
 import { uploadFile } from "../utils/upload";
 import type { Job } from "@/types/types";
 import { JOB_STATUS } from "@/lib/constants";
 import { PDFViewer } from "@/components/pdf/PDFViewer";
 import { Separator } from "@/components/ui/separator";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 interface InvoiceUploadDetailProps {
   job: Job; // Original job with path
@@ -151,11 +155,34 @@ export function InvoiceUploadDetail({ job, displayJob, onUpdate }: InvoiceUpload
   const hasPendingUpload = pendingFile !== null;
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Invoice</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <Collapsible
+      defaultOpen={hasPendingUpload || !hasExistingInvoice}
+      className="rounded-lg border bg-card group"
+    >
+      <CollapsibleTrigger className="w-full p-4 md:p-6 hover:bg-muted/50 active:bg-muted transition-colors touch-manipulation">
+        <div className="flex items-center justify-between w-full">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <div className="rounded-full bg-muted p-1.5 shrink-0">
+              <Receipt
+                className="h-3.5 w-3.5 text-muted-foreground"
+                aria-label="Invoice icon"
+              />
+            </div>
+            <div className="text-left min-w-0 flex-1">
+              <h3 className="text-base md:text-lg font-semibold text-foreground">
+                Invoice
+              </h3>
+              <p className="text-xs md:text-sm text-muted-foreground">
+                {hasExistingInvoice && !hasPendingUpload
+                  ? "View and manage invoice"
+                  : "Upload invoice file"}
+              </p>
+            </div>
+          </div>
+          <ChevronDown className="h-5 w-5 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180 shrink-0 ml-2" />
+        </div>
+      </CollapsibleTrigger>
+      <CollapsibleContent className="px-4 md:px-6 pb-4 md:pb-6 space-y-4">
         {hasExistingInvoice && !hasPendingUpload && (
           <>
             {displayJob?.invoice_file_path && (
@@ -254,8 +281,8 @@ export function InvoiceUploadDetail({ job, displayJob, onUpdate }: InvoiceUpload
             </div>
           </>
         )}
-      </CardContent>
-    </Card>
+      </CollapsibleContent>
+    </Collapsible>
   );
 }
 

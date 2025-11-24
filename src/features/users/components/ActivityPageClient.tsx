@@ -23,6 +23,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { ActivityFilters } from './ActivityFilters'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { format } from 'date-fns'
+import { utcToIstDateObject } from '@/lib/utils/date-ist'
 
 interface AuditLog {
   id: string
@@ -215,7 +216,10 @@ export function ActivityPageClient() {
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
                         <Clock className="h-3.5 w-3.5 flex-shrink-0" />
                         <span className="truncate">
-                          {format(new Date(log.created_at), 'MMM dd, yyyy HH:mm')}
+                          {(() => {
+                            const istDate = utcToIstDateObject(log.created_at);
+                            return istDate ? format(istDate, 'MMM dd, yyyy HH:mm') : '';
+                          })()}
                         </span>
                       </div>
 
@@ -287,7 +291,10 @@ export function ActivityPageClient() {
                   {filteredLogs.map((log) => (
                     <TableRow key={log.id}>
                       <TableCell>
-                        {format(new Date(log.created_at), 'MMM dd, yyyy HH:mm')}
+                        {(() => {
+                          const istDate = utcToIstDateObject(log.created_at);
+                          return istDate ? format(istDate, 'MMM dd, yyyy HH:mm') : '';
+                        })()}
                       </TableCell>
                       <TableCell>
                         {log.user ? (

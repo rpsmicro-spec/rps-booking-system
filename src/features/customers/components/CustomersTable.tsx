@@ -12,7 +12,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
-import { Mail, Phone, MapPin, Briefcase, Users, Eye } from 'lucide-react'
+import { Mail, Phone, MapPin, Briefcase, Users, Eye, Calendar } from 'lucide-react'
 import {
   Empty,
   EmptyDescription,
@@ -154,60 +154,89 @@ export function CustomersTable({ search, limit = 50, offset = 0, onTotalChange }
             return (
               <Card
                 key={`${customer.customer_name}-${index}`}
-                className="cursor-pointer hover:shadow-md transition-shadow"
+                className="cursor-pointer transition-all active:scale-[0.98] active:opacity-90 active:shadow-md"
                 onClick={() => handleRowClick(customer.customer_name)}
               >
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between gap-2 overflow-hidden">
-                    <div className="flex-1 min-w-0 overflow-hidden">
-                      <h3 className="font-semibold text-base truncate">{customer.customer_name}</h3>
-                      <div className="mt-0.5 space-y-0.5">
+                <CardHeader className="pb-3 space-y-2">
+                  {/* Header: Customer Name + Job Count */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-bold text-base text-foreground truncate">
+                        {customer.customer_name}
+                      </h3>
                         {customer.contact_person_name && (
-                          <p className="text-xs text-muted-foreground truncate">
+                        <p className="text-xs text-muted-foreground truncate mt-0.5">
                             {customer.contact_person_name}
                             {customer.contact_person_designation && (
-                              <span className="ml-1">({customer.contact_person_designation})</span>
+                            <span className="ml-1 text-muted-foreground/70">
+                              • {customer.contact_person_designation}
+                            </span>
                             )}
                           </p>
                         )}
-                        {(customer.address_city || customer.address_state) && (
-                          <p className="text-xs text-muted-foreground truncate">
-                            {customer.address_city}
-                            {customer.address_city && customer.address_state && ', '}
-                            {customer.address_state}
-                          </p>
-                        )}
-                      </div>
                     </div>
-                    <div className="flex items-center gap-1.5 flex-shrink-0 ml-2">
-                      <Briefcase className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                      <span className="font-medium text-sm whitespace-nowrap">{customer.job_count}</span>
+                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted/50 shrink-0 ml-2">
+                      <Briefcase className="h-3 w-3 text-muted-foreground shrink-0" />
+                      <span className="font-medium text-xs">{customer.job_count}</span>
+                      <span className="text-muted-foreground text-xs">
+                        {customer.job_count === 1 ? 'job' : 'jobs'}
+                      </span>
                     </div>
                   </div>
+
+                  {/* Quick Info Row */}
+                  <div className="space-y-1.5 pt-1">
+                    {formatAddress(customer) !== '-' && (
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <MapPin className="h-3 w-3 shrink-0" />
+                        <span className="wrap-break-word">{formatAddress(customer)}</span>
+                      </div>
+                    )}
+                    {customer.created_at && (
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <Calendar className="h-3 w-3 shrink-0" />
+                        <span>Created {format(new Date(customer.created_at), 'MMM dd, yyyy')}</span>
+                      </div>
+                    )}
+                  </div>
                 </CardHeader>
-                <CardContent className="space-y-2 pt-0">
+
+                <CardContent className="space-y-3 pt-0">
+                  {/* Contact Info */}
+                  {(customer.contact_number || customer.email) && (
+                    <div className="flex items-center gap-3 flex-wrap pt-3 border-t">
+                      {customer.contact_number && (
+                        <a
+                          href={`tel:${customer.contact_number}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="flex items-center gap-1.5 text-xs text-primary hover:underline"
+                        >
+                          <Phone className="h-3.5 w-3.5 shrink-0" />
+                          <span className="truncate">{customer.contact_number}</span>
+                        </a>
+                      )}
                   {customer.email && (
-                    <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
-                      <Mail className="h-3.5 w-3.5 flex-shrink-0" />
+                        <a
+                          href={`mailto:${customer.email}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="flex items-center gap-1.5 text-xs text-primary hover:underline"
+                        >
+                          <Mail className="h-3.5 w-3.5 shrink-0" />
                       <span className="truncate">{customer.email}</span>
+                        </a>
+                  )}
                     </div>
                   )}
-                  {customer.contact_number && (
-                    <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
-                      <Phone className="h-3.5 w-3.5 flex-shrink-0" />
-                      <span className="truncate">{customer.contact_number}</span>
-                    </div>
-                  )}
-                  {customer.created_at && (
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground pt-1">
-                      <span>Created {format(new Date(customer.created_at), 'MMM dd, yyyy')}</span>
-                    </div>
-                  )}
-                  <div className="pt-2 border-t" onClick={(e) => e.stopPropagation()}>
+
+                  {/* Actions */}
+                  <div
+                    className="flex items-center gap-2 pt-2 border-t"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <Button
                       variant="outline"
                       size="sm"
-                      className="w-full text-xs"
+                      className="flex-1 text-xs h-8"
                       asChild
                       onClick={(e) => e.stopPropagation()}
                     >

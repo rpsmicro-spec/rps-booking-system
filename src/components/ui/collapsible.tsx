@@ -1,11 +1,19 @@
 "use client"
 
 import * as CollapsiblePrimitive from "@radix-ui/react-collapsible"
+import { cn } from "@/lib/utils"
 
 function Collapsible({
+  className,
   ...props
 }: React.ComponentProps<typeof CollapsiblePrimitive.Root>) {
-  return <CollapsiblePrimitive.Root data-slot="collapsible" {...props} />
+  return (
+    <CollapsiblePrimitive.Root
+      data-slot="collapsible"
+      className={cn("group", className)}
+      {...props}
+    />
+  )
 }
 
 function CollapsibleTrigger({

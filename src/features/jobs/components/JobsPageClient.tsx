@@ -15,11 +15,11 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import Link from "next/link";
-import { Plus, Settings } from "lucide-react";
+import { Settings, Briefcase } from "lucide-react";
 import { JobNumberSettingsDialog } from "./JobNumberSettingsDialog";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { RecentJobs } from "./RecentJobs";
+import { PullToSearch } from "@/components/pwa/PullToSearch";
 
 export function JobsPageClient() {
   const isMobile = useIsMobile();
@@ -30,7 +30,7 @@ export function JobsPageClient() {
   const [dateTo, setDateTo] = useState<string | null>(null);
   const [offset, setOffset] = useState(0);
   const [total, setTotal] = useState(0);
-  const limit = isMobile ? 20 : 50;
+  const limit = 10;
 
   const handleStatusChange = (newStatus: string | null) => {
     setStatus(newStatus);
@@ -55,11 +55,14 @@ export function JobsPageClient() {
   };
 
   return (
-    <>
-      <div className="flex-1 space-y-6 p-4 md:p-8 pt-6">
-        <div className="flex flex-col gap-2">
+    <PullToSearch>
+      <div className="flex-1 space-y-6">
+        <div className="flex flex-col gap-2 pt-2 md:pt-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-3xl font-bold tracking-tight">Jobs</h2>
+            <div className="flex items-center gap-3">
+              <Briefcase className="h-6 w-6 md:h-7 md:w-7 text-muted-foreground" />
+              <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Jobs</h2>
+            </div>
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
@@ -70,18 +73,6 @@ export function JobsPageClient() {
               >
                 <Settings className="h-4 w-4" />
               </Button>
-              <Link href="/jobs/new">
-                <Button className="hidden sm:flex">
-                  <Plus className="mr-2 h-4 w-4" />
-                  New Job
-                </Button>
-              </Link>
-              <Link href="/jobs/new">
-                <Button size="icon" className="sm:hidden">
-                  <Plus className="h-4 w-4" />
-                  <span className="sr-only">New Job</span>
-                </Button>
-              </Link>
             </div>
           </div>
           <p className="text-sm text-muted-foreground">
@@ -270,6 +261,6 @@ export function JobsPageClient() {
         open={settingsDialogOpen}
         onOpenChange={setSettingsDialogOpen}
       />
-    </>
+    </PullToSearch>
   );
 }

@@ -213,10 +213,12 @@ export function MediaUpload({
   if (disabled) {
     return (
       <div className="space-y-2">
-        <FieldLabel>
-          {label}
-          {required && <span className="text-red-500 ml-1">*</span>}
-        </FieldLabel>
+        {label && (
+          <FieldLabel>
+            {label}
+            {required && <span className="text-red-500 ml-1">*</span>}
+          </FieldLabel>
+        )}
         {media.length > 0 && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {media.map((item, index) => {
@@ -282,19 +284,12 @@ export function MediaUpload({
   return (
     <>
       <div className="space-y-2">
-        <FieldLabel>
-          {label}
-          {required && <span className="text-red-500 ml-1">*</span>}
-          <span className="text-xs text-muted-foreground ml-2">
-            (
-            {allowImages && allowVideos
-              ? "Images & Videos"
-              : allowImages
-                ? "Images only"
-                : "Videos only"}
-            )
-          </span>
-        </FieldLabel>
+        {label && (
+          <FieldLabel>
+            {label}
+            {required && <span className="text-red-500 ml-1">*</span>}
+          </FieldLabel>
+        )}
 
         {/* Media Preview Grid */}
         {media.length > 0 && (
@@ -382,7 +377,7 @@ export function MediaUpload({
                       e.stopPropagation();
                       handleRemoveMedia(index);
                     }}
-                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity z-10 hover:bg-red-600 active:bg-red-700 touch-manipulation"
                     aria-label="Remove media"
                   >
                     <X className="h-4 w-4" />

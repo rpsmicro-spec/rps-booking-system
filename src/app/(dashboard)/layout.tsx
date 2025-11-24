@@ -4,6 +4,7 @@ import { TopBar } from "@/components/layout/TopBar";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { FloatingActionButton } from "@/components/layout/FloatingActionButton";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
+import { GlobalSearchProvider } from "@/components/search/GlobalSearchProvider";
 import { ReactNode } from "react";
 import {
   SidebarProvider,
@@ -20,6 +21,7 @@ export default async function DashboardLayout({
   await requireAuth(); // Redirects to login if not authenticated
 
   return (
+    <GlobalSearchProvider>
     <SidebarProvider>
       {/* Hide sidebar on mobile since we have bottom nav */}
       <div className="hidden md:block">
@@ -27,9 +29,9 @@ export default async function DashboardLayout({
       </div>
       <SidebarInset>
         <header className="flex h-14 md:h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear border-b bg-background">
-          <div className="flex items-center gap-2 px-3 md:px-4 flex-1 min-w-0">
+          <div className="flex items-center gap-2 px-3 md:px-4 flex-1 min-w-0 overflow-hidden">
             {/* Hide sidebar trigger on mobile */}
-            <div className="hidden md:flex items-center gap-2">
+            <div className="hidden md:flex items-center gap-2 shrink-0">
               <SidebarTrigger className="-ml-1" />
               <Separator
                 orientation="vertical"
@@ -37,7 +39,7 @@ export default async function DashboardLayout({
               />
             </div>
             {/* Show breadcrumbs on desktop, hide on mobile */}
-            <div className="hidden md:block">
+            <div className="hidden md:block min-w-0 flex-1 overflow-hidden">
               <Breadcrumbs />
             </div>
             {/* TopBar handles both mobile and desktop views internally */}
@@ -47,7 +49,7 @@ export default async function DashboardLayout({
           </div>
           <div className="flex-1 hidden md:block" />
           {/* Show TopBar on desktop (user menu only) */}
-          <div className="hidden md:flex items-center px-4">
+          <div className="hidden md:flex items-center px-4 shrink-0">
             <TopBar />
           </div>
         </header>
@@ -58,5 +60,6 @@ export default async function DashboardLayout({
         <FloatingActionButton href="/jobs/new" />
       </SidebarInset>
     </SidebarProvider>
+    </GlobalSearchProvider>
   );
 }
