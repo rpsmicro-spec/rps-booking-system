@@ -67,9 +67,9 @@ export default async function JobDetailPage({
     : Hash;
 
   return (
-    <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
+    <div className="flex-1 space-y-4">
       {/* Top Row: Job Number with Dynamic Icon, Status Badge, and Edit/Delete Buttons */}
-      <div className="flex flex-col gap-3 sm:gap-4">
+      <div className="flex flex-col gap-3 sm:gap-4 pt-2 md:pt-4">
         {/* Job Number and Badge Row */}
         <div className="flex items-center justify-between gap-3 sm:gap-4">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">

@@ -7,8 +7,10 @@ export default async function NewJobPage() {
   await requireAuth();
 
   return (
-    <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-      <NewJobPageClient />
+    <div className="flex-1 space-y-4">
+      <div className="pt-2 md:pt-4">
+        <NewJobPageClient />
+      </div>
       <Card>
         <CardHeader>
           <CardTitle>Job Information</CardTitle>

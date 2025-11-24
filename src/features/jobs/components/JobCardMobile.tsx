@@ -128,8 +128,8 @@ export function JobCardMobile({
       onClick={handleCardClick}
     >
       <CardHeader className="pb-3 space-y-2">
-        {/* Header: Job Number + Status */}
-        <div className="flex items-start justify-between gap-2">
+        {/* Header: Job Number */}
+        <div className="flex items-start gap-2">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
               <h3 className="font-bold text-base text-foreground truncate">
@@ -153,13 +153,6 @@ export function JobCardMobile({
               </p>
             )}
           </div>
-          <Badge
-            className={`${getStatusBadgeCustomClasses(job.status as JobStatus)} shrink-0 ml-2 text-[10px] px-2 py-0.5 font-semibold`}
-          >
-            {job.status
-              ? STATUS_LABELS[job.status as JobStatus] || "Unknown"
-              : "Unknown"}
-          </Badge>
         </div>
 
         {/* Quick Info Row */}
@@ -211,8 +204,15 @@ export function JobCardMobile({
           </div>
         )}
 
-        {/* Media Indicators Row */}
+        {/* Status Badge and Media Indicators Row */}
         <div className="flex items-center gap-3 flex-wrap">
+          {job.status && (
+            <Badge
+              className={`${getStatusBadgeCustomClasses(job.status as JobStatus)} shrink-0 text-[10px] px-2 py-0.5 font-semibold`}
+            >
+              {STATUS_LABELS[job.status as JobStatus] || "Unknown"}
+            </Badge>
+          )}
           {photoCount > 0 && (
             <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted/50 text-xs">
               <Camera className="h-3 w-3" />

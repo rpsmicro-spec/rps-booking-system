@@ -35,11 +35,10 @@ export function ServiceWorkerRegistration() {
         }
       });
 
-      // Handle service worker controller changes
-      let refreshing = false;
-      navigator.serviceWorker.addEventListener("controllerchange", () => {
-        if (!refreshing) {
-          refreshing = true;
+      // Listen for messages from service worker
+      navigator.serviceWorker.addEventListener("message", (event) => {
+        if (event.data && event.data.type === "SKIP_WAITING") {
+          // Service worker is ready, reload
           window.location.reload();
         }
       });
