@@ -284,6 +284,7 @@ export function JobDetail({
                       onClick={() => setPhotosDialogOpen(true)}
                       className="h-8 px-3"
                     >
+                      {/* eslint-disable-next-line jsx-a11y/alt-text */}
                       <Image className="h-3.5 w-3.5 mr-1.5" aria-hidden="true" />
                       <span className="text-xs">Media</span>
                     </Button>
@@ -673,6 +674,7 @@ export function JobDetail({
             <div className="flex items-center justify-between w-full">
               <div className="flex items-center gap-2">
                 <div className="rounded-full bg-muted p-1.5">
+                  {/* eslint-disable-next-line jsx-a11y/alt-text */}
                   <Image className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
                 </div>
                 <CardTitle className="text-sm font-semibold">Photos & Videos</CardTitle>
