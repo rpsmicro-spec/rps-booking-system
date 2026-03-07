@@ -1,8 +1,9 @@
 /**
  * Storage cleanup utilities
+ * Uses admin client so cron can run without a user session (bypasses RLS).
  */
 
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { deleteStorageFile, deleteStorageFiles } from './delete'
 import type { Json } from '@/types/database.types'
 
@@ -29,8 +30,7 @@ function isVideoFile(url: string): boolean {
  * Clean up old job photos (1 month after delivery/completion)
  * Images only - videos are handled separately with shorter retention
  */
-async function cleanupOldPhotos(): Promise<number> {
-  const supabase = await createClient()
+async function cleanupOldPhotos(supabase: Awaited<ReturnType<typeof createAdminClient>>): Promise<number> {
   const oneMonthAgo = new Date()
   oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1)
 
@@ -48,18 +48,26 @@ async function cleanupOldPhotos(): Promise<number> {
 
   let deletedCount = 0
   for (const job of oldJobs) {
-    const allMedia = [
-      ...(job.before_photos || []),
-      ...(job.after_photos || []),
-    ]
+    const beforePhotos = job.before_photos || []
+    const afterPhotos = job.after_photos || []
 
     // Filter to only images (not videos)
-    const photos = allMedia.filter((url) => !isVideoFile(url))
+    const photosToDelete = [
+      ...beforePhotos.filter((url) => !isVideoFile(url)),
+      ...afterPhotos.filter((url) => !isVideoFile(url)),
+    ]
 
-    if (photos.length > 0) {
+    if (photosToDelete.length > 0) {
       try {
-        await deleteStorageFiles(photos, 'job-photos')
-        deletedCount += photos.length
+        await deleteStorageFiles(photosToDelete, 'job-photos', supabase)
+        deletedCount += photosToDelete.length
+        // Clear deleted photo refs; keep video refs
+        const beforeRemaining = beforePhotos.filter(isVideoFile)
+        const afterRemaining = afterPhotos.filter(isVideoFile)
+        await supabase
+          .from('jobs')
+          .update({ before_photos: beforeRemaining, after_photos: afterRemaining })
+          .eq('id', job.id)
       } catch (error) {
         console.error(`Failed to delete photos for job ${job.id}:`, error)
       }
@@ -72,8 +80,7 @@ async function cleanupOldPhotos(): Promise<number> {
 /**
  * Clean up old job videos (3 days after delivery/completion)
  */
-async function cleanupOldVideos(): Promise<number> {
-  const supabase = await createClient()
+async function cleanupOldVideos(supabase: Awaited<ReturnType<typeof createAdminClient>>): Promise<number> {
   const threeDaysAgo = new Date()
   threeDaysAgo.setDate(threeDaysAgo.getDate() - 3)
 
@@ -91,18 +98,24 @@ async function cleanupOldVideos(): Promise<number> {
 
   let deletedCount = 0
   for (const job of oldJobs) {
-    const allMedia = [
-      ...(job.before_photos || []),
-      ...(job.after_photos || []),
+    const beforePhotos = job.before_photos || []
+    const afterPhotos = job.after_photos || []
+
+    const videosToDelete = [
+      ...beforePhotos.filter(isVideoFile),
+      ...afterPhotos.filter(isVideoFile),
     ]
 
-    // Filter to only videos
-    const videos = allMedia.filter((url) => isVideoFile(url))
-
-    if (videos.length > 0) {
+    if (videosToDelete.length > 0) {
       try {
-        await deleteStorageFiles(videos, 'job-photos')
-        deletedCount += videos.length
+        await deleteStorageFiles(videosToDelete, 'job-photos', supabase)
+        deletedCount += videosToDelete.length
+        const beforeRemaining = beforePhotos.filter((url) => !isVideoFile(url))
+        const afterRemaining = afterPhotos.filter((url) => !isVideoFile(url))
+        await supabase
+          .from('jobs')
+          .update({ before_photos: beforeRemaining, after_photos: afterRemaining })
+          .eq('id', job.id)
       } catch (error) {
         console.error(`Failed to delete videos for job ${job.id}:`, error)
       }
@@ -115,15 +128,14 @@ async function cleanupOldVideos(): Promise<number> {
 /**
  * Clean up old invoices (1 week after delivery/completion)
  */
-async function cleanupOldInvoices(): Promise<number> {
-  const supabase = await createClient()
+async function cleanupOldInvoices(supabase: Awaited<ReturnType<typeof createAdminClient>>): Promise<number> {
   const oneWeekAgo = new Date()
   oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
 
   // Find completed jobs older than 1 week
   const { data: oldJobs } = await supabase
     .from('jobs')
-    .select('id, invoice_file_path, updated_at, status')
+    .select('id, invoice_file_path, invoice_url, updated_at, status')
     .eq('status', 'completed')
     .lt('updated_at', oneWeekAgo.toISOString())
     .is('deleted_at', null)
@@ -137,8 +149,12 @@ async function cleanupOldInvoices(): Promise<number> {
   for (const job of oldJobs) {
     if (job.invoice_file_path) {
       try {
-        await deleteStorageFile(job.invoice_file_path, 'invoices')
+        await deleteStorageFile(job.invoice_file_path, 'invoices', supabase)
         deletedCount++
+        await supabase
+          .from('jobs')
+          .update({ invoice_file_path: null, invoice_url: null })
+          .eq('id', job.id)
       } catch (error) {
         console.error(`Failed to delete invoice for job ${job.id}:`, error)
       }
@@ -151,8 +167,7 @@ async function cleanupOldInvoices(): Promise<number> {
 /**
  * Clean up temp uploads (3 days old)
  */
-async function cleanupTempUploads(): Promise<number> {
-  const supabase = await createClient()
+async function cleanupTempUploads(supabase: Awaited<ReturnType<typeof createAdminClient>>): Promise<number> {
   const threeDaysAgo = new Date()
   threeDaysAgo.setDate(threeDaysAgo.getDate() - 3)
 
@@ -200,8 +215,10 @@ async function cleanupTempUploads(): Promise<number> {
 
 /**
  * Run all cleanup operations
+ * Uses admin client so cron runs without a user session (storage and jobs RLS bypassed).
  */
 export async function runStorageCleanup(): Promise<CleanupResult> {
+  const supabase = createAdminClient()
   const result: CleanupResult = {
     deletedFiles: 0,
     errors: 0,
@@ -214,7 +231,7 @@ export async function runStorageCleanup(): Promise<CleanupResult> {
   }
 
   try {
-    result.details.photos = await cleanupOldPhotos()
+    result.details.photos = await cleanupOldPhotos(supabase)
     result.deletedFiles += result.details.photos
   } catch (error) {
     console.error('Error cleaning up photos:', error)
@@ -222,7 +239,7 @@ export async function runStorageCleanup(): Promise<CleanupResult> {
   }
 
   try {
-    result.details.videos = await cleanupOldVideos()
+    result.details.videos = await cleanupOldVideos(supabase)
     result.deletedFiles += result.details.videos
   } catch (error) {
     console.error('Error cleaning up videos:', error)
@@ -230,7 +247,7 @@ export async function runStorageCleanup(): Promise<CleanupResult> {
   }
 
   try {
-    result.details.invoices = await cleanupOldInvoices()
+    result.details.invoices = await cleanupOldInvoices(supabase)
     result.deletedFiles += result.details.invoices
   } catch (error) {
     console.error('Error cleaning up invoices:', error)
@@ -238,7 +255,7 @@ export async function runStorageCleanup(): Promise<CleanupResult> {
   }
 
   try {
-    result.details.temp = await cleanupTempUploads()
+    result.details.temp = await cleanupTempUploads(supabase)
     result.deletedFiles += result.details.temp
   } catch (error) {
     console.error('Error cleaning up temp files:', error)
@@ -246,7 +263,6 @@ export async function runStorageCleanup(): Promise<CleanupResult> {
   }
 
   // Log cleanup operation
-  const supabase = await createClient()
   await supabase.from('cleanup_log').insert({
     cleanup_type: 'storage',
     resource_type: 'files',

@@ -27,6 +27,14 @@ export async function GET(request: Request) {
   try {
     const result = await runStorageCleanup()
 
+    // Log so it shows in Vercel Dashboard → Logs
+    console.log('[cron/cleanup-storage]', {
+      success: true,
+      deletedFiles: result.deletedFiles,
+      errors: result.errors,
+      details: result.details,
+    })
+
     return NextResponse.json(
       {
         success: true,

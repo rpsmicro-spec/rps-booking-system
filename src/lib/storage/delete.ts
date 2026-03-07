@@ -2,12 +2,14 @@
  * Server-side utilities for deleting files from Supabase Storage
  */
 
+import type { SupabaseClient } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/server'
+import type { SupabaseDatabase } from '@/types/types'
 
 /**
  * Extract file path from a Supabase Storage URL
  */
-function extractFilePath(url: string, bucket: string): string | null {
+export function extractFilePath(url: string, bucket: string): string | null {
   // Handle public URLs: https://...supabase.co/storage/v1/object/public/bucket/path
   if (url.includes('/storage/v1/object/public/')) {
     const parts = url.split('/storage/v1/object/public/')
@@ -26,13 +28,15 @@ function extractFilePath(url: string, bucket: string): string | null {
 }
 
 /**
- * Delete a file from Supabase Storage (server-side)
+ * Delete a file from Supabase Storage (server-side).
+ * Pass an optional Supabase client (e.g. admin) for cron/system use without a user session.
  */
 export async function deleteStorageFile(
   filePath: string,
-  bucket: 'job-photos' | 'invoices' | 'temp-uploads'
+  bucket: 'job-photos' | 'invoices' | 'temp-uploads',
+  supabaseClient?: SupabaseClient<SupabaseDatabase>
 ): Promise<void> {
-  const supabase = await createClient()
+  const supabase = supabaseClient ?? (await createClient())
   const path = extractFilePath(filePath, bucket)
 
   if (!path) {
@@ -49,13 +53,15 @@ export async function deleteStorageFile(
 }
 
 /**
- * Delete multiple files from Supabase Storage (server-side)
+ * Delete multiple files from Supabase Storage (server-side).
+ * Pass an optional Supabase client (e.g. admin) for cron/system use without a user session.
  */
 export async function deleteStorageFiles(
   filePaths: string[],
-  bucket: 'job-photos' | 'invoices' | 'temp-uploads'
+  bucket: 'job-photos' | 'invoices' | 'temp-uploads',
+  supabaseClient?: SupabaseClient<SupabaseDatabase>
 ): Promise<void> {
-  const supabase = await createClient()
+  const supabase = supabaseClient ?? (await createClient())
   const paths = filePaths
     .map((url) => extractFilePath(url, bucket))
     .filter((path): path is string => path !== null)
