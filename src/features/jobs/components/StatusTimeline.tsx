@@ -33,84 +33,104 @@ export function StatusTimeline({
   const currentStatusIndex = STATUS_ORDER.indexOf(currentStatus)
 
   return (
-    <div className="space-y-0">
-      {STATUS_ORDER.map((status, index) => {
-        const isCompleted = index <= currentStatusIndex
-        const isCurrent = index === currentStatusIndex
-        const historyEntry = statusHistory.find(
-          (h) => h.new_status === status
-        )
-        const isLast = index === STATUS_ORDER.length - 1
-        const nextIsCompleted = index < STATUS_ORDER.length - 1 && index + 1 <= currentStatusIndex
-
-        return (
-          <div key={status}>
-            <div className="flex items-start gap-3 sm:gap-4">
-              {/* Status Icon with connecting line */}
-              <div className="flex flex-col items-center flex-shrink-0">
-                <div className="mt-1">
-                  {isCompleted ? (
-                    <CheckCircle2
-                      className={`h-4 w-4 sm:h-5 sm:w-5 ${
-                        isCurrent
-                          ? 'text-green-600 dark:text-green-500'
-                          : 'text-green-500 dark:text-green-400'
-                      }`}
-                    />
-                  ) : (
-                    <Circle className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
-                  )}
-                </div>
-                {/* Vertical line */}
-                {!isLast && (
-                  <div
-                    className={`w-0.5 flex-1 min-h-[1.5rem] sm:min-h-[2rem] mt-2 ${
-                      nextIsCompleted
-                        ? 'bg-green-500 dark:bg-green-400'
-                        : 'bg-border'
-                    }`}
-                  />
-                )}
-              </div>
-
-              {/* Status Info */}
-              <div className="flex-1 min-w-0 pb-3 sm:pb-4">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <p
-                    className={`text-xs sm:text-sm font-medium ${
+    <div className="flex flex-col w-full">
+      {/* Row: icons centered with horizontal connectors between */}
+      <div className="flex flex-row items-center w-full">
+        {STATUS_ORDER.map((status, index) => {
+          const isCompleted = index <= currentStatusIndex
+          const isCurrent = index === currentStatusIndex
+          const nextIsCompleted =
+            index < STATUS_ORDER.length - 1 && index + 1 <= currentStatusIndex
+          return (
+            <div
+              key={status}
+              className="flex-1 flex items-center min-w-0"
+            >
+              {/* Left connector: green only when we've reached this step (line leads to this step) */}
+              <div
+                className={`flex-1 min-h-0.5 ${
+                  index > 0
+                    ? isCompleted
+                      ? 'bg-green-500 dark:bg-green-400'
+                      : 'bg-border'
+                    : 'bg-transparent'
+                }`}
+              />
+              <div className="shrink-0 px-0.5 sm:px-1">
+                {isCompleted ? (
+                  <CheckCircle2
+                    className={`h-4 w-4 sm:h-5 sm:w-5 ${
                       isCurrent
                         ? 'text-green-600 dark:text-green-500'
-                        : isCompleted
-                        ? 'text-green-600 dark:text-green-500'
-                        : 'text-muted-foreground'
+                        : 'text-green-500 dark:text-green-400'
                     }`}
-                  >
-                    {STATUS_LABELS[status]}
-                  </p>
-                  {isCurrent && (
-                    <span className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
-                      Current
-                    </span>
-                  )}
-                </div>
-                {historyEntry && historyEntry.changed_at && (
-                  <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1">
-                    {(() => {
-                      const istDate = utcToIstDateObject(historyEntry.changed_at);
-                      return istDate ? format(istDate, 'MMM dd, yyyy HH:mm') : '';
-                    })()}
-                  </p>
-                )}
-                {!historyEntry && isCompleted && (
-                  <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1">
-                    Status set on creation
-                  </p>
+                  />
+                ) : (
+                  <Circle className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
                 )}
               </div>
+              {/* Right connector */}
+              <div
+                className={`flex-1 min-h-0.5 ${
+                  index < STATUS_ORDER.length - 1
+                    ? nextIsCompleted
+                      ? 'bg-green-500 dark:bg-green-400'
+                      : 'bg-border'
+                    : 'bg-transparent'
+                }`}
+              />
             </div>
-          </div>
-        )
-      })}
+          )
+        })}
+      </div>
+      {/* Row: labels + dates aligned under each icon */}
+      <div className="flex flex-row w-full mt-2 gap-0">
+        {STATUS_ORDER.map((status, index) => {
+          const isCurrent = index === currentStatusIndex
+          const historyEntry = statusHistory.find((h) => h.new_status === status)
+          const isCompleted = index <= currentStatusIndex
+          return (
+            <div
+              key={status}
+              className="flex-1 flex flex-col items-center min-w-0 px-0.5 sm:px-1 text-center"
+            >
+              <div className="flex items-center gap-1 flex-wrap justify-center">
+                <p
+                  className={`text-[10px] sm:text-xs font-medium ${
+                    isCurrent
+                      ? 'text-green-600 dark:text-green-500'
+                      : isCompleted
+                        ? 'text-green-600 dark:text-green-500'
+                        : 'text-muted-foreground'
+                  }`}
+                >
+                  {STATUS_LABELS[status]}
+                </p>
+                {isCurrent && (
+                  <span className="text-[9px] sm:text-[10px] px-1 sm:px-1.5 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 shrink-0">
+                    Current
+                  </span>
+                )}
+              </div>
+              {historyEntry?.changed_at && (
+                <p className="text-[9px] sm:text-[10px] text-muted-foreground mt-0.5 truncate max-w-full">
+                  {(() => {
+                    const istDate = utcToIstDateObject(historyEntry.changed_at)
+                    return istDate
+                      ? format(istDate, 'MMM dd, yyyy HH:mm')
+                      : ''
+                  })()}
+                </p>
+              )}
+              {!historyEntry && isCompleted && (
+                <p className="text-[9px] sm:text-[10px] text-muted-foreground mt-0.5">
+                  Status set on creation
+                </p>
+              )}
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }

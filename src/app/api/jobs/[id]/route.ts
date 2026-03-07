@@ -1,4 +1,3 @@
-import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth/helpers'
@@ -10,9 +9,10 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireAuth()
-    const supabase = await createClient()
-    const { id } = await params
+    const authPromise = requireAuth()
+    const paramsPromise = params
+    const { supabase } = await authPromise
+    const { id } = await paramsPromise
 
     const { data, error } = await supabase
       .from('jobs')
@@ -28,8 +28,9 @@ export async function GET(
           { status: 404 }
         )
       }
+      console.error('Job fetch error:', error.message)
       return NextResponse.json(
-        { error: error.message },
+        { error: 'Failed to fetch job' },
         { status: 400 }
       )
     }
@@ -48,9 +49,10 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { user } = await requireAuth()
-    const supabase = await createClient()
-    const { id } = await params
+    const authPromise = requireAuth()
+    const paramsPromise = params
+    const { user, supabase } = await authPromise
+    const { id } = await paramsPromise
 
     const body = await request.json()
 
@@ -82,8 +84,9 @@ export async function PATCH(
           { status: 404 }
         )
       }
+      console.error('Job update error:', error.message)
       return NextResponse.json(
-        { error: error.message },
+        { error: 'Failed to update job' },
         { status: 400 }
       )
     }
@@ -119,9 +122,10 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { user } = await requireAuth()
-    const supabase = await createClient()
-    const { id } = await params
+    const authPromise = requireAuth()
+    const paramsPromise = params
+    const { user, supabase } = await authPromise
+    const { id } = await paramsPromise
 
     // Fetch job to get file paths and details before deletion
     const { data: job } = await supabase
@@ -138,6 +142,24 @@ export async function DELETE(
       )
     }
 
+    // Delete associated files from storage BEFORE deleting the DB record
+    // so that if file cleanup fails, we still have the references
+    try {
+      if (job.before_photos?.length || job.after_photos?.length) {
+        const allPhotos = [
+          ...(job.before_photos || []),
+          ...(job.after_photos || []),
+        ]
+        await deleteStorageFiles(allPhotos, 'job-photos')
+      }
+
+      if (job.invoice_file_path) {
+        await deleteStorageFile(job.invoice_file_path, 'invoices')
+      }
+    } catch (err) {
+      console.error('Failed to delete storage files (proceeding with job deletion):', err)
+    }
+
     // Hard delete - permanently remove the job from the database
     const { error } = await supabase
       .from('jobs')
@@ -152,35 +174,9 @@ export async function DELETE(
         )
       }
       return NextResponse.json(
-        { error: error.message },
+        { error: 'Failed to delete job' },
         { status: 400 }
       )
-    }
-
-    // Delete associated files from storage (non-blocking)
-    if (job) {
-      const filesToDelete: string[] = []
-      if (job.before_photos) filesToDelete.push(...job.before_photos)
-      if (job.after_photos) filesToDelete.push(...job.after_photos)
-      if (job.invoice_file_path) filesToDelete.push(job.invoice_file_path)
-
-      // Delete photos
-      if (job.before_photos?.length || job.after_photos?.length) {
-        const allPhotos = [
-          ...(job.before_photos || []),
-          ...(job.after_photos || []),
-        ]
-        deleteStorageFiles(allPhotos, 'job-photos').catch((err) => {
-          console.error('Failed to delete photos:', err)
-        })
-      }
-
-      // Delete invoice file
-      if (job.invoice_file_path) {
-        deleteStorageFile(job.invoice_file_path, 'invoices').catch((err) => {
-          console.error('Failed to delete invoice:', err)
-        })
-      }
     }
 
     // Log audit event (using admin client to bypass RLS)

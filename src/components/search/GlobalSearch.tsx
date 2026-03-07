@@ -48,6 +48,7 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
   useEffect(() => {
     if (!search.trim() || search.length < 2) {
       setResults([]);
+      setIsLoading(false);
       return;
     }
 

@@ -1,4 +1,3 @@
-import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth/helpers'
 
@@ -7,9 +6,8 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireAuth()
+    const { supabase } = await requireAuth()
     const { id } = await params
-    const supabase = await createClient()
 
     // Fetch status history for the job
     const { data: statusHistory, error } = await supabase
@@ -19,8 +17,9 @@ export async function GET(
       .order('changed_at', { ascending: true })
 
     if (error) {
+      console.error('Failed to fetch status history:', error.message)
       return NextResponse.json(
-        { error: error.message },
+        { error: 'Failed to fetch status history' },
         { status: 400 }
       )
     }

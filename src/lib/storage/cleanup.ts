@@ -32,7 +32,7 @@ function isVideoFile(url: string): boolean {
  */
 async function cleanupOldPhotos(supabase: Awaited<ReturnType<typeof createAdminClient>>): Promise<number> {
   const oneMonthAgo = new Date()
-  oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1)
+  oneMonthAgo.setDate(oneMonthAgo.getDate() - 30)
 
   // Find completed jobs older than 1 month
   const { data: oldJobs } = await supabase
@@ -263,12 +263,16 @@ export async function runStorageCleanup(): Promise<CleanupResult> {
   }
 
   // Log cleanup operation
-  await supabase.from('cleanup_log').insert({
+  const { error: logError } = await supabase.from('cleanup_log').insert({
     cleanup_type: 'storage',
     resource_type: 'files',
     reason: 'Automated cleanup',
     metadata: result as unknown as Json,
   })
+  if (logError) {
+    console.error('Failed to write cleanup_log:', logError)
+    result.errors++
+  }
 
   return result
 }

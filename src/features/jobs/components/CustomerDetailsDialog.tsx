@@ -12,12 +12,15 @@ import { Separator } from "@/components/ui/separator";
 import { Info, User, Phone, Mail, MapPin, UserCircle } from "lucide-react";
 import { formatAddress } from "@/lib/utils/address";
 import type { Job } from "@/types/types";
+import { useIsMobile } from "@/hooks/use-mobile";
+import Link from "next/link";
 
 interface CustomerDetailsDialogProps {
   job: Job;
 }
 
 export function CustomerDetailsDialog({ job }: CustomerDetailsDialogProps) {
+  const isMobile = useIsMobile();
   const contactPersonName = (job as Job & { contact_person_name?: string }).contact_person_name;
   const contactPersonDesignation = (job as Job & { contact_person_designation?: string }).contact_person_designation;
   const phoneNumbers = (job as Job & { phone_numbers?: string[] }).phone_numbers || [];
@@ -25,6 +28,20 @@ export function CustomerDetailsDialog({ job }: CustomerDetailsDialogProps) {
   const hasAdditionalPhones = phoneNumbers.filter((p) => p && p.trim() !== "").length > 0;
   const hasAdditionalEmails = emails.filter((e) => e && e.trim() !== "").length > 0;
   const address = formatAddress(job);
+
+  const customerDetailHref = `/customers/${encodeURIComponent(job.customer_name)}`;
+
+  if (!isMobile) {
+    return (
+      <Button variant="outline" size="sm" className="text-xs sm:text-sm" asChild>
+        <Link href={customerDetailHref}>
+          <Info className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
+          <span className="hidden sm:inline">View Customer Details</span>
+          <span className="sm:hidden">Customer</span>
+        </Link>
+      </Button>
+    );
+  }
 
   return (
     <Drawer>

@@ -5,17 +5,7 @@ import { JobsTable } from "./JobsTable";
 import { JobSearch } from "./JobSearch";
 import { JobFilters } from "./JobFilters";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
-import { Settings, Briefcase } from "lucide-react";
+import { Settings, Briefcase, Filter } from "lucide-react";
 import { JobNumberSettingsDialog } from "./JobNumberSettingsDialog";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { RecentJobs } from "./RecentJobs";
@@ -24,6 +14,7 @@ import { PullToSearch } from "@/components/pwa/PullToSearch";
 export function JobsPageClient() {
   const isMobile = useIsMobile();
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
+  const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [dateFrom, setDateFrom] = useState<string | null>(null);
@@ -85,12 +76,7 @@ export function JobsPageClient() {
           {(isMobile || (!search && !status && !dateFrom && !dateTo)) && (
             <RecentJobs />
           )}
-          
-          <JobSearch
-            search={search}
-            onSearchChange={handleSearchChange}
-            onClear={handleClearSearch}
-          />
+
           <JobFilters
             status={status}
             dateFrom={dateFrom}
@@ -105,13 +91,43 @@ export function JobsPageClient() {
               setOffset(0);
             }}
             onClear={handleClearFilters}
+            mobileSheetOpen={filterSheetOpen}
+            onMobileSheetOpenChange={setFilterSheetOpen}
+            search={search}
+            onSearchChange={handleSearchChange}
+            onClearSearch={handleClearSearch}
           />
 
-          <Card>
-            <CardHeader>
-              <CardTitle>All Jobs</CardTitle>
-            </CardHeader>
-            <CardContent className="min-h-[400px]">
+          <div className="space-y-4">
+            <h3 className="text-lg md:text-xl font-semibold tracking-tight">
+              All Jobs
+            </h3>
+            {/* Mobile only: search + filter button in one row */}
+            <div className="flex gap-2 items-center md:hidden">
+              <div className="flex-1 min-w-0">
+                <JobSearch
+                  search={search}
+                  onSearchChange={handleSearchChange}
+                  onClear={handleClearSearch}
+                />
+              </div>
+              <Button
+                variant="outline"
+                size="icon"
+                className="shrink-0"
+                onClick={() => setFilterSheetOpen(true)}
+                aria-label="Open filters"
+                title="Filters"
+              >
+                <Filter className="h-4 w-4" />
+                {(status || dateFrom || dateTo) && (
+                  <span className="sr-only">
+                    ({[status, dateFrom, dateTo].filter(Boolean).length} active)
+                  </span>
+                )}
+              </Button>
+            </div>
+            <div className="min-h-[400px]">
               <JobsTable
                 status={status}
                 search={search}
@@ -121,137 +137,35 @@ export function JobsPageClient() {
                 offset={offset}
                 onTotalChange={setTotal}
               />
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
-          {/* Pagination */}
+          {/* Pagination - same UI as Activity page */}
           {total > limit && (
-            <div className="flex flex-col gap-3 sm:gap-4">
-              <p className="text-xs sm:text-sm text-muted-foreground text-center">
-                Showing {offset + 1}-{Math.min(offset + limit, total)} of{" "}
-                {total} jobs
+            <div className="flex flex-col gap-3 pt-4 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm text-muted-foreground">
+                Showing {offset + 1}-{Math.min(offset + limit, total)} of {total} jobs
               </p>
-              <Pagination>
-                <PaginationContent className="flex-wrap">
-                  <PaginationItem>
-                    <PaginationPrevious
-                      href="#"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        if (offset > 0) {
-                          setOffset(Math.max(0, offset - limit));
-                        }
-                      }}
-                      className={
-                        offset === 0
-                          ? "pointer-events-none opacity-50"
-                          : "cursor-pointer"
-                      }
-                    />
-                  </PaginationItem>
-
-                  {(() => {
-                    const totalPages = Math.ceil(total / limit);
-                    const currentPage = Math.floor(offset / limit) + 1;
-                    const pages: (number | "ellipsis")[] = [];
-
-                    // On mobile, show fewer page numbers
-                    const maxPagesToShow = isMobile ? 3 : 7;
-
-                    if (totalPages <= maxPagesToShow) {
-                      // Show all pages
-                      for (let i = 1; i <= totalPages; i++) {
-                        pages.push(i);
-                      }
-                    } else {
-                      // Show first page
-                      pages.push(1);
-
-                      if (currentPage <= 4) {
-                        // Show pages 2-5, then ellipsis, then last
-                        const endPage = maxPagesToShow === 3 ? 3 : 5;
-                        for (let i = 2; i <= endPage; i++) {
-                          pages.push(i);
-                        }
-                        if (maxPagesToShow > 3) {
-                          pages.push("ellipsis");
-                          pages.push(totalPages);
-                        }
-                      } else if (currentPage >= totalPages - 3) {
-                        // Show first, ellipsis, then last pages
-                        if (maxPagesToShow > 3) {
-                          pages.push("ellipsis");
-                        }
-                        const startPage = maxPagesToShow === 3 
-                          ? Math.max(2, totalPages - 1)
-                          : totalPages - 4;
-                        for (let i = startPage; i <= totalPages; i++) {
-                          pages.push(i);
-                        }
-                      } else {
-                        // Show first, ellipsis, current-1, current, current+1, ellipsis, last
-                        if (maxPagesToShow > 3) {
-                          pages.push("ellipsis");
-                        }
-                        for (
-                          let i = currentPage - 1;
-                          i <= currentPage + 1;
-                          i++
-                        ) {
-                          pages.push(i);
-                        }
-                        if (maxPagesToShow > 3) {
-                          pages.push("ellipsis");
-                          pages.push(totalPages);
-                        }
-                      }
-                    }
-
-                    return pages.map((page, index) => {
-                      if (page === "ellipsis") {
-                        return (
-                          <PaginationItem key={`ellipsis-${index}`}>
-                            <PaginationEllipsis />
-                          </PaginationItem>
-                        );
-                      }
-
-                      return (
-                        <PaginationItem key={page}>
-                          <PaginationLink
-                            href="#"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              setOffset((page - 1) * limit);
-                            }}
-                            isActive={currentPage === page}
-                            className="cursor-pointer text-xs sm:text-sm min-w-[2rem] sm:min-w-[2.5rem]"
-                          >
-                            {page}
-                          </PaginationLink>
-                        </PaginationItem>
-                      );
-                    });
-                  })()}
-
-                  <PaginationItem>
-                    <PaginationNext
-                      href="#"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        if (offset + limit < total) {
-                          setOffset(offset + limit);
-                        }
-                      }}
-                      className={
-                        offset + limit >= total
-                          ? "pointer-events-none opacity-50"
-                          : "cursor-pointer"
-                      }
-                    />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
+              <div className="flex w-full gap-2 sm:w-auto">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 min-w-0 sm:flex-initial"
+                  onClick={() => setOffset(Math.max(0, offset - limit))}
+                  disabled={offset === 0}
+                >
+                  Previous
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 min-w-0 sm:flex-initial"
+                  onClick={() => setOffset(offset + limit)}
+                  disabled={offset + limit >= total}
+                >
+                  Next
+                </Button>
+              </div>
             </div>
           )}
         </div>

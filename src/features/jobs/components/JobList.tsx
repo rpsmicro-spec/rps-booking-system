@@ -179,28 +179,32 @@ export function JobList() {
             ))}
           </div>
 
-          {/* Pagination */}
+          {/* Pagination - same UI as Activity page */}
           {total > limit && (
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-3 pt-4 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-sm text-muted-foreground">
                 Showing {offset + 1}-{Math.min(offset + limit, total)} of {total} jobs
               </p>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setOffset(Math.max(0, offset - limit))}
-                  disabled={offset === 0 || isLoading}
-                >
-                  Previous
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => setOffset(offset + limit)}
-                  disabled={offset + limit >= total || isLoading}
-                >
-                  Next
-                </Button>
-              </div>
+                <div className="flex w-full gap-2 sm:w-auto">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 min-w-0 sm:flex-initial"
+                    onClick={() => setOffset(Math.max(0, offset - limit))}
+                    disabled={offset === 0 || isLoading}
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 min-w-0 sm:flex-initial"
+                    onClick={() => setOffset(offset + limit)}
+                    disabled={offset + limit >= total || isLoading}
+                  >
+                    Next
+                  </Button>
+                </div>
             </div>
           )}
         </>

@@ -14,12 +14,15 @@ interface InvoiceUploadProps {
   invoiceFile: File | string | null;
   onInvoiceChange: (file: File | string | null) => void;
   disabled?: boolean;
+  /** When "minimal", no label above dropzone and dropzone shows only drag/select; parent shows limit */
+  emptyStateVariant?: "default" | "minimal";
 }
 
 export function InvoiceUpload({
   invoiceFile,
   onInvoiceChange,
   disabled = false,
+  emptyStateVariant = "default",
 }: InvoiceUploadProps) {
   const uploadHook = useSupabaseUpload({
     bucketName: "invoices",
@@ -46,7 +49,9 @@ export function InvoiceUpload({
   if (disabled) {
     return (
       <div className="space-y-2">
-        <FieldLabel>Invoice File (PDF, max 5MB)</FieldLabel>
+        {emptyStateVariant !== "minimal" && (
+          <FieldLabel>Invoice File (PDF, max 5MB)</FieldLabel>
+        )}
         {invoiceFile && (
           <div className="flex items-center gap-2">
             <FileText className="h-4 w-4 text-muted-foreground" />
@@ -73,7 +78,9 @@ export function InvoiceUpload({
 
   return (
     <div className="space-y-2">
-      <FieldLabel>Invoice File (PDF, max 5MB)</FieldLabel>
+      {emptyStateVariant !== "minimal" && (
+        <FieldLabel>Invoice File (PDF, max 5MB)</FieldLabel>
+      )}
 
       {invoiceFile ? (
         <div className="flex items-center gap-4">
@@ -104,7 +111,7 @@ export function InvoiceUpload({
           </button>
         </div>
       ) : (
-        <Dropzone {...uploadHook}>
+        <Dropzone {...uploadHook} emptyStateVariant={emptyStateVariant}>
           <DropzoneEmptyState />
           <DropzoneContent />
         </Dropzone>

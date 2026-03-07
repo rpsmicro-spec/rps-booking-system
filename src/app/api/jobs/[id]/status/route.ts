@@ -1,4 +1,3 @@
-import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth/helpers'
@@ -11,8 +10,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { user } = await requireAuth()
-    const supabase = await createClient()
+    const { user, supabase } = await requireAuth()
     const { id } = await params
 
     const { status } = await request.json()
@@ -60,8 +58,9 @@ export async function PATCH(
       .single()
 
     if (error) {
+      console.error('Failed to update job status:', error.message)
       return NextResponse.json(
-        { error: error.message },
+        { error: 'Failed to update job status' },
         { status: 400 }
       )
     }

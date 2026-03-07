@@ -10,8 +10,10 @@ export async function GET(request: Request) {
     const role = await getUserRole()
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('user_id')
-    const limit = parseInt(searchParams.get('limit') || '100')
-    const offset = parseInt(searchParams.get('offset') || '0')
+    const limitRaw = parseInt(searchParams.get('limit') || '100', 10)
+    const offsetRaw = parseInt(searchParams.get('offset') || '0', 10)
+    const limit = Number.isNaN(limitRaw) ? 100 : Math.max(1, Math.min(limitRaw, 100))
+    const offset = Number.isNaN(offsetRaw) ? 0 : Math.max(0, offsetRaw)
 
     const adminClient = createAdminClient()
 
@@ -41,8 +43,9 @@ export async function GET(request: Request) {
     const { data: logs, error } = await query
 
     if (error) {
+      console.error('Failed to fetch audit log:', error.message)
       return NextResponse.json(
-        { error: error.message },
+        { error: 'Failed to fetch audit log' },
         { status: 400 }
       )
     }
@@ -63,9 +66,9 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ logs: logsWithUsers || [] }, { status: 200 })
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred'
+    console.error('Failed to fetch audit log:', error instanceof Error ? error.message : error)
     return NextResponse.json(
-      { error: errorMessage },
+      { error: 'Failed to fetch audit log' },
       { status: 500 }
     )
   }

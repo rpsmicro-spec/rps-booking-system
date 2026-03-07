@@ -21,8 +21,9 @@ export async function GET() {
       .order('created_at', { ascending: false })
 
     if (error) {
+      console.error('Failed to fetch users:', error.message)
       return NextResponse.json(
-        { error: error.message },
+        { error: 'Failed to fetch users' },
         { status: 400 }
       )
     }

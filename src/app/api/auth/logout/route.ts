@@ -15,8 +15,9 @@ export async function POST(request: Request) {
       const { error } = await supabase.auth.signOut({ scope: 'global' })
 
       if (error) {
+        console.error('Failed to log out:', error.message)
         return NextResponse.json(
-          { error: error.message },
+          { error: 'Failed to log out' },
           { status: 400 }
         )
       }
@@ -25,8 +26,9 @@ export async function POST(request: Request) {
       const { error } = await supabase.auth.signOut({ scope: 'local' })
 
       if (error) {
+        console.error('Failed to log out:', error.message)
         return NextResponse.json(
-          { error: error.message },
+          { error: 'Failed to log out' },
           { status: 400 }
         )
       }

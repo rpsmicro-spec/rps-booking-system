@@ -56,9 +56,8 @@ export function SetupPasswordForm() {
             } else {
               // Fetch user profile to get the invited name
               try {
-                const {
-                  data: { user: authUser },
-                } = await supabase.auth.getUser();
+                const { data } = await supabase.auth.getUser();
+                const authUser = data?.user;
                 if (authUser) {
                   const { data: userProfile } = await supabase
                     .from("users")
@@ -78,6 +77,10 @@ export function SetupPasswordForm() {
               // Clear the hash from URL
               window.history.replaceState(null, "", window.location.pathname);
             }
+          })
+          .catch(() => {
+            toast.error("Invalid or expired invitation link");
+            router.push("/login");
           });
       } else if (type === "recovery") {
         // If it's a recovery token, redirect to reset-password instead
@@ -92,7 +95,8 @@ export function SetupPasswordForm() {
     } else {
       // No hash, check if we're already authenticated (token might be in session)
       // This handles cases where the user refreshes the page after setting the session
-      supabase.auth.getSession().then(async ({ data: { session } }) => {
+      supabase.auth.getSession().then(async ({ data }) => {
+        const session = data?.session;
         if (session) {
           // Fetch user profile to get the invited name
           try {
@@ -114,6 +118,9 @@ export function SetupPasswordForm() {
           toast.error("Invalid or expired invitation link");
           router.push("/login");
         }
+      }).catch(() => {
+        toast.error("Invalid or expired invitation link");
+        router.push("/login");
       });
     }
   }, [router]);

@@ -14,10 +14,12 @@ export async function GET(request: Request) {
   const isVercelCron = vercelCronHeader === '1'
   
   // Or allow if it has valid CRON_SECRET (for manual testing)
-  const hasValidSecret = process.env.CRON_SECRET && 
+  const hasValidSecret =
+    Boolean(process.env.CRON_SECRET) &&
     authHeader === `Bearer ${process.env.CRON_SECRET}`
-  
-  if (!isVercelCron && !hasValidSecret && process.env.CRON_SECRET) {
+
+  // Reject unless from Vercel Cron or valid secret (if CRON_SECRET unset, only Vercel Cron can call)
+  if (!isVercelCron && !hasValidSecret) {
     return NextResponse.json(
       { error: 'Unauthorized' },
       { status: 401 }

@@ -59,6 +59,10 @@ export function ResetPasswordForm() {
               // Clear the hash from URL
               window.history.replaceState(null, "", window.location.pathname);
             }
+          })
+          .catch(() => {
+            toast.error("Invalid or expired reset token");
+            router.push("/forgot-password");
           });
       } else if (type === "signup" || type === "invite") {
         // If it's an invite token, redirect to setup-password
@@ -73,13 +77,17 @@ export function ResetPasswordForm() {
     } else {
       // No hash, check if we're already authenticated (token might be in session)
       // This handles cases where the user refreshes the page after setting the session
-      supabase.auth.getSession().then(({ data: { session } }) => {
+      supabase.auth.getSession().then(({ data }) => {
+        const session = data?.session;
         if (session) {
           setIsReady(true);
         } else {
           toast.error("Invalid or expired token");
           router.push("/forgot-password");
         }
+      }).catch(() => {
+        toast.error("Invalid or expired token");
+        router.push("/forgot-password");
       });
     }
   }, [router]);

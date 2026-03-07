@@ -218,23 +218,117 @@ export function PublicJobView({ job, statusHistory = [] }: PublicJobViewProps) {
                 </div>
               </div>
             )}
+            {job.status && (
+              <>
+                <hr className="border-border my-4" />
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-3">
+                    Status Timeline
+                  </p>
+                  <StatusTimeline
+                    currentStatus={job.status as JobStatus}
+                    statusHistory={statusHistory}
+                  />
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
 
-        {/* Status Timeline */}
-        {job.status && (
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Status Timeline</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <StatusTimeline
-                currentStatus={job.status as JobStatus}
-                statusHistory={statusHistory}
-              />
-            </CardContent>
-          </Card>
-        )}
+        {/* Contact Us - same row as Job Details */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">Contact Us</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="shrink-0 mt-0.5">
+                <div className="rounded-full bg-muted p-2">
+                  <MapPin className="h-4 w-4 text-muted-foreground" />
+                </div>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium text-muted-foreground mb-1.5">
+                  Address
+                </p>
+                <p className="text-sm whitespace-pre-line leading-relaxed">
+                  {COMPANY_INFO.ADDRESS}
+                </p>
+              </div>
+            </div>
+            {COMPANY_INFO.PHONE && (
+              <div className="flex items-start gap-3">
+                <div className="shrink-0 mt-0.5">
+                  <div className="rounded-full bg-muted p-2">
+                    <Phone className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-muted-foreground mb-1.5">
+                    Phone
+                  </p>
+                  <a
+                    href={`tel:${COMPANY_INFO.PHONE.replace(/[^\d+]/g, "")}`}
+                    className="text-sm hover:underline"
+                  >
+                    {COMPANY_INFO.PHONE}
+                  </a>
+                  {COMPANY_INFO.TEL && (
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {COMPANY_INFO.TEL}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+            {COMPANY_INFO.EMAIL && (
+              <div className="flex items-start gap-3">
+                <div className="shrink-0 mt-0.5">
+                  <div className="rounded-full bg-muted p-2">
+                    <Mail className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-muted-foreground mb-1.5">
+                    Email
+                  </p>
+                  <a
+                    href={`mailto:${COMPANY_INFO.EMAIL}`}
+                    className="text-sm hover:underline break-all"
+                  >
+                    {COMPANY_INFO.EMAIL}
+                  </a>
+                </div>
+              </div>
+            )}
+            <div>
+              <p className="text-xs font-medium text-muted-foreground mb-2">
+                Location
+              </p>
+              <div className="rounded-lg overflow-hidden border aspect-video">
+                <iframe
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1943.0054346450845!2d80.17156813013989!3d13.098497570286531!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3a5263001c995869%3A0xca1357dca97bd8b7!2sRPS%20Micro%20Electronics!5e0!3m2!1sen!2sin!4v1764003201324!5m2!1sen!2sin"
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0 }}
+                  allowFullScreen
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  className="w-full h-full min-h-[200px]"
+                  title={`${COMPANY_INFO.NAME} location`}
+                />
+              </div>
+              <a
+                href={COMPANY_INFO.GOOGLE_MAPS_LINK}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-primary hover:underline mt-2 inline-block"
+              >
+                Open in Google Maps →
+              </a>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Photos - Show before and after in tabs */}
@@ -303,105 +397,6 @@ export function PublicJobView({ job, statusHistory = [] }: PublicJobViewProps) {
         </Card>
       )}
 
-      {/* Contact Information & Location */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg">Contact Us</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-4">
-              <div className="flex items-start gap-3">
-                <div className="shrink-0 mt-0.5">
-                  <div className="rounded-full bg-muted p-2">
-                    <MapPin className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-muted-foreground mb-1.5">
-                    Address
-                  </p>
-                  <p className="text-sm whitespace-pre-line leading-relaxed">
-                    {COMPANY_INFO.ADDRESS}
-                  </p>
-                </div>
-              </div>
-              {COMPANY_INFO.PHONE && (
-                <div className="flex items-start gap-3">
-                  <div className="shrink-0 mt-0.5">
-                    <div className="rounded-full bg-muted p-2">
-                      <Phone className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-muted-foreground mb-1.5">
-                      Phone
-                    </p>
-                    <a
-                      href={`tel:${COMPANY_INFO.PHONE.replace(/[^\d+]/g, "")}`}
-                      className="text-sm hover:underline"
-                    >
-                      {COMPANY_INFO.PHONE}
-                    </a>
-                    {COMPANY_INFO.TEL && (
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {COMPANY_INFO.TEL}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              )}
-              {COMPANY_INFO.EMAIL && (
-                <div className="flex items-start gap-3">
-                  <div className="shrink-0 mt-0.5">
-                    <div className="rounded-full bg-muted p-2">
-                      <Mail className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-muted-foreground mb-1.5">
-                      Email
-                    </p>
-                    <a
-                      href={`mailto:${COMPANY_INFO.EMAIL}`}
-                      className="text-sm hover:underline break-all"
-                    >
-                      {COMPANY_INFO.EMAIL}
-                    </a>
-                  </div>
-                </div>
-              )}
-            </div>
-            <div className="space-y-4">
-              <div>
-                <p className="text-xs font-medium text-muted-foreground mb-2">
-                  Location
-                </p>
-                <div className="rounded-lg overflow-hidden border aspect-video">
-                  <iframe
-                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1943.0054346450845!2d80.17156813013989!3d13.098497570286531!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3a5263001c995869%3A0xca1357dca97bd8b7!2sRPS%20Micro%20Electronics!5e0!3m2!1sen!2sin!4v1764003201324!5m2!1sen!2sin"
-                    width="100%"
-                    height="100%"
-                    style={{ border: 0 }}
-                    allowFullScreen
-                    loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                    className="w-full h-full"
-                  />
-                </div>
-                <a
-                  href={COMPANY_INFO.GOOGLE_MAPS_LINK}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs text-primary hover:underline mt-2 inline-block"
-                >
-                  Open in Google Maps →
-                </a>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }

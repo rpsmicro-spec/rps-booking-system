@@ -1,4 +1,3 @@
-import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth/helpers'
@@ -11,8 +10,7 @@ import type { JobUpdate } from '@/types/types'
  */
 export async function PATCH(request: Request) {
   try {
-    const { user } = await requireAuth()
-    const supabase = await createClient()
+    const { user, supabase } = await requireAuth()
     const adminClient = createAdminClient()
 
     const body = await request.json()

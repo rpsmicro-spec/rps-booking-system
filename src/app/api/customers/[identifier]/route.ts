@@ -1,4 +1,3 @@
-import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth/helpers'
 
@@ -7,8 +6,7 @@ export async function GET(
   { params }: { params: Promise<{ identifier: string }> }
 ) {
   try {
-    await requireAuth()
-    const supabase = await createClient()
+    const { supabase } = await requireAuth()
     const { identifier } = await params
 
     // Decode the identifier (URL encoded customer name)
@@ -23,8 +21,9 @@ export async function GET(
       .order('created_at', { ascending: false })
 
     if (error) {
+      console.error('Failed to fetch customer:', error.message)
       return NextResponse.json(
-        { error: error.message },
+        { error: 'Failed to fetch customer' },
         { status: 400 }
       )
     }

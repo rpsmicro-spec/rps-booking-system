@@ -7,9 +7,8 @@ import { canInviteUsers, canManageUsers } from '@/lib/constants/roles'
  */
 export async function getUserRole(): Promise<UserRole | null> {
   const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { data } = await supabase.auth.getUser()
+  const user = data?.user
 
   if (!user) return null
 
@@ -28,9 +27,8 @@ export async function getUserRole(): Promise<UserRole | null> {
  */
 export async function getUserProfile() {
   const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { data } = await supabase.auth.getUser()
+  const user = data?.user
 
   if (!user) return null
 

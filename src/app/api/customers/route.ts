@@ -1,16 +1,16 @@
-import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth/helpers'
 
 export async function GET(request: Request) {
   try {
-    await requireAuth()
-    const supabase = await createClient()
+    const { supabase } = await requireAuth()
 
     const { searchParams } = new URL(request.url)
     const search = searchParams.get('search')
-    const limit = parseInt(searchParams.get('limit') || '50')
-    const offset = parseInt(searchParams.get('offset') || '0')
+    const limitRaw = parseInt(searchParams.get('limit') || '50', 10)
+    const offsetRaw = parseInt(searchParams.get('offset') || '0', 10)
+    const limit = Number.isNaN(limitRaw) ? 50 : Math.max(1, Math.min(limitRaw, 100))
+    const offset = Number.isNaN(offsetRaw) ? 0 : Math.max(0, offsetRaw)
 
     // Get all unique customers by grouping jobs
     let query = supabase
@@ -21,16 +21,20 @@ export async function GET(request: Request) {
 
     // Apply search filter
     if (search) {
-      query = query.or(
-        `customer_name.ilike.%${search}%,email.ilike.%${search}%,contact_number.ilike.%${search}%`
-      )
+      const sanitized = search.replace(/[%_,.()"'\\]/g, '')
+      if (sanitized) {
+        query = query.or(
+          `customer_name.ilike.%${sanitized}%,email.ilike.%${sanitized}%,contact_number.ilike.%${sanitized}%`
+        )
+      }
     }
 
     const { data: jobs, error } = await query
 
     if (error) {
+      console.error('Customers query error:', error.message)
       return NextResponse.json(
-        { error: error.message },
+        { error: 'Failed to fetch customers' },
         { status: 400 }
       )
     }

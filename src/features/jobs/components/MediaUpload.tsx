@@ -33,6 +33,8 @@ interface MediaUploadProps {
   bucket?: "job-photos" | "invoices" | "temp-uploads";
   allowImages?: boolean;
   allowVideos?: boolean;
+  /** When "minimal", dropzone shows only drag/select (no "Upload N files" or max size); card/section should show limits */
+  emptyStateVariant?: "default" | "minimal";
 }
 
 // Helper to check if a file or URL is a video
@@ -86,6 +88,7 @@ export function MediaUpload({
   bucket = "job-photos",
   allowImages = true,
   allowVideos = true,
+  emptyStateVariant = "default",
 }: MediaUploadProps) {
   const objectUrlRefs = useRef<Map<number, string>>(new Map());
   const onMediaChangeRef = useRef(onMediaChange);
@@ -390,7 +393,11 @@ export function MediaUpload({
 
         {/* Dropzone */}
         {media.length < maxFiles && (
-          <Dropzone {...uploadHook} enableCamera={allowImages}>
+          <Dropzone
+            {...uploadHook}
+            enableCamera={allowImages}
+            emptyStateVariant={emptyStateVariant}
+          >
             <DropzoneEmptyState />
             <DropzoneContent />
           </Dropzone>
@@ -399,12 +406,6 @@ export function MediaUpload({
         {media.length >= maxFiles && (
           <p className="text-sm text-muted-foreground">
             Maximum {maxFiles} files reached
-          </p>
-        )}
-
-        {allowVideos && (
-          <p className="text-xs text-muted-foreground">
-            Max file size: 25MB for videos, 5MB for images
           </p>
         )}
       </div>

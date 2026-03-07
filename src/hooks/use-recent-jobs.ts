@@ -10,11 +10,16 @@ import { offlineStorage } from "@/lib/offline/storage";
 export function useRecentJobs(jobId?: string, jobNumber?: string, customerName?: string) {
   useEffect(() => {
     if (jobId && jobNumber && customerName) {
-      offlineStorage.init().then(() => {
-        offlineStorage.addRecentJob(jobId, jobNumber, customerName).catch((error) => {
-          console.error("Error tracking recent job:", error);
+      offlineStorage
+        .init()
+        .then(() => {
+          offlineStorage.addRecentJob(jobId, jobNumber, customerName).catch((error) => {
+            console.error("Error tracking recent job:", error);
+          });
+        })
+        .catch((error) => {
+          console.error("Error initializing offline storage:", error);
         });
-      });
     }
   }, [jobId, jobNumber, customerName]);
 }

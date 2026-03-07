@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { MediaUpload } from "./MediaUpload";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -128,17 +128,20 @@ export function AfterPhotosUpload({ job, onUpdate }: AfterPhotosUploadProps) {
     <Card>
       <CardHeader>
         <CardTitle>After Photos & Videos</CardTitle>
+        <CardDescription>
+          Add photos or videos. 25 MB per video, 5 MB per image.
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <MediaUpload
           media={media}
           onMediaChange={handleMediaChange}
-          label="Upload After Photos & Videos"
           maxFiles={10}
           bucket="job-photos"
           disabled={isUploading}
           allowImages={true}
           allowVideos={true}
+          emptyStateVariant="minimal"
         />
         {hasPendingUploads && (
           <div className="flex items-center justify-between pt-2 border-t">

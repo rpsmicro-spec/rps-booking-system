@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { STATUS_LABELS, getStatusBadgeCustomClasses } from "@/lib/constants";
@@ -19,17 +18,11 @@ import {
   Trash2,
   Truck,
   Video,
+  ChevronRight,
 } from "lucide-react";
 import { format } from "date-fns";
 import { utcToIstDateObject } from "@/lib/utils/date-ist";
 import { formatAddressSingleLine } from "@/lib/utils/address";
-
-const STATUS_ICONS: Record<string, typeof Calendar> = {
-  collected: Calendar,
-  in_progress: Package,
-  completed: Package,
-  delivered: Truck,
-};
 
 interface JobCardMobileProps {
   job: Job;
@@ -118,28 +111,27 @@ export function JobCardMobile({
     job as Job & { contact_person_designation?: string }
   ).contact_person_designation;
 
-  const StatusIcon = job.status
-    ? STATUS_ICONS[job.status] || Calendar
-    : Calendar;
-
   return (
-    <Card
-      className="cursor-pointer transition-all active:scale-[0.98] active:opacity-90 active:shadow-md"
+    <article
+      role="button"
+      tabIndex={0}
       onClick={handleCardClick}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          handleCardClick();
+        }
+      }}
+      className="rounded-xl border border-border/80 bg-card overflow-hidden cursor-pointer transition-colors hover:bg-muted/30 active:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
     >
-      <CardHeader className="pb-3 space-y-2">
-        {/* Header: Job Number */}
-        <div className="flex items-start gap-2">
+      <div className="p-4 space-y-3">
+        {/* Header: Job Number + Customer | Badge + Chevron */}
+        <div className="flex items-start gap-3">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <h3 className="font-bold text-base text-foreground truncate">
-                {job.job_number}
-              </h3>
-              {job.status && (
-                <StatusIcon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-              )}
-            </div>
-            <p className="text-sm font-medium text-foreground wrap-break-word">
+            <h3 className="font-semibold text-base text-foreground truncate">
+              {job.job_number}
+            </h3>
+            <p className="text-sm text-foreground/90 mt-0.5 wrap-break-word">
               {job.customer_name}
             </p>
             {contactPerson && (
@@ -153,95 +145,86 @@ export function JobCardMobile({
               </p>
             )}
           </div>
+          <div className="flex items-center gap-2 shrink-0">
+            {job.status && (
+              <Badge
+                className={`${getStatusBadgeCustomClasses(job.status as JobStatus)} text-[10px] px-2 py-0 h-5 font-medium`}
+              >
+                {STATUS_LABELS[job.status as JobStatus] || "Unknown"}
+              </Badge>
+            )}
+            <ChevronRight className="h-5 w-5 text-muted-foreground/60 mt-0.5" aria-hidden />
+          </div>
         </div>
 
-        {/* Quick Info Row */}
-        <div className="space-y-1.5 pt-1">
+        {/* Quick Info */}
+        <div className="space-y-1.5">
           {job.material_type && (
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Package className="h-3 w-3 shrink-0" />
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Package className="h-3.5 w-3.5 shrink-0 text-muted-foreground/70" />
               <span className="wrap-break-word">{job.material_type}</span>
             </div>
           )}
           {fullAddress && (
-            <div className="flex items-start gap-1.5 text-xs text-muted-foreground">
-              <MapPin className="h-3 w-3 shrink-0 mt-0.5" />
+            <div className="flex items-start gap-2 text-xs text-muted-foreground">
+              <MapPin className="h-3.5 w-3.5 shrink-0 mt-0.5 text-muted-foreground/70" />
               <span className="wrap-break-word line-clamp-2">
                 {fullAddress}
               </span>
             </div>
           )}
           {dcNumber && (
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <FileText className="h-3 w-3 shrink-0" />
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <FileText className="h-3.5 w-3.5 shrink-0 text-muted-foreground/70" />
               <span className="wrap-break-word">DC: {dcNumber}</span>
             </div>
           )}
         </div>
-      </CardHeader>
 
-      <CardContent className="space-y-3 pt-0">
+        <div className="space-y-3 pt-1">
         {/* Dates Row */}
         {(bookingDate || deliveryDate) && (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
+          <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
             {bookingDate && (
               <div className="flex items-center gap-1.5">
-                <Calendar className="h-3.5 w-3.5 shrink-0" />
-                <span className="font-medium">Booked:</span>
-                <span>{bookingDate}</span>
+                <Calendar className="h-3.5 w-3.5 shrink-0 text-muted-foreground/70" />
+                <span>Booked {bookingDate}</span>
               </div>
-            )}
-            {bookingDate && deliveryDate && (
-              <span className="text-muted-foreground/50">|</span>
             )}
             {deliveryDate && (
               <div className="flex items-center gap-1.5">
-                <Truck className="h-3.5 w-3.5 shrink-0" />
-                <span className="font-medium">Delivery:</span>
-                <span>{deliveryDate}</span>
+                <Truck className="h-3.5 w-3.5 shrink-0 text-muted-foreground/70" />
+                <span>Delivery {deliveryDate}</span>
               </div>
             )}
           </div>
         )}
 
-        {/* Status Badge and Media Indicators Row */}
-        <div className="flex items-center gap-3 flex-wrap">
-          {job.status && (
-            <Badge
-              className={`${getStatusBadgeCustomClasses(job.status as JobStatus)} shrink-0 text-[10px] px-2 py-0.5 font-semibold`}
-            >
-              {STATUS_LABELS[job.status as JobStatus] || "Unknown"}
-            </Badge>
-          )}
+        {/* Media & invoice chips */}
+        <div className="flex items-center gap-2 flex-wrap">
           {photoCount > 0 && (
-            <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted/50 text-xs">
-              <Camera className="h-3 w-3" />
-              <span className="font-medium">{photoCount}</span>
-              <span className="text-muted-foreground">
-                {photoCount === 1 ? "photo" : "photos"}
-              </span>
-            </div>
+            <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted/60 text-xs font-medium tabular-nums">
+              <Camera className="h-3 w-3 text-muted-foreground" />
+              {photoCount} {photoCount === 1 ? "photo" : "photos"}
+            </span>
           )}
           {videoCount > 0 && (
-            <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted/50 text-xs">
-              <Video className="h-3 w-3" />
-              <span className="font-medium">{videoCount}</span>
-              <span className="text-muted-foreground">
-                {videoCount === 1 ? "video" : "videos"}
-              </span>
-            </div>
+            <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted/60 text-xs font-medium tabular-nums">
+              <Video className="h-3 w-3 text-muted-foreground" />
+              {videoCount} {videoCount === 1 ? "video" : "videos"}
+            </span>
           )}
           {hasInvoice && (
-            <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted/50 text-xs">
+            <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted/60 text-xs text-muted-foreground">
               <FileText className="h-3 w-3" />
-              <span className="text-muted-foreground">Invoice</span>
-            </div>
+              Invoice
+            </span>
           )}
         </div>
 
         {/* Contact Info */}
         {(primaryPhone || primaryEmail) && (
-          <div className="flex items-center gap-3 flex-wrap pt-3 border-t">
+          <div className="flex items-center gap-4 flex-wrap pt-3 border-t border-border/60">
             {primaryPhone && (
               <a
                 href={`tel:${primaryPhone}`}
@@ -282,7 +265,7 @@ export function JobCardMobile({
         {/* Actions */}
         {showActions && (
           <div
-            className="flex items-center gap-2 pt-2 border-t"
+            className="flex items-center gap-2 pt-3 border-t border-border/60"
             onClick={(e) => e.stopPropagation()}
           >
             <Button
@@ -329,7 +312,8 @@ export function JobCardMobile({
             )}
           </div>
         )}
-      </CardContent>
-    </Card>
+        </div>
+      </div>
+    </article>
   );
 }

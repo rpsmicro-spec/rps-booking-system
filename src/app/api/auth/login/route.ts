@@ -64,8 +64,9 @@ export async function POST(request: Request) {
     })
 
     if (error) {
+      console.error('Login failed:', error.message)
       return NextResponse.json(
-        { error: error.message },
+        { error: 'Invalid credentials' },
         { status: 401 }
       )
     }

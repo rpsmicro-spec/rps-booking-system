@@ -150,7 +150,8 @@ export function usePWAInstall() {
         window.removeEventListener('beforeinstallprompt', handler)
       }
     }
-  }, [deferredPrompt, isInstalled, hasServiceWorker])
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- runs once on mount; state is set inside, not consumed as deps
+  }, [])
 
   const install = async () => {
     if (!deferredPrompt) {

@@ -8,12 +8,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Label } from '@/components/ui/label'
 import { JOB_STATUS, STATUS_LABELS } from '@/lib/constants'
 import { X, Filter } from 'lucide-react'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { useState } from 'react'
 import { SimpleDatePicker } from './SimpleDatePicker'
+import { JobSearch } from './JobSearch'
 
 interface JobFiltersProps {
   status: string | null
@@ -23,6 +23,13 @@ interface JobFiltersProps {
   onDateFromChange: (date: string | null) => void
   onDateToChange: (date: string | null) => void
   onClear: () => void
+  /** When provided, mobile sheet is controlled and no trigger is rendered (parent puts trigger elsewhere, e.g. next to search). */
+  mobileSheetOpen?: boolean
+  onMobileSheetOpenChange?: (open: boolean) => void
+  /** When provided, desktop card shows search and filters in the same card (search above filters). */
+  search?: string
+  onSearchChange?: (search: string) => void
+  onClearSearch?: () => void
 }
 
 export function JobFilters({
@@ -33,25 +40,36 @@ export function JobFilters({
   onDateFromChange,
   onDateToChange,
   onClear,
+  mobileSheetOpen,
+  onMobileSheetOpenChange,
+  search,
+  onSearchChange,
+  onClearSearch,
 }: JobFiltersProps) {
-  const [isOpen, setIsOpen] = useState(false)
+  const [internalOpen, setInternalOpen] = useState(false)
+  const isControlled = mobileSheetOpen !== undefined && onMobileSheetOpenChange !== undefined
+  const isOpen = isControlled ? mobileSheetOpen : internalOpen
+  const setIsOpen = isControlled ? onMobileSheetOpenChange : setInternalOpen
   const hasFilters = status || dateFrom || dateTo
 
   return (
     <>
-      {/* Desktop Filters */}
-      <div className="hidden md:block">
-        <div className="rounded-lg border bg-card p-4">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {/* Desktop: search + filters, no card (consistency with other pages) */}
+      <div className="hidden md:block space-y-4">
+        {search !== undefined && onSearchChange && onClearSearch && (
+          <JobSearch
+            search={search}
+            onSearchChange={onSearchChange}
+            onClear={onClearSearch}
+          />
+        )}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <div>
-              <Label htmlFor="status" className="mb-2 block text-sm font-medium">
-                Status
-              </Label>
               <Select
                 value={status || 'all'}
                 onValueChange={(value) => onStatusChange(value === 'all' ? null : value)}
               >
-                <SelectTrigger id="status" className="w-full">
+                <SelectTrigger id="status" className="w-full" aria-label="Status">
                   <SelectValue placeholder="All statuses" />
                 </SelectTrigger>
                 <SelectContent>
@@ -65,9 +83,6 @@ export function JobFilters({
               </Select>
             </div>
             <div>
-              <Label htmlFor="dateFrom" className="mb-2 block text-sm font-medium">
-                From Date
-              </Label>
               <SimpleDatePicker
                 id="dateFrom"
                 value={dateFrom || undefined}
@@ -76,9 +91,6 @@ export function JobFilters({
               />
             </div>
             <div>
-              <Label htmlFor="dateTo" className="mb-2 block text-sm font-medium">
-                To Date
-              </Label>
               <SimpleDatePicker
                 id="dateTo"
                 value={dateTo || undefined}
@@ -87,44 +99,42 @@ export function JobFilters({
               />
             </div>
           </div>
-          {hasFilters && (
-            <div className="mt-4 flex justify-end">
-              <Button variant="outline" size="sm" onClick={onClear}>
-                <X className="h-4 w-4 mr-2" />
-                Clear Filters
-              </Button>
-            </div>
-          )}
-        </div>
+        {hasFilters && (
+          <div className="flex justify-end">
+            <Button variant="outline" size="sm" onClick={onClear}>
+              <X className="h-4 w-4 mr-2" />
+              Clear Filters
+            </Button>
+          </div>
+        )}
       </div>
 
-      {/* Mobile Filters */}
+      {/* Mobile Filters - sheet only when controlled (trigger is in parent row with search); otherwise sheet + trigger */}
       <div className="md:hidden">
         <Sheet open={isOpen} onOpenChange={setIsOpen}>
-          <SheetTrigger asChild>
-            <Button variant="outline" className="w-full justify-between">
-              <span>
-                Filters {hasFilters && `(${[status, dateFrom, dateTo].filter(Boolean).length})`}
-              </span>
-              <Filter className="h-4 w-4" />
-            </Button>
-          </SheetTrigger>
+          {!isControlled && (
+            <SheetTrigger asChild>
+              <Button variant="outline" className="w-full justify-between">
+                <span>
+                  Filters {hasFilters && `(${[status, dateFrom, dateTo].filter(Boolean).length})`}
+                </span>
+                <Filter className="h-4 w-4" />
+              </Button>
+            </SheetTrigger>
+          )}
           <SheetContent side="bottom" className="w-full max-h-[85vh] overflow-y-auto pb-6">
             <SheetHeader className="px-4 pb-4 border-b">
               <SheetTitle>Filter Jobs</SheetTitle>
             </SheetHeader>
             <div className="pt-6 pb-2 px-4 space-y-5">
-              <div className="space-y-2.5">
-                <Label htmlFor="mobile-status" className="text-sm font-medium">
-                  Status
-                </Label>
+              <div>
                 <Select
                   value={status || 'all'}
                   onValueChange={(value) => {
                     onStatusChange(value === 'all' ? null : value)
                   }}
                 >
-                  <SelectTrigger id="mobile-status" className="w-full">
+                  <SelectTrigger id="mobile-status" className="w-full" aria-label="Status">
                     <SelectValue placeholder="All statuses" />
                   </SelectTrigger>
                   <SelectContent>
@@ -137,10 +147,7 @@ export function JobFilters({
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2.5">
-                <Label htmlFor="mobile-dateFrom" className="text-sm font-medium">
-                  From Date
-                </Label>
+              <div>
                 <SimpleDatePicker
                   id="mobile-dateFrom"
                   value={dateFrom || undefined}
@@ -148,10 +155,7 @@ export function JobFilters({
                   placeholder="Select from date"
                 />
               </div>
-              <div className="space-y-2.5">
-                <Label htmlFor="mobile-dateTo" className="text-sm font-medium">
-                  To Date
-                </Label>
+              <div>
                 <SimpleDatePicker
                   id="mobile-dateTo"
                   value={dateTo || undefined}

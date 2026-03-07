@@ -24,6 +24,7 @@ import { TableSkeleton } from '@/components/ui/skeletons'
 import { format } from 'date-fns'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { ChevronRight } from 'lucide-react'
 
 interface Customer {
   customer_name: string
@@ -53,6 +54,7 @@ export function CustomersTable({ search, limit = 50, offset = 0, onTotalChange }
   const isMobile = useIsMobile()
   const [customers, setCustomers] = useState<Customer[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   const handleRowClick = (customerName: string) => {
     const customerKey = encodeURIComponent(customerName)
@@ -66,6 +68,7 @@ export function CustomersTable({ search, limit = 50, offset = 0, onTotalChange }
 
   const fetchCustomers = async () => {
     setIsLoading(true)
+    setError(null)
     try {
       const params = new URLSearchParams()
       if (search) params.append('search', search)
@@ -76,7 +79,7 @@ export function CustomersTable({ search, limit = 50, offset = 0, onTotalChange }
       const result = await response.json()
 
       if (!response.ok) {
-        console.error('Failed to fetch customers:', result.error)
+        setError('Failed to load customers. Please try again.')
         return
       }
 
@@ -84,6 +87,7 @@ export function CustomersTable({ search, limit = 50, offset = 0, onTotalChange }
       onTotalChange?.(result.total || 0)
     } catch (error) {
       console.error('Error fetching customers:', error)
+      setError('Failed to load customers. Please check your connection.')
     } finally {
       setIsLoading(false)
     }
@@ -122,6 +126,17 @@ export function CustomersTable({ search, limit = 50, offset = 0, onTotalChange }
     )
   }
 
+  if (error) {
+    return (
+      <div className="p-8 sm:p-12 text-center">
+        <p className="text-sm text-destructive">{error}</p>
+        <Button variant="outline" size="sm" className="mt-4" onClick={fetchCustomers}>
+          Try Again
+        </Button>
+      </div>
+    )
+  }
+
   const emptyState = (
     <div className="p-8 sm:p-12">
       <Empty>
@@ -152,102 +167,105 @@ export function CustomersTable({ search, limit = 50, offset = 0, onTotalChange }
           customers.map((customer, index) => {
             const customerKey = encodeURIComponent(customer.customer_name)
             return (
-              <Card
+              <article
                 key={`${customer.customer_name}-${index}`}
-                className="cursor-pointer transition-all active:scale-[0.98] active:opacity-90 active:shadow-md"
+                role="button"
+                tabIndex={0}
                 onClick={() => handleRowClick(customer.customer_name)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    handleRowClick(customer.customer_name)
+                  }
+                }}
+                className="rounded-xl border border-border/80 bg-card overflow-hidden cursor-pointer transition-colors hover:bg-muted/30 active:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               >
-                <CardHeader className="pb-3 space-y-2">
-                  {/* Header: Customer Name + Job Count */}
-                  <div className="flex items-start justify-between gap-2">
+                <div className="p-4 space-y-3">
+                  {/* Header: Name + Job count chip + Chevron */}
+                  <div className="flex items-start gap-3">
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-bold text-base text-foreground truncate">
+                      <h3 className="font-semibold text-base text-foreground truncate">
                         {customer.customer_name}
                       </h3>
-                        {customer.contact_person_name && (
+                      {customer.contact_person_name && (
                         <p className="text-xs text-muted-foreground truncate mt-0.5">
-                            {customer.contact_person_name}
-                            {customer.contact_person_designation && (
+                          {customer.contact_person_name}
+                          {customer.contact_person_designation && (
                             <span className="ml-1 text-muted-foreground/70">
                               • {customer.contact_person_designation}
                             </span>
-                            )}
-                          </p>
-                        )}
+                          )}
+                        </p>
+                      )}
                     </div>
-                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted/50 shrink-0 ml-2">
-                      <Briefcase className="h-3 w-3 text-muted-foreground shrink-0" />
-                      <span className="font-medium text-xs">{customer.job_count}</span>
-                      <span className="text-muted-foreground text-xs">
-                        {customer.job_count === 1 ? 'job' : 'jobs'}
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted/60 text-xs font-medium tabular-nums">
+                        <Briefcase className="h-3 w-3 text-muted-foreground" />
+                        {customer.job_count} {customer.job_count === 1 ? 'job' : 'jobs'}
                       </span>
+                      <ChevronRight className="h-5 w-5 text-muted-foreground/60" aria-hidden />
                     </div>
                   </div>
 
-                  {/* Quick Info Row */}
-                  <div className="space-y-1.5 pt-1">
+                  {/* Quick Info */}
+                  <div className="space-y-1.5">
                     {formatAddress(customer) !== '-' && (
-                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                        <MapPin className="h-3 w-3 shrink-0" />
+                      <div className="flex items-start gap-2 text-xs text-muted-foreground">
+                        <MapPin className="h-3.5 w-3.5 shrink-0 mt-0.5 text-muted-foreground/70" />
                         <span className="wrap-break-word">{formatAddress(customer)}</span>
                       </div>
                     )}
                     {customer.created_at && (
-                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                        <Calendar className="h-3 w-3 shrink-0" />
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Calendar className="h-3.5 w-3.5 shrink-0 text-muted-foreground/70" />
                         <span>Created {format(new Date(customer.created_at), 'MMM dd, yyyy')}</span>
                       </div>
                     )}
                   </div>
-                </CardHeader>
 
-                <CardContent className="space-y-3 pt-0">
-                  {/* Contact Info */}
-                  {(customer.contact_number || customer.email) && (
-                    <div className="flex items-center gap-3 flex-wrap pt-3 border-t">
-                      {customer.contact_number && (
-                        <a
-                          href={`tel:${customer.contact_number}`}
-                          onClick={(e) => e.stopPropagation()}
-                          className="flex items-center gap-1.5 text-xs text-primary hover:underline"
-                        >
-                          <Phone className="h-3.5 w-3.5 shrink-0" />
-                          <span className="truncate">{customer.contact_number}</span>
-                        </a>
-                      )}
-                  {customer.email && (
-                        <a
-                          href={`mailto:${customer.email}`}
-                          onClick={(e) => e.stopPropagation()}
-                          className="flex items-center gap-1.5 text-xs text-primary hover:underline"
-                        >
-                          <Mail className="h-3.5 w-3.5 shrink-0" />
-                      <span className="truncate">{customer.email}</span>
-                        </a>
-                  )}
+                  {/* Contact + Action */}
+                  <div className="space-y-3 pt-2 border-t border-border/60">
+                    {(customer.contact_number || customer.email) && (
+                      <div className="flex items-center gap-4 flex-wrap">
+                        {customer.contact_number && (
+                          <a
+                            href={`tel:${customer.contact_number}`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="flex items-center gap-1.5 text-xs text-primary hover:underline"
+                          >
+                            <Phone className="h-3.5 w-3.5 shrink-0" />
+                            <span className="truncate">{customer.contact_number}</span>
+                          </a>
+                        )}
+                        {customer.email && (
+                          <a
+                            href={`mailto:${customer.email}`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="flex items-center gap-1.5 text-xs text-primary hover:underline"
+                          >
+                            <Mail className="h-3.5 w-3.5 shrink-0" />
+                            <span className="truncate">{customer.email}</span>
+                          </a>
+                        )}
+                      </div>
+                    )}
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full text-xs h-8"
+                        asChild
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Link href={`/customers/${customerKey}`}>
+                          <Eye className="mr-1.5 h-3.5 w-3.5" />
+                          View Jobs
+                        </Link>
+                      </Button>
                     </div>
-                  )}
-
-                  {/* Actions */}
-                  <div
-                    className="flex items-center gap-2 pt-2 border-t"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1 text-xs h-8"
-                      asChild
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <Link href={`/customers/${customerKey}`}>
-                        <Eye className="mr-1.5 h-3.5 w-3.5" />
-                        View Jobs
-                      </Link>
-                    </Button>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </article>
             )
           })
         )}

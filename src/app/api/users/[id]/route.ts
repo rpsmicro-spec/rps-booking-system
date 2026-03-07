@@ -29,8 +29,9 @@ export async function GET(
       .single()
 
     if (error) {
+      console.error('Failed to fetch user:', error.message)
       return NextResponse.json(
-        { error: error.message },
+        { error: 'Failed to fetch user' },
         { status: 400 }
       )
     }
@@ -93,8 +94,9 @@ export async function PATCH(
         { email }
       )
       if (authError) {
+        console.error('Failed to update user:', authError.message)
         return NextResponse.json(
-          { error: authError.message },
+          { error: 'Failed to update user' },
           { status: 400 }
         )
       }
@@ -109,8 +111,9 @@ export async function PATCH(
       .single()
 
     if (error) {
+      console.error('Failed to update user:', error.message)
       return NextResponse.json(
-        { error: error.message },
+        { error: 'Failed to update user' },
         { status: 400 }
       )
     }
@@ -132,9 +135,9 @@ export async function PATCH(
 
     return NextResponse.json({ user: updatedUser }, { status: 200 })
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred'
+    console.error('Failed to update user:', error instanceof Error ? error.message : error)
     return NextResponse.json(
-      { error: errorMessage },
+      { error: 'Failed to update user' },
       { status: 500 }
     )
   }
@@ -184,8 +187,9 @@ export async function DELETE(
     const { error: deleteError } = await adminClient.auth.admin.deleteUser(id)
 
     if (deleteError) {
+      console.error('Failed to delete user:', deleteError.message)
       return NextResponse.json(
-        { error: deleteError.message },
+        { error: 'Failed to delete user' },
         { status: 400 }
       )
     }
@@ -209,9 +213,9 @@ export async function DELETE(
       { status: 200 }
     )
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred'
+    console.error('Failed to delete user:', error instanceof Error ? error.message : error)
     return NextResponse.json(
-      { error: errorMessage },
+      { error: 'Failed to delete user' },
       { status: 500 }
     )
   }

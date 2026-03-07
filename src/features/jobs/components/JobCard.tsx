@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { STATUS_LABELS, getStatusBadgeColor } from '@/lib/constants'
 import type { Job, JobStatus } from '@/types/types'
-import { Calendar, Phone, Mail } from 'lucide-react'
+import { Calendar, Phone, Mail, ChevronRight } from 'lucide-react'
 import { format } from 'date-fns'
 import { utcToIstDateObject } from "@/lib/utils/date-ist";
 
@@ -30,11 +30,14 @@ export function JobCard({ job }: JobCardProps) {
                 {job.customer_name}
               </p>
             </div>
-            <Badge
-              className={`${getStatusBadgeColor(job.status as JobStatus)} text-white flex-shrink-0 ml-2`}
-            >
-              {getStatusLabel(job.status)}
-            </Badge>
+            <div className="flex items-center gap-2 shrink-0">
+              <Badge
+                className={`${getStatusBadgeColor(job.status as JobStatus)} text-white`}
+              >
+                {getStatusLabel(job.status)}
+              </Badge>
+              <ChevronRight className="h-5 w-5 text-muted-foreground/60" aria-hidden />
+            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-2">

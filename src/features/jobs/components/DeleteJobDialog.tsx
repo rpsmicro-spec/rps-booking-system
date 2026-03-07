@@ -12,14 +12,16 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 
 interface DeleteJobDialogProps {
   jobId: string
   jobNumber: string
+  triggerClassName?: string
 }
 
-export function DeleteJobDialog({ jobId, jobNumber }: DeleteJobDialogProps) {
+export function DeleteJobDialog({ jobId, jobNumber, triggerClassName }: DeleteJobDialogProps) {
   const router = useRouter()
   const [isOpen, setIsOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -52,7 +54,7 @@ export function DeleteJobDialog({ jobId, jobNumber }: DeleteJobDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="destructive" size="sm" className="text-xs sm:text-sm">
+        <Button variant="destructive" size="sm" className={cn('text-xs sm:text-sm', triggerClassName)}>
           Delete Job
         </Button>
       </DialogTrigger>

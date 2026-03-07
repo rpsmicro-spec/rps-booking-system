@@ -128,17 +128,17 @@ export function Breadcrumbs() {
   }
 
   return (
-    <Breadcrumb className="min-w-0">
+    <Breadcrumb className="min-w-0 overflow-hidden">
       <BreadcrumbList className="min-w-0">
         {breadcrumbItems.map((item, index) => (
           <React.Fragment key={item.href}>
-            {index > 0 && <BreadcrumbSeparator />}
-            <BreadcrumbItem className="min-w-0 max-w-full">
+            {index > 0 && <BreadcrumbSeparator className="shrink-0" />}
+            <BreadcrumbItem className={item.isLast ? "min-w-0 shrink overflow-hidden" : "shrink-0"}>
               {item.isLast ? (
-                <BreadcrumbPage className="truncate">{item.label}</BreadcrumbPage>
+                <BreadcrumbPage className="truncate block">{item.label}</BreadcrumbPage>
               ) : (
                 <BreadcrumbLink asChild>
-                  <Link href={item.href} className="truncate block hover:text-foreground transition-colors">{item.label}</Link>
+                  <Link href={item.href} className="block hover:text-foreground transition-colors">{item.label}</Link>
                 </BreadcrumbLink>
               )}
             </BreadcrumbItem>

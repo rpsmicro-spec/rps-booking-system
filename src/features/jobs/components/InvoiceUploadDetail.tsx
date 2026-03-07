@@ -161,23 +161,23 @@ export function InvoiceUploadDetail({ job, displayJob, onUpdate }: InvoiceUpload
     >
       <CollapsibleTrigger className="w-full p-4 md:p-6 hover:bg-muted/50 active:bg-muted transition-colors touch-manipulation">
         <div className="flex items-center justify-between w-full">
-          <div className="flex items-center gap-3 flex-1 min-w-0">
-            <div className="rounded-full bg-muted p-1.5 shrink-0">
-              <Receipt
-                className="h-3.5 w-3.5 text-muted-foreground"
-                aria-label="Invoice icon"
-              />
-            </div>
-            <div className="text-left min-w-0 flex-1">
-              <h3 className="text-base md:text-lg font-semibold text-foreground">
+          <div className="flex flex-col gap-0.5 flex-1 min-w-0 text-left">
+            <div className="flex items-center gap-2">
+              <div className="rounded-full bg-muted p-1.5 shrink-0">
+                <Receipt
+                  className="h-3.5 w-3.5 text-muted-foreground"
+                  aria-label="Invoice icon"
+                />
+              </div>
+              <h3 className="text-sm font-semibold text-foreground">
                 Invoice
               </h3>
-              <p className="text-xs md:text-sm text-muted-foreground">
-                {hasExistingInvoice && !hasPendingUpload
-                  ? "View and manage invoice"
-                  : "Upload invoice file"}
-              </p>
             </div>
+            <p className="text-sm text-muted-foreground pl-9">
+              {hasExistingInvoice && !hasPendingUpload
+                ? "View and manage invoice"
+                : "PDF, max 5 MB"}
+            </p>
           </div>
           <ChevronDown className="h-5 w-5 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180 shrink-0 ml-2" />
         </div>
@@ -222,6 +222,7 @@ export function InvoiceUploadDetail({ job, displayJob, onUpdate }: InvoiceUpload
           invoiceFile={invoiceFile}
           onInvoiceChange={handleInvoiceChange}
           disabled={isUploading}
+          emptyStateVariant="minimal"
         />
 
         {hasPendingUpload && previewUrl && (

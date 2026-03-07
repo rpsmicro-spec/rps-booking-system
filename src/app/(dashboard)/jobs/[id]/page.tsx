@@ -1,16 +1,14 @@
 import { requireAuth } from "@/lib/auth/helpers";
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
-import { JobDetailClient } from "@/features/jobs/components/JobDetailClient";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import Link from "next/link";
-import { Edit, Hash, Calendar, Package, Truck } from "lucide-react";
-import { DeleteJobDialog } from "@/features/jobs/components/DeleteJobDialog";
+import { Hash, Calendar, Package, Truck } from "lucide-react";
 import { getSignedUrl } from "@/lib/storage/signed-url";
 import { STATUS_LABELS, getStatusBadgeCustomClasses } from "@/lib/constants";
 import type { JobStatus } from "@/types/types";
-import { CustomerDetailsDialog } from "@/features/jobs/components/CustomerDetailsDialog";
+import { ClientOnly } from "@/components/client-only";
+import { JobDetailPageContent } from "@/features/jobs/components/JobDetailPageContent";
+import { JobDetailPageSkeleton } from "@/features/jobs/components/JobDetailPageSkeleton";
 
 const STATUS_ICONS: Record<string, typeof Calendar> = {
   collected: Calendar,
@@ -84,33 +82,16 @@ export default async function JobDetailPage({
             </Badge>
           )}
         </div>
-        {/* Action Buttons Row */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <CustomerDetailsDialog job={jobWithSignedInvoice} />
-          <Link href={`/jobs/${id}/edit`}>
-            <Button variant="outline" size="sm" className="text-xs sm:text-sm">
-              <Edit className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              Edit
-            </Button>
-          </Link>
-          <DeleteJobDialog jobId={job.id} jobNumber={job.job_number} />
-        </div>
+        {/* Action buttons + detail content: client-only to avoid Radix hydration mismatch */}
+        <ClientOnly fallback={<JobDetailPageSkeleton />}>
+          <JobDetailPageContent
+            id={id}
+            jobWithSignedInvoice={jobWithSignedInvoice}
+            originalJob={job}
+            statusHistory={statusHistory || []}
+          />
+        </ClientOnly>
       </div>
-
-      {/* Status Card */}
-      <JobDetailClient
-        job={jobWithSignedInvoice}
-        statusHistory={statusHistory || []}
-        showStatusCard={true}
-      />
-      
-      {/* Rest of the content */}
-      <JobDetailClient
-        job={jobWithSignedInvoice}
-        originalJob={job}
-        statusHistory={statusHistory || []}
-        showStatusCard={false}
-      />
     </div>
   );
 }

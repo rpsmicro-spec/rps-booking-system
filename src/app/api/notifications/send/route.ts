@@ -8,12 +8,11 @@ import {
   generateCompletionEmailText,
 } from '@/lib/email/templates'
 import { getJobViewUrl, getWhatsAppLink, generateWhatsAppMessage, generateCompletionWhatsAppMessage } from '@/lib/notifications/utils'
-import { createClient } from '@/lib/supabase/server'
 import { STATUS_LABELS } from '@/lib/constants'
 
 export async function POST(request: Request) {
   try {
-    await requireAuth()
+    const { supabase } = await requireAuth()
     const { jobId, notificationType, ccAdditionalEmails = false } = await request.json()
 
     if (!jobId || !notificationType) {
@@ -22,8 +21,6 @@ export async function POST(request: Request) {
         { status: 400 }
       )
     }
-
-    const supabase = await createClient()
 
     // Fetch job with public_token
     const { data: job, error } = await supabase

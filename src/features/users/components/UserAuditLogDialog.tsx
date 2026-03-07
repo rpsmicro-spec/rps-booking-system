@@ -84,8 +84,8 @@ export function UserAuditLogDialog({
 
   const formatAction = (action: string) => {
     return action
-      .split('.')
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .split(/[._]/)
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
       .join(' ')
   }
 

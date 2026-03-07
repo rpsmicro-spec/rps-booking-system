@@ -6,8 +6,8 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card'
  */
 export function StatsCardsSkeleton() {
   return (
-    <div className="grid gap-3 md:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-      {[1, 2, 3].map((i) => (
+    <div className="grid gap-3 md:gap-4 grid-cols-2 lg:grid-cols-4">
+      {[1, 2, 3, 4].map((i) => (
         <Card key={i}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <Skeleton className="h-4 w-24" />
@@ -86,6 +86,18 @@ export function TableSkeleton({
           </tbody>
         </table>
       </div>
+    </div>
+  )
+}
+
+/**
+ * Skeleton for dashboard recent jobs section
+ */
+export function RecentJobsSkeleton() {
+  return (
+    <div className="space-y-4">
+      <Skeleton className="h-6 w-32" />
+      <TableSkeleton rows={5} columns={5} />
     </div>
   )
 }

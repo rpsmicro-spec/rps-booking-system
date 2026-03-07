@@ -1,4 +1,3 @@
-import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth/helpers'
@@ -12,9 +11,7 @@ type JobNumberSettingsInsert = Database['public']['Tables']['job_number_settings
 
 export async function GET() {
   try {
-    // Allow all authenticated users to view settings (read-only)
-    await requireAuth()
-    const supabase = await createClient()
+    const { supabase } = await requireAuth()
 
     // Get settings (there should only be one row)
     const { data, error } = await supabase
@@ -63,7 +60,7 @@ export async function GET() {
 
 export async function PUT(request: Request) {
   try {
-    await requireAuth()
+    const { supabase } = await requireAuth()
     const role = await getUserRole()
 
     // Check if user has permission (owner or admin)
@@ -73,8 +70,6 @@ export async function PUT(request: Request) {
         { status: 403 }
       )
     }
-
-    const supabase = await createClient()
 
     const body = await request.json()
     const { prefix, next_number } = body

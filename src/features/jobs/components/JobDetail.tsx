@@ -221,7 +221,7 @@ export function JobDetail({
                     onStatusUpdate={onStatusUpdate}
                   />
                 </div>
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex w-full flex-wrap items-center gap-2 [&>button]:flex-1 [&>button]:min-w-0 [&>button]:sm:flex-initial">
                   {job.email && job.public_token && (
                     <Button
                       variant="outline"
@@ -372,21 +372,10 @@ export function JobDetail({
   // Otherwise, show the rest of the content
   return (
     <div className="space-y-3 w-full">
-      {/* Job Details and Status Timeline - Side by Side on Desktop */}
-      <div className="grid gap-3 lg:grid-cols-2">
-        {/* Job Details Card */}
-        <Card>
-          <CardHeader className="pb-2 pt-4 px-4">
-            <div className="flex items-center gap-2">
-              <div className="rounded-full bg-muted p-1.5">
-                <ClipboardList className="h-3.5 w-3.5 text-muted-foreground" />
-              </div>
-              <CardTitle className="text-sm font-semibold">Job Details</CardTitle>
-            </div>
-          </CardHeader>
-          <Separator />
-          <CardContent className="pt-3 px-4 pb-4">
-            <div className="grid gap-3">
+      {/* Job details + Status Timeline in one card */}
+      <Card className="w-full">
+        <CardContent className="pt-4 px-4 pb-4">
+          <div className="grid gap-3 md:grid-cols-2">
               <div className="flex items-start gap-3">
                 <div className="shrink-0 mt-0.5">
                   <div className="rounded-full bg-muted p-1.5">
@@ -640,32 +629,18 @@ export function JobDetail({
                 </div>
               )}
             </div>
+
+            {job.status && (
+              <>
+                <Separator className="my-4" />
+                <StatusTimeline
+                  currentStatus={job.status as JobStatus}
+                  statusHistory={statusHistory}
+                />
+              </>
+            )}
           </CardContent>
         </Card>
-
-        {/* Status Timeline Card */}
-        {job.status && (
-          <Card>
-            <CardHeader className="pb-2 pt-4 px-4">
-              <div className="flex items-center gap-2">
-                <div className="rounded-full bg-muted p-1.5">
-                  <Package className="h-3.5 w-3.5 text-muted-foreground" />
-                </div>
-                <CardTitle className="text-sm font-semibold">
-                  Status Timeline
-                </CardTitle>
-              </div>
-            </CardHeader>
-            <Separator />
-            <CardContent className="pt-3 px-4 pb-4">
-              <StatusTimeline
-                currentStatus={job.status as JobStatus}
-                statusHistory={statusHistory}
-              />
-            </CardContent>
-          </Card>
-        )}
-      </div>
 
       {/* Photos & Videos - Show before and after in tabs */}
       {((job.before_photos?.length ?? 0) > 0 || (job.after_photos?.length ?? 0) > 0) && (

@@ -47,8 +47,9 @@ export async function PATCH(
       .eq('id', id)
 
     if (error) {
+      console.error('Failed to update role:', error.message)
       return NextResponse.json(
-        { error: error.message },
+        { error: 'Failed to update role' },
         { status: 400 }
       )
     }

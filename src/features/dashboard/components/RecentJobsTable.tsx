@@ -45,50 +45,68 @@ import { toast } from "sonner";
 
 type TimeRange = "today" | "week";
 
-export function RecentJobsTable() {
+function filterJobsByTimeRange(jobList: Job[], range: TimeRange): Job[] {
+  let filterDate: Date;
+  if (range === "today") {
+    filterDate = new Date(getIstTodayStart());
+  } else {
+    filterDate = new Date(getIstWeekStart());
+  }
+  return jobList.filter((job) => {
+    if (!job.created_at) return false;
+    return new Date(job.created_at) >= filterDate;
+  });
+}
+
+type RecentJobsTableProps = {
+  /** Server-provided recent jobs (e.g. from dashboard). When set, used as initial data and no fetch on mount. */
+  initialJobs?: Job[];
+};
+
+export function RecentJobsTable({ initialJobs }: RecentJobsTableProps = {}) {
   const router = useRouter();
   const isMobile = useIsMobile();
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [jobs, setJobs] = useState<Job[]>(() => {
+    if (initialJobs?.length) {
+      return filterJobsByTimeRange(initialJobs, "week").slice(0, 5);
+    }
+    return [];
+  });
+  const [isLoading, setIsLoading] = useState(!initialJobs?.length);
+  const [error, setError] = useState<string | null>(null);
   const [timeRange, setTimeRange] = useState<TimeRange>("week");
 
   useEffect(() => {
+    if (initialJobs?.length) {
+      const filtered = filterJobsByTimeRange(initialJobs, timeRange).slice(0, 5);
+      setJobs(filtered);
+      setIsLoading(false);
+      return;
+    }
     fetchRecentJobs(timeRange);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- initialJobs is server-provided, stable per request
   }, [timeRange]);
 
   const fetchRecentJobs = async (range: TimeRange) => {
     try {
       setIsLoading(true);
-      // Fetch recent jobs (more than we need, we'll filter client-side)
+      setError(null);
       const response = await fetch(`/api/jobs?limit=50`);
       const result = await response.json();
 
       if (!response.ok) {
-        console.error("Failed to fetch recent jobs:", result.error);
+        setError("Failed to load recent jobs");
         return;
       }
 
-      let filterDate: Date;
-
-      if (range === "today") {
-        // Filter jobs created today (in IST)
-        filterDate = new Date(getIstTodayStart());
-      } else {
-        // Filter jobs created this week (from start of current week in IST)
-        filterDate = new Date(getIstWeekStart());
-      }
-
-      const recentJobs = (result.jobs || [])
-        .filter((job: Job) => {
-          if (!job.created_at) return false;
-          const createdDate = new Date(job.created_at);
-          return createdDate >= filterDate;
-        })
-        .slice(0, 5); // Limit to 5 items
-
+      const recentJobs = filterJobsByTimeRange(result.jobs || [], range).slice(
+        0,
+        5
+      );
       setJobs(recentJobs);
     } catch (error) {
       console.error("Error fetching recent jobs:", error);
+      setError("Failed to load recent jobs. Please check your connection.");
       toast.error("Failed to load recent jobs");
     } finally {
       setIsLoading(false);
@@ -141,6 +159,17 @@ export function RecentJobsTable() {
       </div>
     ) : (
       <TableSkeleton rows={5} columns={5} />
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-8 sm:p-12 text-center">
+        <p className="text-sm text-destructive">{error}</p>
+        <Button variant="outline" size="sm" className="mt-4" onClick={() => fetchRecentJobs(timeRange)}>
+          Try Again
+        </Button>
+      </div>
     );
   }
 

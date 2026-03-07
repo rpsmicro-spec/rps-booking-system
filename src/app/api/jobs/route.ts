@@ -1,4 +1,3 @@
-import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth/helpers'
@@ -7,16 +6,17 @@ import { headers } from 'next/headers'
 
 export async function GET(request: Request) {
   try {
-    await requireAuth()
-    const supabase = await createClient()
+    const { supabase } = await requireAuth()
 
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status')
     const search = searchParams.get('search')
     const dateFrom = searchParams.get('dateFrom')
     const dateTo = searchParams.get('dateTo')
-    const limit = parseInt(searchParams.get('limit') || '50')
-    const offset = parseInt(searchParams.get('offset') || '0')
+    const limitRaw = parseInt(searchParams.get('limit') || '50', 10)
+    const offsetRaw = parseInt(searchParams.get('offset') || '0', 10)
+    const limit = Number.isNaN(limitRaw) ? 50 : Math.max(1, Math.min(limitRaw, 100))
+    const offset = Number.isNaN(offsetRaw) ? 0 : Math.max(0, offsetRaw)
 
     let query = supabase
       .from('jobs')
@@ -32,9 +32,13 @@ export async function GET(request: Request) {
 
     // Apply search filter (search in job_number, customer_name, email)
     if (search) {
-      query = query.or(
-        `job_number.ilike.%${search}%,customer_name.ilike.%${search}%,email.ilike.%${search}%`
-      )
+      // Escape special characters that could break the PostgREST filter syntax
+      const sanitized = search.replace(/[%_,.()"'\\]/g, '')
+      if (sanitized) {
+        query = query.or(
+          `job_number.ilike.%${sanitized}%,customer_name.ilike.%${sanitized}%,email.ilike.%${sanitized}%`
+        )
+      }
     }
 
     // Apply date range filter (filter by booking_date)
@@ -51,8 +55,9 @@ export async function GET(request: Request) {
     const { data, error } = await query
 
     if (error) {
+      console.error('Jobs query error:', error.message)
       return NextResponse.json(
-        { error: error.message },
+        { error: 'Failed to fetch jobs' },
         { status: 400 }
       )
     }
@@ -68,9 +73,12 @@ export async function GET(request: Request) {
     }
 
     if (search) {
-      countQuery = countQuery.or(
-        `job_number.ilike.%${search}%,customer_name.ilike.%${search}%,email.ilike.%${search}%`
-      )
+      const sanitized = search.replace(/[%_,.()"'\\]/g, '')
+      if (sanitized) {
+        countQuery = countQuery.or(
+          `job_number.ilike.%${sanitized}%,customer_name.ilike.%${sanitized}%,email.ilike.%${sanitized}%`
+        )
+      }
     }
 
     if (dateFrom) {
@@ -103,8 +111,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const { user } = await requireAuth()
-    const supabase = await createClient()
+    const { user, supabase } = await requireAuth()
     const adminClient = createAdminClient()
 
     const body = await request.json()
@@ -134,8 +141,9 @@ export async function POST(request: Request) {
       .single()
 
     if (error) {
+      console.error('Job creation error:', error.message)
       return NextResponse.json(
-        { error: error.message },
+        { error: 'Failed to create job' },
         { status: 400 }
       )
     }

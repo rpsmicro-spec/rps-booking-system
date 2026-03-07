@@ -1,11 +1,9 @@
-import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth/helpers'
 
 export async function GET() {
   try {
-    const { user } = await requireAuth()
-    const supabase = await createClient()
+    const { user, supabase } = await requireAuth()
 
     // Get user profile from users table
     const { data: userProfile, error } = await supabase
@@ -15,8 +13,9 @@ export async function GET() {
       .single()
 
     if (error) {
+      console.error('Failed to fetch profile:', error.message)
       return NextResponse.json(
-        { error: error.message },
+        { error: 'Failed to fetch profile' },
         { status: 400 }
       )
     }
@@ -32,8 +31,7 @@ export async function GET() {
 
 export async function PATCH(request: Request) {
   try {
-    const { user } = await requireAuth()
-    const supabase = await createClient()
+    const { user, supabase } = await requireAuth()
     const { name } = await request.json()
 
     const trimmedName = name?.trim() || ''
@@ -64,8 +62,9 @@ export async function PATCH(request: Request) {
       .single()
 
     if (error) {
+      console.error('Failed to update profile:', error.message)
       return NextResponse.json(
-        { error: error.message },
+        { error: 'Failed to update profile' },
         { status: 400 }
       )
     }

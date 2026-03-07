@@ -11,6 +11,7 @@ export function UpdateNotification() {
   const [isUpdating, setIsUpdating] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const isUpdatingRef = useRef(false);
 
   useEffect(() => {
     if (typeof window === "undefined" || !("serviceWorker" in navigator)) {
@@ -62,6 +63,7 @@ export function UpdateNotification() {
       }
 
       setIsUpdating(true);
+      isUpdatingRef.current = true;
 
       // Tell the waiting service worker to skip waiting and activate
       registration.waiting.postMessage({ type: "SKIP_WAITING" });
@@ -118,21 +120,23 @@ export function UpdateNotification() {
     const updateInterval = setInterval(checkForUpdates, 30 * 60 * 1000);
 
     // Listen for controller change (service worker activated)
-    navigator.serviceWorker.addEventListener("controllerchange", () => {
+    const handleControllerChange = () => {
       // Service worker has been updated, reload to get new version
-      if (!isUpdating) {
+      if (!isUpdatingRef.current) {
         window.location.reload();
       }
-    });
+    };
+    navigator.serviceWorker.addEventListener("controllerchange", handleControllerChange);
 
     return () => {
       clearInterval(updateInterval);
+      navigator.serviceWorker.removeEventListener("controllerchange", handleControllerChange);
       if (countdownIntervalRef.current) {
         clearInterval(countdownIntervalRef.current);
         countdownIntervalRef.current = null;
       }
     };
-  }, [isUpdating]);
+  }, []);
 
   const handleDismiss = () => {
     setUpdateAvailable(false);
@@ -158,6 +162,7 @@ export function UpdateNotification() {
     }
 
     setIsUpdating(true);
+    isUpdatingRef.current = true;
 
     // Tell the waiting service worker to skip waiting and activate
     registration.waiting.postMessage({ type: "SKIP_WAITING" });

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import {
   Table,
@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Briefcase, Eye, MoreHorizontal, Edit, Trash2, User, Mail, Phone, MapPin, BarChart3, CheckCircle2, Package, Truck, FileText, UserCircle } from 'lucide-react'
+import { Briefcase, Eye, MoreHorizontal, Edit, Trash2, User, Mail, Phone, MapPin, BarChart3, CheckCircle2, Package, Truck, UserCircle } from 'lucide-react'
 import { useIsMobile } from '@/hooks/use-mobile'
 import {
   Empty,
@@ -46,11 +46,10 @@ import type { Job } from '@/types/types'
 import { formatAddress } from '@/lib/utils/address'
 import { format } from 'date-fns'
 import { utcToIstDateObject } from "@/lib/utils/date-ist";
-import { StatusBadge } from '@/features/jobs/components/StatusBadge'
 import { JobCardMobile } from '@/features/jobs/components/JobCardMobile'
 import type { JobStatus } from '@/types/types'
 import { toast } from 'sonner'
-import { JOB_STATUS } from '@/lib/constants'
+import { JOB_STATUS, STATUS_LABELS, getStatusBadgeCustomClasses } from '@/lib/constants'
 
 interface CustomerDetailProps {
   customer: {
@@ -128,239 +127,172 @@ export function CustomerDetail({ customer, jobs }: CustomerDetailProps) {
     }
   }
 
+  const hasContactInfo = contactPersonName || customer.email || customer.contact_number || address
+  const hasNotes = customerNotes != null && customerNotes !== ''
+
   return (
-    <div className="space-y-4 sm:space-y-6">
-      {/* Customer Information and Stats - Side by Side on Desktop */}
-      <div className="grid gap-3 sm:gap-4 lg:grid-cols-2">
-        {/* Left Column: Customer Info and Quick Actions (on mobile) */}
-        <div className="space-y-3 sm:space-y-4 flex flex-col lg:space-y-0 lg:h-full">
-          {/* Quick Actions - Above Customer Info on mobile, in right column on desktop */}
-          {(phoneLink || emailLink) && (
-            <Card className="lg:hidden">
-              <CardHeader className="pb-1">
-                <CardTitle className="text-base sm:text-lg">Quick Actions</CardTitle>
-              </CardHeader>
-              <Separator />
-              <CardContent className="pt-4 sm:pt-6">
-                <div className="flex flex-col gap-2">
-                  {phoneLink && (
-                    <Button variant="outline" size="sm" className="w-full text-xs sm:text-sm" asChild>
-                      <a href={phoneLink}>
-                        <Phone className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                        Call Customer
-                      </a>
-                    </Button>
-                  )}
-                  {emailLink && (
-                    <Button variant="outline" size="sm" className="w-full text-xs sm:text-sm" asChild>
-                      <a href={emailLink}>
-                        <Mail className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                        Send Email
-                      </a>
-                    </Button>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Customer Information Card */}
-          <Card className="lg:h-full">
-            <CardHeader className="pb-1">
-              <CardTitle className="text-base sm:text-lg">Customer Info</CardTitle>
-            </CardHeader>
-            <Separator />
-            <CardContent className="pt-4 sm:pt-6">
-              <div className="grid gap-4 sm:gap-6">
-                <div className="flex items-start gap-3 sm:gap-4">
-                  <div className="flex-shrink-0 mt-0.5">
-                    <div className="rounded-full bg-muted p-1.5 sm:p-2">
-                      <User className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
-                    </div>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-muted-foreground mb-1 sm:mb-1.5">Customer Name</p>
-                    <p className="text-sm sm:text-base font-semibold break-words">{customer.customer_name}</p>
-                  </div>
-                </div>
-                {contactPersonName && (
-                  <div className="flex items-start gap-3 sm:gap-4">
-                    <div className="flex-shrink-0 mt-0.5">
-                      <div className="rounded-full bg-muted p-1.5 sm:p-2">
-                        <UserCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
-                      </div>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-muted-foreground mb-1 sm:mb-1.5">Contact Person</p>
-                      <p className="text-sm font-semibold break-words">
-                        {contactPersonName}
-                        {contactPersonDesignation && (
-                          <span className="text-xs font-normal text-muted-foreground ml-1.5 sm:ml-2 block sm:inline">
-                            ({contactPersonDesignation})
-                          </span>
-                        )}
-                      </p>
-                    </div>
-                  </div>
-                )}
-                {customer.email && (
-                  <div className="flex items-start gap-3 sm:gap-4">
-                    <div className="flex-shrink-0 mt-0.5">
-                      <div className="rounded-full bg-muted p-1.5 sm:p-2">
-                        <Mail className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
-                      </div>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-muted-foreground mb-1 sm:mb-1.5">Email Address</p>
-                      <p className="text-xs sm:text-sm font-medium break-all">{customer.email}</p>
-                    </div>
-                  </div>
-                )}
-                {customer.contact_number && (
-                  <div className="flex items-start gap-3 sm:gap-4">
-                    <div className="flex-shrink-0 mt-0.5">
-                      <div className="rounded-full bg-muted p-1.5 sm:p-2">
-                        <Phone className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
-                      </div>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-muted-foreground mb-1 sm:mb-1.5">Contact Number</p>
-                      <p className="text-xs sm:text-sm font-medium break-words">{customer.contact_number}</p>
-                    </div>
-                  </div>
-                )}
-                {address && (
-                  <div className="flex items-start gap-3 sm:gap-4">
-                    <div className="flex-shrink-0 mt-0.5">
-                      <div className="rounded-full bg-muted p-1.5 sm:p-2">
-                        <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
-                      </div>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-muted-foreground mb-1 sm:mb-1.5">Address</p>
-                      <p className="text-xs sm:text-sm whitespace-pre-line leading-relaxed break-words">{address}</p>
-                    </div>
-                  </div>
-                )}
-                {customerNotes && (
-                  <div className="flex items-start gap-3 sm:gap-4">
-                    <div className="flex-shrink-0 mt-0.5">
-                      <div className="rounded-full bg-muted p-1.5 sm:p-2">
-                        <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
-                      </div>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-muted-foreground mb-1 sm:mb-1.5">Notes</p>
-                      <p className="text-xs sm:text-sm whitespace-pre-wrap leading-relaxed break-words">{customerNotes}</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Right Column: Quick Actions and Stats (on desktop) */}
-        <div className="space-y-4 flex flex-col lg:h-full lg:justify-start">
-          {/* Action Buttons - Only visible on desktop */}
-          {(phoneLink || emailLink) && (
-            <Card className="hidden lg:block">
-              <CardHeader className="pb-1">
-                <CardTitle className="text-base sm:text-lg">Quick Actions</CardTitle>
-              </CardHeader>
-              <Separator />
-              <CardContent className="pt-6">
-                <div className="flex flex-col sm:flex-row gap-2">
-                  {phoneLink && (
-                    <Button variant="outline" className="flex-1" asChild>
-                      <a href={phoneLink}>
-                        <Phone className="mr-2 h-4 w-4" />
-                        Call Customer
-                      </a>
-                    </Button>
-                  )}
-                  {emailLink && (
-                    <Button variant="outline" className="flex-1" asChild>
-                      <a href={emailLink}>
-                        <Mail className="mr-2 h-4 w-4" />
-                        Send Email
-                      </a>
-                    </Button>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Stats Cards */}
-          <div className="grid grid-cols-2 gap-3 sm:gap-4 flex-1">
-            <Card>
-              <CardContent className="pt-4 sm:pt-6">
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <div className="rounded-full bg-muted p-1.5 sm:p-2">
-                    <BarChart3 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
-                  </div>
-                  <div>
-                    <p className="text-[10px] sm:text-xs font-medium text-muted-foreground">Total Jobs</p>
-                    <p className="text-xl sm:text-2xl font-bold">{totalJobs}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="pt-4 sm:pt-6">
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <div className="rounded-full bg-muted p-1.5 sm:p-2">
-                    <Package className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
-                  </div>
-                  <div>
-                    <p className="text-[10px] sm:text-xs font-medium text-muted-foreground">Active Jobs</p>
-                    <p className="text-xl sm:text-2xl font-bold">{activeJobs}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="pt-4 sm:pt-6">
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <div className="rounded-full bg-muted p-1.5 sm:p-2">
-                    <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
-                  </div>
-                  <div>
-                    <p className="text-[10px] sm:text-xs font-medium text-muted-foreground">Completed</p>
-                    <p className="text-xl sm:text-2xl font-bold">{completedJobs}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="pt-4 sm:pt-6">
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <div className="rounded-full bg-muted p-1.5 sm:p-2">
-                    <Truck className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
-                  </div>
-                  <div>
-                    <p className="text-[10px] sm:text-xs font-medium text-muted-foreground">Delivered</p>
-                    <p className="text-xl sm:text-2xl font-bold">{deliveredJobs}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+    <div className="space-y-5 sm:space-y-6 md:space-y-8">
+      {/* Header: name + quick actions (no card) */}
+      <header className="flex flex-col gap-3 sm:gap-4 pt-2 md:pt-4">
+        <div className="flex flex-col gap-2 min-w-0">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="rounded-full bg-muted/80 p-2 sm:p-2.5 shrink-0">
+              <User className="h-5 w-5 sm:h-6 sm:w-6 text-muted-foreground" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h1 className="text-xl font-bold tracking-tight truncate sm:text-2xl md:text-3xl">
+                {customer.customer_name}
+              </h1>
+              <p className="text-xs text-muted-foreground mt-0.5 sm:text-sm">
+                Customer details and job history
+              </p>
+            </div>
           </div>
         </div>
+        {(phoneLink || emailLink) && (
+          <div className="flex flex-wrap items-center gap-2">
+            {phoneLink && (
+              <Button variant="outline" size="sm" className="h-9 text-xs sm:text-sm shrink-0" asChild>
+                <a href={phoneLink}>
+                  <Phone className="mr-1.5 h-3.5 w-3.5 sm:mr-2 sm:h-4 sm:w-4" />
+                  Call
+                </a>
+              </Button>
+            )}
+            {emailLink && (
+              <Button variant="outline" size="sm" className="h-9 text-xs sm:text-sm shrink-0" asChild>
+                <a href={emailLink}>
+                  <Mail className="mr-1.5 h-3.5 w-3.5 sm:mr-2 sm:h-4 sm:w-4" />
+                  Email
+                </a>
+              </Button>
+            )}
+          </div>
+        )}
+      </header>
+
+      {/* Stats row */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+        <Card className="overflow-hidden">
+          <CardContent className="flex items-center gap-3 p-3 sm:p-4">
+            <div className="rounded-full bg-muted/60 p-1.5">
+              <BarChart3 className="h-3.5 w-3.5 text-muted-foreground" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs text-muted-foreground">Total</p>
+              <p className="text-lg font-bold tabular-nums leading-tight">{totalJobs}</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="overflow-hidden">
+          <CardContent className="flex items-center gap-3 p-3 sm:p-4">
+            <div className="rounded-full bg-muted/60 p-1.5">
+              <Package className="h-3.5 w-3.5 text-muted-foreground" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs text-muted-foreground">Active</p>
+              <p className="text-lg font-bold tabular-nums leading-tight">{activeJobs}</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="overflow-hidden">
+          <CardContent className="flex items-center gap-3 p-3 sm:p-4">
+            <div className="rounded-full bg-muted/60 p-1.5">
+              <CheckCircle2 className="h-3.5 w-3.5 text-muted-foreground" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs text-muted-foreground">Completed</p>
+              <p className="text-lg font-bold tabular-nums leading-tight">{completedJobs}</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="overflow-hidden">
+          <CardContent className="flex items-center gap-3 p-3 sm:p-4">
+            <div className="rounded-full bg-muted/60 p-1.5">
+              <Truck className="h-3.5 w-3.5 text-muted-foreground" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs text-muted-foreground">Delivered</p>
+              <p className="text-lg font-bold tabular-nums leading-tight">{deliveredJobs}</p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Jobs Table */}
-      <Card>
-        <CardHeader className="pb-1">
-          <CardTitle className="text-base sm:text-lg">All Jobs ({jobs.length})</CardTitle>
-        </CardHeader>
-        <Separator />
-        <CardContent className="pt-4 sm:pt-6">
-          {jobs.length === 0 ? (
+      {/* Customer details */}
+      {(hasContactInfo || hasNotes) && (
+        <Card className="overflow-hidden">
+          <CardContent className="p-4 sm:p-5 md:p-6">
+            <div className="flex flex-col gap-4 sm:gap-5 md:flex-row md:gap-8">
+              {hasContactInfo && (
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Contact & address</p>
+                  <dl className="grid gap-3 sm:grid-cols-2">
+                    {contactPersonName && (
+                      <div className="flex gap-3 min-w-0">
+                        <UserCircle className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+                        <div className="min-w-0">
+                          <dt className="text-xs text-muted-foreground">Contact</dt>
+                          <dd className="text-sm font-medium wrap-break-word">
+                            {contactPersonName}
+                            {contactPersonDesignation && (
+                              <span className="font-normal text-muted-foreground"> · {contactPersonDesignation}</span>
+                            )}
+                          </dd>
+                        </div>
+                      </div>
+                    )}
+                    {customer.contact_number && (
+                      <div className="flex gap-3 min-w-0">
+                        <Phone className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+                        <div className="min-w-0">
+                          <dt className="text-xs text-muted-foreground">Phone</dt>
+                          <dd className="text-sm font-medium wrap-break-word">{customer.contact_number}</dd>
+                        </div>
+                      </div>
+                    )}
+                    {customer.email && (
+                      <div className="flex gap-3 min-w-0">
+                        <Mail className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+                        <div className="min-w-0 break-all">
+                          <dt className="text-xs text-muted-foreground">Email</dt>
+                          <dd className="text-sm font-medium">{customer.email}</dd>
+                        </div>
+                      </div>
+                    )}
+                    {address && (
+                      <div className="flex gap-3 min-w-0">
+                        <MapPin className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+                        <div className="min-w-0">
+                          <dt className="text-xs text-muted-foreground">Address</dt>
+                          <dd className="text-sm whitespace-pre-line leading-relaxed wrap-break-word text-foreground/90">{address}</dd>
+                        </div>
+                      </div>
+                    )}
+                  </dl>
+                </div>
+              )}
+              {hasNotes && (
+                <>
+                  {hasContactInfo && <Separator orientation="vertical" className="hidden md:block" />}
+                  {hasContactInfo && <Separator className="md:hidden" />}
+                  <div className="md:w-1/3 min-w-0">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1.5">Notes</p>
+                    <p className="text-xs sm:text-sm whitespace-pre-wrap leading-relaxed wrap-break-word text-foreground/90">{customerNotes}</p>
+                  </div>
+                </>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* All Jobs */}
+      <div className="space-y-4">
+        <h3 className="text-lg md:text-xl font-semibold tracking-tight">
+          All Jobs ({jobs.length})
+        </h3>
+        {jobs.length === 0 ? (
             <div className="p-8 sm:p-12">
               <Empty>
                 <EmptyHeader>
@@ -424,11 +356,9 @@ export function CustomerDetail({ customer, jobs }: CustomerDetailProps) {
                         </Link>
                       </TableCell>
                       <TableCell>
-                        {job.status ? (
-                          <StatusBadge status={job.status as JobStatus} />
-                        ) : (
-                          <Badge variant="default">Unknown</Badge>
-                        )}
+                        <Badge className={getStatusBadgeCustomClasses(job.status as JobStatus)}>
+                          {job.status ? (STATUS_LABELS[job.status as JobStatus] || 'Unknown') : 'Unknown'}
+                        </Badge>
                       </TableCell>
                       <TableCell>
                         {job.booking_date
@@ -486,8 +416,7 @@ export function CustomerDetail({ customer, jobs }: CustomerDetailProps) {
               </Table>
             </div>
           )}
-        </CardContent>
-      </Card>
+      </div>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

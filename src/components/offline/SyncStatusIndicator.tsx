@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { RefreshCw, WifiOff, CheckCircle2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Tooltip,
   TooltipContent,
@@ -154,6 +155,8 @@ export function SyncStatusIndicator() {
       }
     };
 
+    const handleOffline = () => setIsOnline(false);
+
     // Initial connection check
     checkInternetConnection();
 
@@ -161,7 +164,7 @@ export function SyncStatusIndicator() {
     loadPendingJobs();
 
     window.addEventListener("online", updateOnlineStatus);
-    window.addEventListener("offline", () => setIsOnline(false));
+    window.addEventListener("offline", handleOffline);
 
     // Poll for connection and pending jobs every 15 seconds
     const interval = setInterval(() => {
@@ -171,7 +174,7 @@ export function SyncStatusIndicator() {
 
     return () => {
       window.removeEventListener("online", updateOnlineStatus);
-      window.removeEventListener("offline", () => setIsOnline(false));
+      window.removeEventListener("offline", handleOffline);
       clearInterval(interval);
     };
   }, [loadPendingJobs, checkInternetConnection]);
@@ -284,43 +287,53 @@ export function SyncStatusIndicator() {
     );
   };
 
+  const statusLabel =
+    isSyncing
+      ? "Syncing..."
+      : !isOnline
+        ? "Offline"
+        : pendingJobs.length > 0
+          ? `${pendingJobs.length} pending`
+          : lastSyncTime
+            ? `Saved ${formatLastSaved(lastSyncTime)}`
+            : "Synced";
+
+  const badgeVariant = "outline";
+
   return (
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleSync}
-            disabled={isSyncing || !isOnline}
+          <Badge
+            asChild
+            variant={badgeVariant}
             className={cn(
-              "h-8 px-2 gap-1.5 min-w-auto",
-              "hover:bg-accent/50",
-              !isOnline && "text-orange-500",
+              "cursor-pointer gap-1.5 py-1.5 transition-colors hover:opacity-90",
+              !isOnline && "border-orange-500/50 bg-orange-500/10 text-orange-600 dark:text-orange-400",
               pendingJobs.length > 0 &&
                 isOnline &&
                 !isSyncing &&
-                "text-yellow-500",
+                "border-amber-500/50 bg-amber-500/10 text-amber-600 dark:text-amber-400",
               isOnline &&
                 pendingJobs.length === 0 &&
                 !isSyncing &&
-                "text-green-500",
-              isSyncing && "text-blue-500"
+                "border-emerald-500/50 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+              isSyncing && "border-blue-500/50 bg-blue-500/10 text-blue-600 dark:text-blue-400"
             )}
           >
-            {getStatusIcon()}
-            <span className="text-xs font-medium hidden sm:inline">
-              {isSyncing
-                ? "Syncing..."
-                : !isOnline
-                  ? "Offline"
-                  : pendingJobs.length > 0
-                    ? `${pendingJobs.length} pending`
-                    : lastSyncTime
-                      ? `Saved ${formatLastSaved(lastSyncTime)}`
-                      : "Synced"}
-            </span>
-          </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleSync}
+              disabled={isSyncing || !isOnline}
+              className="h-auto gap-1.5 rounded-full bg-transparent px-2.5 py-0.5 hover:bg-transparent hover:opacity-90 min-w-0"
+            >
+              {getStatusIcon()}
+              <span className="text-xs font-medium hidden sm:inline">
+                {statusLabel}
+              </span>
+            </Button>
+          </Badge>
         </TooltipTrigger>
         <TooltipContent side="bottom" className="max-w-[220px]">
           {getTooltipContent()}

@@ -2,7 +2,6 @@
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { X } from 'lucide-react'
 
 interface CustomerSearchProps {
@@ -19,27 +18,21 @@ export function CustomerSearch({
   const hasSearch = search
 
   return (
-    <div className="rounded-lg border bg-card p-4">
-      <div className="flex gap-4 items-end">
-        <div className="flex-1">
-          <Label htmlFor="search" className="mb-2 block text-sm font-medium">
-            Search
-          </Label>
-          <Input
-            id="search"
-            placeholder="Search by name, email, or phone..."
-            value={search}
-            onChange={(e) => onSearchChange(e.target.value)}
-            className="w-full"
-          />
-        </div>
-        {hasSearch && (
-          <Button variant="outline" size="sm" onClick={onClear}>
-            <X className="h-4 w-4 mr-2" />
-            Clear
-          </Button>
-        )}
-      </div>
+    <div className="flex gap-2 items-center">
+      <Input
+        id="customers-search"
+        type="search"
+        placeholder="Search by name, email, or phone…"
+        value={search}
+        onChange={(e) => onSearchChange(e.target.value)}
+        className="flex-1 min-w-0"
+        aria-label="Search customers"
+      />
+      {hasSearch && (
+        <Button variant="ghost" size="icon" onClick={onClear} aria-label="Clear search">
+          <X className="h-4 w-4" />
+        </Button>
+      )}
     </div>
   )
 }

@@ -16,9 +16,11 @@ import {
 export const formatBytes = (
   bytes: number,
   decimals = 2,
-  size?: "bytes" | "KB" | "MB" | "GB" | "TB" | "PB" | "EB" | "ZB" | "YB"
+  size?: "bytes" | "KB" | "MB" | "GB" | "TB" | "PB" | "EB" | "ZB" | "YB",
+  /** Use 1024 (binary) so e.g. 25*1024*1024 displays as "25 MB" instead of "26 MB" */
+  binary = false
 ) => {
-  const k = 1000;
+  const k = binary ? 1024 : 1000;
   const dm = decimals < 0 ? 0 : decimals;
   const sizes = ["bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
 
@@ -39,6 +41,8 @@ type DropzoneContextType = Omit<
   cameraInputRef?: React.RefObject<HTMLInputElement | null>;
   handleCameraClick?: () => void;
   inputRef?: React.RefObject<HTMLInputElement | null>;
+  /** When "minimal", empty state omits "Upload N files" and "Maximum file size" (card/section provides that) */
+  emptyStateVariant?: "default" | "minimal";
 };
 
 const DropzoneContext = createContext<DropzoneContextType | undefined>(
@@ -52,6 +56,11 @@ type DropzoneProps = UseSupabaseUploadReturn & {
    * When true, adds a camera button and supports camera input
    */
   enableCamera?: boolean;
+  /**
+   * When "minimal", empty state shows only drag/select (no "Upload N files" or "Maximum file size").
+   * Use when the parent card/section already shows title and limits.
+   */
+  emptyStateVariant?: "default" | "minimal";
 };
 
 const Dropzone = ({
@@ -60,6 +69,7 @@ const Dropzone = ({
   getRootProps,
   getInputProps,
   enableCamera = false,
+  emptyStateVariant = "default",
   ...restProps
 }: PropsWithChildren<DropzoneProps>) => {
   const isSuccess = restProps.isSuccess;
@@ -89,51 +99,66 @@ const Dropzone = ({
         cameraInputRef,
         handleCameraClick,
         inputRef: mainInputRef as React.RefObject<HTMLInputElement>,
+        emptyStateVariant,
       }}
     >
-      <div
-        {...getRootProps({
-          className: cn(
-            "border-2 rounded-lg p-6 text-center bg-card transition-colors duration-300 text-foreground",
-            "border-input", // Match input border color
-            className,
-            isSuccess ? "border-solid" : "border-dashed",
-            isActive && "border-ring bg-primary/15 dark:bg-primary/10", // Use ring color for active state
-            isInvalid && "border-destructive bg-destructive/10"
-          ),
-        })}
-      >
-        <input {...getInputProps()} ref={setMainInputRef} />
-        {/* Separate camera input for mobile */}
-        {enableCamera && (
-          <input
-            ref={cameraInputRef}
-            type="file"
-            accept="image/*"
-            capture="environment"
-            style={{ display: "none" }}
-            onChange={(e) => {
-              const files = e.target.files;
-              if (files && files.length > 0) {
-                // Create a synthetic drop event to trigger the dropzone's onDrop
-                const fileArray = Array.from(files);
-                // Access the onDrop from the dropzone's internal state
-                // We'll trigger it by setting files on the main input and dispatching change
-                if (mainInputRef.current) {
-                  const dataTransfer = new DataTransfer();
-                  fileArray.forEach((file) => dataTransfer.items.add(file));
-                  mainInputRef.current.files = dataTransfer.files;
-                  mainInputRef.current.dispatchEvent(
-                    new Event("change", { bubbles: true })
-                  );
+      <div className="flex flex-col gap-3">
+        <div
+          {...getRootProps({
+            className: cn(
+              "border-2 rounded-lg p-6 text-center bg-card transition-colors duration-300 text-foreground",
+              "border-input", // Match input border color
+              className,
+              isSuccess ? "border-solid" : "border-dashed",
+              isActive && "border-ring bg-primary/15 dark:bg-primary/10", // Use ring color for active state
+              isInvalid && "border-destructive bg-destructive/10"
+            ),
+          })}
+        >
+          <input {...getInputProps()} ref={setMainInputRef} />
+          {/* Hidden camera input – triggered by the button below */}
+          {enableCamera && (
+            <input
+              ref={cameraInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              style={{ display: "none" }}
+              onChange={(e) => {
+                const files = e.target.files;
+                if (files && files.length > 0) {
+                  const fileArray = Array.from(files);
+                  if (mainInputRef.current) {
+                    const dataTransfer = new DataTransfer();
+                    fileArray.forEach((file) => dataTransfer.items.add(file));
+                    mainInputRef.current.files = dataTransfer.files;
+                    mainInputRef.current.dispatchEvent(
+                      new Event("change", { bubbles: true })
+                    );
+                  }
+                  e.target.value = "";
                 }
-                // Reset the camera input so the same file can be selected again
-                e.target.value = "";
-              }
+              }}
+            />
+          )}
+          {children}
+        </div>
+        {enableCamera && (
+          <Button
+            type="button"
+            variant="outline"
+            size="lg"
+            className="w-full h-12 gap-2"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleCameraClick();
             }}
-          />
+          >
+            <Camera className="h-5 w-5" />
+            Open camera
+          </Button>
         )}
-        {children}
       </div>
     </DropzoneContext.Provider>
   );
@@ -348,57 +373,41 @@ const DropzoneEmptyState = ({ className }: { className?: string }) => {
     maxFileSize,
     inputRef,
     isSuccess,
-    enableCamera,
-    handleCameraClick,
+    emptyStateVariant = "default",
   } = useDropzoneContext();
 
   if (isSuccess) {
     return null;
   }
 
+  const minimal = emptyStateVariant === "minimal";
+
   return (
     <div className={cn("flex flex-col items-center gap-y-2", className)}>
       <Upload size={20} className="text-muted-foreground" />
-      <p className="text-sm">
-        Upload{maxFiles > 1 ? ` ${maxFiles}` : ""} file
-        {maxFiles !== 1 ? "s" : ""}
-      </p>
+      {!minimal && (
+        <p className="text-sm">
+          Upload{maxFiles > 1 ? ` ${maxFiles}` : ""} file
+          {maxFiles !== 1 ? "s" : ""}
+        </p>
+      )}
       <div className="flex flex-col items-center gap-y-1">
-        <div className="flex items-center gap-2 flex-wrap justify-center">
+        <p className="text-xs text-muted-foreground">
+          Drag and drop or{" "}
+          <a
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              inputRef?.current?.click();
+            }}
+            className="underline cursor-pointer transition hover:text-foreground"
+          >
+            select {maxFiles === 1 ? `file` : "files"}
+          </a>
+        </p>
+        {!minimal && maxFileSize !== Number.POSITIVE_INFINITY && (
           <p className="text-xs text-muted-foreground">
-            Drag and drop or{" "}
-            <a
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                inputRef?.current?.click();
-              }}
-              className="underline cursor-pointer transition hover:text-foreground"
-            >
-              select {maxFiles === 1 ? `file` : "files"}
-            </a>
-          </p>
-          {enableCamera && (
-            <>
-              <span className="text-xs text-muted-foreground">or</span>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleCameraClick?.();
-                }}
-                className="inline-flex items-center gap-1 text-xs text-muted-foreground underline cursor-pointer transition hover:text-foreground"
-              >
-                <Camera className="h-3 w-3" />
-                open camera
-              </button>
-            </>
-          )}
-        </div>
-        {maxFileSize !== Number.POSITIVE_INFINITY && (
-          <p className="text-xs text-muted-foreground">
-            Maximum file size: {formatBytes(maxFileSize, 2)}
+            Maximum file size: {formatBytes(maxFileSize, 0, undefined, true)}
           </p>
         )}
       </div>

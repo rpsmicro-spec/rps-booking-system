@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
+import useSWR from "swr"
 import { useRouter } from "next/navigation"
 import {
   LogOut,
@@ -40,35 +41,20 @@ import { ROLE_LABELS, type UserRole } from "@/lib/constants/roles"
 import type { User as UserType } from "@/types/types"
 import { NameDialog } from "./NameDialog"
 
+const fetcher = (url: string) =>
+  fetch(url, { cache: "no-store", headers: { "Cache-Control": "no-cache" } }).then((res) =>
+    res.json()
+  )
+
 export function NavUser() {
   const router = useRouter()
-  const [user, setUser] = useState<UserType | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const { data, mutate } = useSWR<{ user?: UserType }>("/api/users/me", fetcher, {
+    revalidateOnFocus: false,
+  })
   const [showLogoutDialog, setShowLogoutDialog] = useState(false)
 
-  useEffect(() => {
-    console.log("NavUser: Fetching user data...");
-    fetch("/api/users/me", {
-      cache: 'no-store',
-      headers: {
-        'Cache-Control': 'no-cache'
-      }
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        console.log("NavUser: Fetched user data:", data);
-        if (data.user) {
-          setUser(data.user)
-        }
-      })
-      .catch((error) => {
-        console.error("NavUser: Error fetching user:", error);
-        // Ignore errors
-      })
-      .finally(() => {
-        setIsLoading(false)
-      })
-  }, [])
+  const user = data?.user ?? null
+  const isLoading = !data && !user
 
   const handleLogout = async (logoutEverywhere = false) => {
     try {
@@ -100,11 +86,9 @@ export function NavUser() {
   }
 
   const handleNameSet = (name: string) => {
-    console.log("handleNameSet called with:", name);
+    const trimmedName = name.trim()
     if (user) {
-      const trimmedName = name.trim();
-      console.log("Updating user name to:", trimmedName);
-      setUser({ ...user, name: trimmedName });
+      mutate({ user: { ...user, name: trimmedName } }, { revalidate: true })
     }
   }
 
@@ -129,8 +113,6 @@ export function NavUser() {
   const hasName = !!(user.name?.trim())
   const userRole = (user.role as UserRole) || "staff"
   const canManageUsers = userRole === "owner" || userRole === "admin"
-
-  console.log("NavUser render - user.name:", user.name, "hasName:", hasName)
 
   // Show dialog if name is not set
   if (!hasName) {
