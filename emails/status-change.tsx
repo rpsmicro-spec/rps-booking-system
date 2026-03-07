@@ -99,7 +99,6 @@ StatusChangeEmail.PreviewProps = {
   status: 'in_progress',
   materialType: 'PCB Assembly',
   viewLink: 'https://example.com/jobs/42',
-  whatsappLink: 'https://wa.me/919884901472',
 } satisfies StatusChangeEmailProps
 
 const main = {

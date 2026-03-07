@@ -6,7 +6,7 @@ import { Clock, X, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { offlineStorage, type RecentJob } from "@/lib/offline/storage";
 
-function formatViewedAt(viewedAt: string): string {
+function formatViewedAt(viewedAt: number): string {
   const date = new Date(viewedAt);
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();

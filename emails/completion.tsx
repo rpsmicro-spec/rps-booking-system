@@ -110,7 +110,6 @@ CompletionEmail.PreviewProps = {
   deliveryDate: 'Mar 15, 2025',
   viewLink: 'https://example.com/jobs/42',
   hasInvoice: true,
-  whatsappLink: 'https://wa.me/919884901472',
 } satisfies CompletionEmailProps
 
 const main = {
