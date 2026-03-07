@@ -34,11 +34,11 @@ async function cleanupOldPhotos(supabase: Awaited<ReturnType<typeof createAdminC
   const oneMonthAgo = new Date()
   oneMonthAgo.setDate(oneMonthAgo.getDate() - 30)
 
-  // Find completed jobs older than 1 month
+  // Find completed/delivered jobs older than 1 month
   const { data: oldJobs } = await supabase
     .from('jobs')
     .select('id, before_photos, after_photos, updated_at, status')
-    .eq('status', 'completed')
+    .in('status', ['completed', 'delivered'])
     .lt('updated_at', oneMonthAgo.toISOString())
     .is('deleted_at', null)
 
@@ -84,11 +84,11 @@ async function cleanupOldVideos(supabase: Awaited<ReturnType<typeof createAdminC
   const threeDaysAgo = new Date()
   threeDaysAgo.setDate(threeDaysAgo.getDate() - 3)
 
-  // Find completed jobs older than 3 days
+  // Find completed/delivered jobs older than 3 days
   const { data: oldJobs } = await supabase
     .from('jobs')
     .select('id, before_photos, after_photos, updated_at, status')
-    .eq('status', 'completed')
+    .in('status', ['completed', 'delivered'])
     .lt('updated_at', threeDaysAgo.toISOString())
     .is('deleted_at', null)
 
@@ -132,11 +132,11 @@ async function cleanupOldInvoices(supabase: Awaited<ReturnType<typeof createAdmi
   const oneWeekAgo = new Date()
   oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
 
-  // Find completed jobs older than 1 week
+  // Find completed/delivered jobs older than 1 week
   const { data: oldJobs } = await supabase
     .from('jobs')
     .select('id, invoice_file_path, invoice_url, updated_at, status')
-    .eq('status', 'completed')
+    .in('status', ['completed', 'delivered'])
     .lt('updated_at', oneWeekAgo.toISOString())
     .is('deleted_at', null)
     .not('invoice_file_path', 'is', null)
@@ -171,46 +171,59 @@ async function cleanupTempUploads(supabase: Awaited<ReturnType<typeof createAdmi
   const threeDaysAgo = new Date()
   threeDaysAgo.setDate(threeDaysAgo.getDate() - 3)
 
-  // List all files in temp-uploads bucket
-  const { data: files, error } = await supabase.storage
-    .from('temp-uploads')
-    .list('', {
-      limit: 1000,
-      sortBy: { column: 'created_at', order: 'asc' },
-    })
+  let totalDeleted = 0
+  const PAGE_SIZE = 1000
 
-  if (error || !files) {
-    console.error('Failed to list temp files:', error)
-    return 0
-  }
-
-  const filesToDelete = files
-    .filter((file) => {
-      if (!file.created_at) return false
-      const fileDate = new Date(file.created_at)
-      return fileDate < threeDaysAgo
-    })
-    .map((file) => file.name)
-
-  if (filesToDelete.length === 0) {
-    return 0
-  }
-
-  try {
-    const { error: deleteError } = await supabase.storage
+  // Paginate through all temp files in case there are more than 1000
+  while (true) {
+    const { data: files, error } = await supabase.storage
       .from('temp-uploads')
-      .remove(filesToDelete)
+      .list('', {
+        limit: PAGE_SIZE,
+        sortBy: { column: 'created_at', order: 'asc' },
+      })
 
-    if (deleteError) {
-      console.error('Failed to delete temp files:', deleteError)
-      return 0
+    if (error || !files) {
+      console.error('Failed to list temp files:', error)
+      break
     }
 
-    return filesToDelete.length
-  } catch (error) {
-    console.error('Error cleaning up temp files:', error)
-    return 0
+    const filesToDelete = files
+      .filter((file) => {
+        if (!file.created_at) return false
+        const fileDate = new Date(file.created_at)
+        return fileDate < threeDaysAgo
+      })
+      .map((file) => file.name)
+
+    // No more stale files to delete
+    if (filesToDelete.length === 0) {
+      break
+    }
+
+    try {
+      const { error: deleteError } = await supabase.storage
+        .from('temp-uploads')
+        .remove(filesToDelete)
+
+      if (deleteError) {
+        console.error('Failed to delete temp files:', deleteError)
+        break
+      }
+
+      totalDeleted += filesToDelete.length
+    } catch (error) {
+      console.error('Error cleaning up temp files:', error)
+      break
+    }
+
+    // If we got fewer files than page size, we've reached the end
+    if (files.length < PAGE_SIZE) {
+      break
+    }
   }
+
+  return totalDeleted
 }
 
 /**
