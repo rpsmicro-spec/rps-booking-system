@@ -27,24 +27,55 @@ function isVideoFile(url: string): boolean {
 }
 
 /**
- * Clean up old job photos (1 month after delivery/completion)
+ * Get the date each job reached completed/delivered (from status history).
+ * Used for retention so edits don't reset the cleanup window.
+ */
+async function getJobCompletedDeliveredAt(
+  supabase: Awaited<ReturnType<typeof createAdminClient>>
+): Promise<Map<string, Date>> {
+  const { data: rows } = await supabase
+    .from('job_status_history')
+    .select('job_id, changed_at')
+    .in('new_status', ['completed', 'delivered'])
+
+  const byJob = new Map<string, Date>()
+  for (const row of rows || []) {
+    if (!row.job_id || !row.changed_at) continue
+    const existing = byJob.get(row.job_id)
+    const at = new Date(row.changed_at)
+    if (!existing || at > existing) byJob.set(row.job_id, at)
+  }
+  return byJob
+}
+
+/**
+ * Clean up old job photos (1 month after job reached completed/delivered)
+ * Uses status history date so later edits don't reset retention.
  * Images only - videos are handled separately with shorter retention
  */
 async function cleanupOldPhotos(supabase: Awaited<ReturnType<typeof createAdminClient>>): Promise<number> {
   const oneMonthAgo = new Date()
   oneMonthAgo.setDate(oneMonthAgo.getDate() - 30)
 
-  // Find completed/delivered jobs older than 1 month
-  const { data: oldJobs } = await supabase
+  const completedAtByJob = await getJobCompletedDeliveredAt(supabase)
+
+  // Completed/delivered jobs that are not deleted
+  const { data: jobs } = await supabase
     .from('jobs')
-    .select('id, before_photos, after_photos, updated_at, status')
+    .select('id, before_photos, after_photos, status, updated_at')
     .in('status', ['completed', 'delivered'])
-    .lt('updated_at', oneMonthAgo.toISOString())
     .is('deleted_at', null)
 
-  if (!oldJobs || oldJobs.length === 0) {
+  if (!jobs || jobs.length === 0) {
     return 0
   }
+
+  // Keep only jobs that reached completed/delivered more than 30 days ago.
+  // Use status history date when present; fall back to updated_at for old jobs with no history.
+  const oldJobs = jobs.filter((job) => {
+    const at = completedAtByJob.get(job.id) ?? (job.updated_at ? new Date(job.updated_at) : null)
+    return at ? at < oneMonthAgo : false
+  })
 
   let deletedCount = 0
   for (const job of oldJobs) {
@@ -78,23 +109,29 @@ async function cleanupOldPhotos(supabase: Awaited<ReturnType<typeof createAdminC
 }
 
 /**
- * Clean up old job videos (3 days after delivery/completion)
+ * Clean up old job videos (3 days after job reached completed/delivered)
+ * Uses status history date so later edits don't reset retention.
  */
 async function cleanupOldVideos(supabase: Awaited<ReturnType<typeof createAdminClient>>): Promise<number> {
   const threeDaysAgo = new Date()
   threeDaysAgo.setDate(threeDaysAgo.getDate() - 3)
 
-  // Find completed/delivered jobs older than 3 days
-  const { data: oldJobs } = await supabase
+  const completedAtByJob = await getJobCompletedDeliveredAt(supabase)
+
+  const { data: jobs } = await supabase
     .from('jobs')
-    .select('id, before_photos, after_photos, updated_at, status')
+    .select('id, before_photos, after_photos, status, updated_at')
     .in('status', ['completed', 'delivered'])
-    .lt('updated_at', threeDaysAgo.toISOString())
     .is('deleted_at', null)
 
-  if (!oldJobs || oldJobs.length === 0) {
+  if (!jobs || jobs.length === 0) {
     return 0
   }
+
+  const oldJobs = jobs.filter((job) => {
+    const at = completedAtByJob.get(job.id) ?? (job.updated_at ? new Date(job.updated_at) : null)
+    return at ? at < threeDaysAgo : false
+  })
 
   let deletedCount = 0
   for (const job of oldJobs) {
@@ -126,24 +163,30 @@ async function cleanupOldVideos(supabase: Awaited<ReturnType<typeof createAdminC
 }
 
 /**
- * Clean up old invoices (1 week after delivery/completion)
+ * Clean up old invoices (1 week after job reached completed/delivered)
+ * Uses status history date so later edits don't reset retention.
  */
 async function cleanupOldInvoices(supabase: Awaited<ReturnType<typeof createAdminClient>>): Promise<number> {
   const oneWeekAgo = new Date()
   oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
 
-  // Find completed/delivered jobs older than 1 week
-  const { data: oldJobs } = await supabase
+  const completedAtByJob = await getJobCompletedDeliveredAt(supabase)
+
+  const { data: jobs } = await supabase
     .from('jobs')
-    .select('id, invoice_file_path, invoice_url, updated_at, status')
+    .select('id, invoice_file_path, invoice_url, status, updated_at')
     .in('status', ['completed', 'delivered'])
-    .lt('updated_at', oneWeekAgo.toISOString())
     .is('deleted_at', null)
     .not('invoice_file_path', 'is', null)
 
-  if (!oldJobs || oldJobs.length === 0) {
+  if (!jobs || jobs.length === 0) {
     return 0
   }
+
+  const oldJobs = jobs.filter((job) => {
+    const at = completedAtByJob.get(job.id) ?? (job.updated_at ? new Date(job.updated_at) : null)
+    return at ? at < oneWeekAgo : false
+  })
 
   let deletedCount = 0
   for (const job of oldJobs) {
