@@ -21,96 +21,28 @@ export function SyncStatusIndicator() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState<number | null>(null);
 
-  // Check internet connection by verifying service health
-  // Checks multiple services we depend on: Supabase, Resend, and general connectivity
+  // Check internet connection via our own API (same-origin, no CORS issues).
+  // External checks (cloudflare.com, api.resend.com, supabase REST) were removed
+  // because they always fail with CORS/401 errors from the browser.
   const checkInternetConnection = useCallback(async () => {
     if (!navigator.onLine) {
       setIsOnline(false);
       return;
     }
 
-    const createTimeoutSignal = (ms: number) => {
-      const controller = new AbortController();
-      setTimeout(() => controller.abort(), ms);
-      return controller.signal;
-    };
-
-    const checks: Promise<boolean>[] = [];
-
-    // Check 1: Our own API (Supabase-backed) - Primary check
-    checks.push(
-      fetch("/api/auth/session", {
-        method: "GET",
-        cache: "no-store",
-        signal: createTimeoutSignal(2000),
-      })
-        .then((res) => res.ok || res.status < 500)
-        .catch(() => false)
-    );
-
-    // Check 2: Supabase REST API health (if not local)
-    // Supabase REST API returns 200 even without auth for health checks
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    if (
-      supabaseUrl &&
-      !supabaseUrl.includes("127.0.0.1") &&
-      !supabaseUrl.includes("localhost")
-    ) {
-      checks.push(
-        fetch(`${supabaseUrl}/rest/v1/`, {
-          method: "HEAD",
-          cache: "no-store",
-          signal: createTimeoutSignal(2000),
-        })
-          .then((res) => res.ok || res.status < 500)
-          .catch(() => false)
-      );
-    }
-
-    // Check 3: Resend API status (via their status page API if available)
-    // Resend uses status.resend.com but we can check their main domain
-    // This is a secondary check to verify Resend service availability
-    checks.push(
-      fetch("https://api.resend.com/health", {
-        method: "GET",
-        cache: "no-store",
-        signal: createTimeoutSignal(2000),
-      })
-        .then((res) => res.ok)
-        .catch(() => {
-          // If health endpoint doesn't exist, try their main API root
-          return fetch("https://api.resend.com", {
-            method: "HEAD",
-            cache: "no-store",
-            signal: createTimeoutSignal(2000),
-          })
-            .then((res) => res.ok || res.status === 401) // 401 means API is reachable
-            .catch(() => false);
-        })
-    );
-
-    // Check 4: General internet connectivity (Cloudflare DNS)
-    // This is a fallback to verify basic internet access
-    checks.push(
-      fetch("https://cloudflare.com", {
-        method: "HEAD",
-        cache: "no-store",
-        signal: createTimeoutSignal(2000),
-      })
-        .then((res) => res.ok)
-        .catch(() => false)
-    );
-
     try {
-      // If any check passes, we're online
-      // This ensures we're connected if at least one service is reachable
-      const results = await Promise.allSettled(checks);
-      const anyOnline = results.some(
-        (result) => result.status === "fulfilled" && result.value === true
-      );
-      setIsOnline(anyOnline);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+      const res = await fetch("/api/auth/session", {
+        method: "GET",
+        cache: "no-store",
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+
+      setIsOnline(res.ok || res.status < 500);
     } catch {
-      // If all checks fail, fall back to navigator.onLine
       setIsOnline(navigator.onLine);
     }
   }, []);

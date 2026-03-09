@@ -77,6 +77,7 @@ export function PhotoGallery({
                   fill
                   className="object-cover"
                   sizes="(max-width: 768px) 50vw, 25vw"
+                  quality={80}
                   unoptimized={isLocal}
                 />
               </button>
@@ -138,6 +139,7 @@ export function PhotoGallery({
                   fill
                   className="object-contain"
                   sizes="100vw"
+                  quality={90}
                   priority
                   unoptimized={
                     photos[selectedIndex]?.startsWith("http://127.0.0.1") ||
