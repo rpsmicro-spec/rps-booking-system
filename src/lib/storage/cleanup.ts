@@ -350,6 +350,82 @@ async function cleanupOrphanedFiles(
 }
 
 /**
+ * Delete files in invoices bucket that are no longer referenced by any job.
+ * Same 7-day grace period as photo orphan cleanup.
+ */
+async function cleanupOrphanedInvoices(
+  supabase: Awaited<ReturnType<typeof createAdminClient>>
+): Promise<number> {
+  const cutoff = new Date()
+  cutoff.setDate(cutoff.getDate() - ORPHAN_RETENTION_DAYS)
+
+  const { data: jobs } = await supabase
+    .from('jobs')
+    .select('invoice_file_path')
+    .not('invoice_file_path', 'is', null)
+
+  const referencedFiles = new Set<string>()
+  for (const job of jobs || []) {
+    if (job.invoice_file_path) {
+      const path = extractFilePath(job.invoice_file_path, 'invoices')
+      if (path) referencedFiles.add(path)
+    }
+  }
+
+  const orphanNames: string[] = []
+  const PAGE_SIZE = 1000
+  let offset = 0
+
+  while (true) {
+    const { data: files, error } = await supabase.storage
+      .from('invoices')
+      .list('', {
+        limit: PAGE_SIZE,
+        offset,
+        sortBy: { column: 'created_at', order: 'asc' },
+      })
+
+    if (error || !files) {
+      console.error('Failed to list invoice files:', error)
+      break
+    }
+
+    for (const file of files) {
+      if (!file.created_at) continue
+      const fileDate = new Date(file.created_at)
+      if (fileDate < cutoff && !referencedFiles.has(file.name)) {
+        orphanNames.push(file.name)
+      }
+    }
+
+    if (files.length < PAGE_SIZE) break
+    offset += PAGE_SIZE
+  }
+
+  const DELETE_BATCH = 100
+  let totalDeleted = 0
+
+  for (let i = 0; i < orphanNames.length; i += DELETE_BATCH) {
+    const batch = orphanNames.slice(i, i + DELETE_BATCH)
+    try {
+      const { error: deleteError } = await supabase.storage
+        .from('invoices')
+        .remove(batch)
+
+      if (deleteError) {
+        console.error('Failed to delete orphaned invoices batch:', deleteError)
+        continue
+      }
+      totalDeleted += batch.length
+    } catch (error) {
+      console.error('Error deleting orphaned invoices batch:', error)
+    }
+  }
+
+  return totalDeleted
+}
+
+/**
  * Run all cleanup operations
  * Uses admin client so cron runs without a user session (storage and jobs RLS bypassed).
  */
@@ -400,7 +476,9 @@ export async function runStorageCleanup(): Promise<CleanupResult> {
   }
 
   try {
-    result.details.orphans = await cleanupOrphanedFiles(supabase)
+    const photoOrphans = await cleanupOrphanedFiles(supabase)
+    const invoiceOrphans = await cleanupOrphanedInvoices(supabase)
+    result.details.orphans = photoOrphans + invoiceOrphans
     result.deletedFiles += result.details.orphans
   } catch (error) {
     console.error('Error cleaning up orphaned files:', error)

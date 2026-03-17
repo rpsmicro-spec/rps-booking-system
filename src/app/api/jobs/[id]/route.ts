@@ -65,16 +65,18 @@ export async function PATCH(
       )
     }
 
-    // If photos are being updated, fetch current values so we can clean up removed files
+    // If photos or invoice are being updated, fetch current values to clean up removed files
     const isUpdatingPhotos =
       'before_photos' in updateData || 'after_photos' in updateData
+    const isUpdatingInvoice = 'invoice_file_path' in updateData
     let oldBeforePhotos: string[] = []
     let oldAfterPhotos: string[] = []
+    let oldInvoicePath: string | null = null
 
-    if (isUpdatingPhotos) {
+    if (isUpdatingPhotos || isUpdatingInvoice) {
       const { data: current } = await supabase
         .from('jobs')
-        .select('before_photos, after_photos')
+        .select('before_photos, after_photos, invoice_file_path')
         .eq('id', id)
         .is('deleted_at', null)
         .single()
@@ -82,6 +84,7 @@ export async function PATCH(
       if (current) {
         oldBeforePhotos = current.before_photos || []
         oldAfterPhotos = current.after_photos || []
+        oldInvoicePath = current.invoice_file_path || null
       }
     }
 
@@ -125,6 +128,16 @@ export async function PATCH(
       if (removedPhotos.length > 0) {
         deleteStorageFiles(removedPhotos, 'job-photos').catch((err) =>
           console.error('Failed to delete removed photos from storage:', err)
+        )
+      }
+    }
+
+    // Delete old invoice from storage when replaced or removed
+    if (isUpdatingInvoice && oldInvoicePath) {
+      const newInvoicePath = updateData.invoice_file_path || null
+      if (newInvoicePath !== oldInvoicePath) {
+        deleteStorageFile(oldInvoicePath, 'invoices').catch((err) =>
+          console.error('Failed to delete old invoice from storage:', err)
         )
       }
     }
@@ -180,6 +193,9 @@ export async function DELETE(
       )
     }
 
+    // Use admin client for storage deletion to bypass RLS (user session can be stale)
+    const adminClient = createAdminClient()
+
     // Delete associated files from storage BEFORE deleting the DB record
     // so that if file cleanup fails, we still have the references
     try {
@@ -188,11 +204,11 @@ export async function DELETE(
           ...(job.before_photos || []),
           ...(job.after_photos || []),
         ]
-        await deleteStorageFiles(allPhotos, 'job-photos')
+        await deleteStorageFiles(allPhotos, 'job-photos', adminClient)
       }
 
       if (job.invoice_file_path) {
-        await deleteStorageFile(job.invoice_file_path, 'invoices')
+        await deleteStorageFile(job.invoice_file_path, 'invoices', adminClient)
       }
     } catch (err) {
       console.error('Failed to delete storage files (proceeding with job deletion):', err)
@@ -217,8 +233,6 @@ export async function DELETE(
       )
     }
 
-    // Log audit event (using admin client to bypass RLS)
-    const adminClient = createAdminClient()
     const headersList = await headers()
     await adminClient.from('audit_log').insert({
       user_id: user.id,
