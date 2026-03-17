@@ -4,7 +4,7 @@
  */
 
 import { createAdminClient } from '@/lib/supabase/admin'
-import { deleteStorageFile, deleteStorageFiles } from './delete'
+import { deleteStorageFile, deleteStorageFiles, extractFilePath } from './delete'
 import type { Json } from '@/types/database.types'
 
 interface CleanupResult {
@@ -15,6 +15,7 @@ interface CleanupResult {
     videos: number
     invoices: number
     temp: number
+    orphans: number
   }
 }
 
@@ -269,6 +270,85 @@ async function cleanupTempUploads(supabase: Awaited<ReturnType<typeof createAdmi
   return totalDeleted
 }
 
+const ORPHAN_RETENTION_DAYS = 7
+
+/**
+ * Delete files in job-photos that are no longer referenced by any job.
+ * Files become orphaned when photos are replaced during edits, or when a job
+ * is deleted but storage removal fails silently. Uses a 7-day grace period
+ * to avoid deleting files mid-upload.
+ */
+async function cleanupOrphanedFiles(
+  supabase: Awaited<ReturnType<typeof createAdminClient>>
+): Promise<number> {
+  const cutoff = new Date()
+  cutoff.setDate(cutoff.getDate() - ORPHAN_RETENTION_DAYS)
+
+  const { data: jobs } = await supabase
+    .from('jobs')
+    .select('before_photos, after_photos')
+
+  const referencedFiles = new Set<string>()
+  for (const job of jobs || []) {
+    for (const url of [...(job.before_photos || []), ...(job.after_photos || [])]) {
+      const path = extractFilePath(url, 'job-photos')
+      if (path) referencedFiles.add(path)
+    }
+  }
+
+  const orphanNames: string[] = []
+  const PAGE_SIZE = 1000
+  let offset = 0
+
+  while (true) {
+    const { data: files, error } = await supabase.storage
+      .from('job-photos')
+      .list('', {
+        limit: PAGE_SIZE,
+        offset,
+        sortBy: { column: 'created_at', order: 'asc' },
+      })
+
+    if (error || !files) {
+      console.error('Failed to list job-photos files:', error)
+      break
+    }
+
+    for (const file of files) {
+      if (!file.created_at) continue
+      const fileDate = new Date(file.created_at)
+      if (fileDate < cutoff && !referencedFiles.has(file.name)) {
+        orphanNames.push(file.name)
+      }
+    }
+
+    if (files.length < PAGE_SIZE) break
+    offset += PAGE_SIZE
+  }
+
+  const DELETE_BATCH = 100
+  let totalDeleted = 0
+
+  for (let i = 0; i < orphanNames.length; i += DELETE_BATCH) {
+    const batch = orphanNames.slice(i, i + DELETE_BATCH)
+    try {
+      const { error: deleteError } = await supabase.storage
+        .from('job-photos')
+        .remove(batch)
+
+      if (deleteError) {
+        console.error('Failed to delete orphaned files batch:', deleteError)
+        continue
+      }
+      totalDeleted += batch.length
+    } catch (error) {
+      console.error('Error deleting orphaned files batch:', error)
+    }
+  }
+
+  return totalDeleted
+}
+
 /**
  * Run all cleanup operations
  * Uses admin client so cron runs without a user session (storage and jobs RLS bypassed).
@@ -283,6 +363,7 @@ export async function runStorageCleanup(): Promise<CleanupResult> {
       videos: 0,
       invoices: 0,
       temp: 0,
+      orphans: 0,
     },
   }
 
@@ -315,6 +396,14 @@ export async function runStorageCleanup(): Promise<CleanupResult> {
     result.deletedFiles += result.details.temp
   } catch (error) {
     console.error('Error cleaning up temp files:', error)
+    result.errors++
+  }
+
+  try {
+    result.details.orphans = await cleanupOrphanedFiles(supabase)
+    result.deletedFiles += result.details.orphans
+  } catch (error) {
+    console.error('Error cleaning up orphaned files:', error)
     result.errors++
   }
 

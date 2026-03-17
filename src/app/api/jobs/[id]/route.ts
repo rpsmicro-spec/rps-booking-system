@@ -65,6 +65,26 @@ export async function PATCH(
       )
     }
 
+    // If photos are being updated, fetch current values so we can clean up removed files
+    const isUpdatingPhotos =
+      'before_photos' in updateData || 'after_photos' in updateData
+    let oldBeforePhotos: string[] = []
+    let oldAfterPhotos: string[] = []
+
+    if (isUpdatingPhotos) {
+      const { data: current } = await supabase
+        .from('jobs')
+        .select('before_photos, after_photos')
+        .eq('id', id)
+        .is('deleted_at', null)
+        .single()
+
+      if (current) {
+        oldBeforePhotos = current.before_photos || []
+        oldAfterPhotos = current.after_photos || []
+      }
+    }
+
     // Update job
     const { data, error } = await supabase
       .from('jobs')
@@ -89,6 +109,24 @@ export async function PATCH(
         { error: 'Failed to update job' },
         { status: 400 }
       )
+    }
+
+    // Delete removed photos from storage (fire-and-forget so it doesn't slow down the response)
+    if (isUpdatingPhotos) {
+      const newBeforePhotos: string[] = updateData.before_photos || []
+      const newAfterPhotos: string[] = updateData.after_photos || []
+      const newPhotosSet = new Set([...newBeforePhotos, ...newAfterPhotos])
+
+      const removedPhotos = [
+        ...oldBeforePhotos.filter((url) => !newPhotosSet.has(url)),
+        ...oldAfterPhotos.filter((url) => !newPhotosSet.has(url)),
+      ]
+
+      if (removedPhotos.length > 0) {
+        deleteStorageFiles(removedPhotos, 'job-photos').catch((err) =>
+          console.error('Failed to delete removed photos from storage:', err)
+        )
+      }
     }
 
     // Log audit event (using admin client to bypass RLS)
