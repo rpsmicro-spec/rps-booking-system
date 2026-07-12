@@ -24,3 +24,16 @@ jobs:
 
       - name: Typecheck
         run: npx tsc --noEmit
+
+      # Placeholder values are enough: nothing fetches from Supabase or
+      # Resend at build time, the env vars just need to be present.
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
+          SUPABASE_SERVICE_ROLE_KEY: placeholder-service-key
+          RESEND_API_KEY: re_placeholder
+          FROM_EMAIL: noreply@example.com
+          NEXT_PUBLIC_APP_URL: http://localhost:3000
+          CRON_SECRET: placeholder
