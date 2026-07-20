@@ -28,19 +28,46 @@ function isVideoFile(url: string): boolean {
 }
 
 /**
+ * Fetch every row of a query in 1000-row pages. PostgREST silently caps
+ * un-ranged selects at 1000 rows — for cleanup that would mean rows beyond
+ * the cap look unreferenced and their files get deleted as "orphans".
+ * Throws on any page error so cleanup aborts instead of running on a
+ * partial reference list.
+ */
+async function fetchAllRows<T>(
+  fetchPage: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>
+): Promise<T[]> {
+  const PAGE = 1000
+  const all: T[] = []
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await fetchPage(from, from + PAGE - 1)
+    if (error) {
+      throw new Error(`Paged fetch failed during cleanup: ${error.message}`)
+    }
+    all.push(...(data || []))
+    if (!data || data.length < PAGE) break
+  }
+  return all
+}
+
+/**
  * Get the date each job reached completed/delivered (from status history).
  * Used for retention so edits don't reset the cleanup window.
  */
 async function getJobCompletedDeliveredAt(
   supabase: Awaited<ReturnType<typeof createAdminClient>>
 ): Promise<Map<string, Date>> {
-  const { data: rows } = await supabase
-    .from('job_status_history')
-    .select('job_id, changed_at')
-    .in('new_status', ['completed', 'delivered'])
+  const rows = await fetchAllRows((from, to) =>
+    supabase
+      .from('job_status_history')
+      .select('job_id, changed_at')
+      .in('new_status', ['completed', 'delivered'])
+      .order('id')
+      .range(from, to)
+  )
 
   const byJob = new Map<string, Date>()
-  for (const row of rows || []) {
+  for (const row of rows) {
     if (!row.job_id || !row.changed_at) continue
     const existing = byJob.get(row.job_id)
     const at = new Date(row.changed_at)
@@ -61,13 +88,17 @@ async function cleanupOldPhotos(supabase: Awaited<ReturnType<typeof createAdminC
   const completedAtByJob = await getJobCompletedDeliveredAt(supabase)
 
   // Completed/delivered jobs that are not deleted
-  const { data: jobs } = await supabase
-    .from('jobs')
-    .select('id, before_photos, after_photos, status, updated_at')
-    .in('status', ['completed', 'delivered'])
-    .is('deleted_at', null)
+  const jobs = await fetchAllRows((from, to) =>
+    supabase
+      .from('jobs')
+      .select('id, before_photos, after_photos, status, updated_at')
+      .in('status', ['completed', 'delivered'])
+      .is('deleted_at', null)
+      .order('id')
+      .range(from, to)
+  )
 
-  if (!jobs || jobs.length === 0) {
+  if (jobs.length === 0) {
     return 0
   }
 
@@ -119,13 +150,17 @@ async function cleanupOldVideos(supabase: Awaited<ReturnType<typeof createAdminC
 
   const completedAtByJob = await getJobCompletedDeliveredAt(supabase)
 
-  const { data: jobs } = await supabase
-    .from('jobs')
-    .select('id, before_photos, after_photos, status, updated_at')
-    .in('status', ['completed', 'delivered'])
-    .is('deleted_at', null)
+  const jobs = await fetchAllRows((from, to) =>
+    supabase
+      .from('jobs')
+      .select('id, before_photos, after_photos, status, updated_at')
+      .in('status', ['completed', 'delivered'])
+      .is('deleted_at', null)
+      .order('id')
+      .range(from, to)
+  )
 
-  if (!jobs || jobs.length === 0) {
+  if (jobs.length === 0) {
     return 0
   }
 
@@ -173,14 +208,18 @@ async function cleanupOldInvoices(supabase: Awaited<ReturnType<typeof createAdmi
 
   const completedAtByJob = await getJobCompletedDeliveredAt(supabase)
 
-  const { data: jobs } = await supabase
-    .from('jobs')
-    .select('id, invoice_file_path, invoice_url, status, updated_at')
-    .in('status', ['completed', 'delivered'])
-    .is('deleted_at', null)
-    .not('invoice_file_path', 'is', null)
+  const jobs = await fetchAllRows((from, to) =>
+    supabase
+      .from('jobs')
+      .select('id, invoice_file_path, invoice_url, status, updated_at')
+      .in('status', ['completed', 'delivered'])
+      .is('deleted_at', null)
+      .not('invoice_file_path', 'is', null)
+      .order('id')
+      .range(from, to)
+  )
 
-  if (!jobs || jobs.length === 0) {
+  if (jobs.length === 0) {
     return 0
   }
 
@@ -284,12 +323,16 @@ async function cleanupOrphanedFiles(
   const cutoff = new Date()
   cutoff.setDate(cutoff.getDate() - ORPHAN_RETENTION_DAYS)
 
-  const { data: jobs } = await supabase
-    .from('jobs')
-    .select('before_photos, after_photos')
+  const jobs = await fetchAllRows((from, to) =>
+    supabase
+      .from('jobs')
+      .select('before_photos, after_photos')
+      .order('id')
+      .range(from, to)
+  )
 
   const referencedFiles = new Set<string>()
-  for (const job of jobs || []) {
+  for (const job of jobs) {
     for (const url of [...(job.before_photos || []), ...(job.after_photos || [])]) {
       const path = extractFilePath(url, 'job-photos')
       if (path) referencedFiles.add(path)
@@ -359,13 +402,17 @@ async function cleanupOrphanedInvoices(
   const cutoff = new Date()
   cutoff.setDate(cutoff.getDate() - ORPHAN_RETENTION_DAYS)
 
-  const { data: jobs } = await supabase
-    .from('jobs')
-    .select('invoice_file_path')
-    .not('invoice_file_path', 'is', null)
+  const jobs = await fetchAllRows((from, to) =>
+    supabase
+      .from('jobs')
+      .select('invoice_file_path')
+      .not('invoice_file_path', 'is', null)
+      .order('id')
+      .range(from, to)
+  )
 
   const referencedFiles = new Set<string>()
-  for (const job of jobs || []) {
+  for (const job of jobs) {
     if (job.invoice_file_path) {
       const path = extractFilePath(job.invoice_file_path, 'invoices')
       if (path) referencedFiles.add(path)
