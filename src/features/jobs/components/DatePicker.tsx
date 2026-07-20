@@ -58,7 +58,7 @@ export function DatePicker({
             onChange(selectedDate ? format(selectedDate, 'yyyy-MM-dd') : undefined)
           }}
           disabled={disabled}
-          initialFocus
+          autoFocus
         />
       </PopoverContent>
     </Popover>

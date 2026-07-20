@@ -84,15 +84,17 @@ const useSupabaseUpload = (options: UseSupabaseUploadOptions) => {
       const validFiles = acceptedFiles
         .filter((file) => !files.find((x) => x.name === file.name))
         .map((file) => {
-          ;(file as FileWithPreview).preview = URL.createObjectURL(file)
-          ;(file as FileWithPreview).errors = []
-          return file as FileWithPreview
+          const f = file as unknown as FileWithPreview
+          f.preview = URL.createObjectURL(file)
+          f.errors = []
+          return f
         })
 
       const invalidFiles = fileRejections.map(({ file, errors }) => {
-        ;(file as FileWithPreview).preview = URL.createObjectURL(file)
-        ;(file as FileWithPreview).errors = errors
-        return file as FileWithPreview
+        const f = file as unknown as FileWithPreview
+        f.preview = URL.createObjectURL(file)
+        f.errors = errors
+        return f
       })
 
       const newFiles = [...files, ...validFiles, ...invalidFiles]
