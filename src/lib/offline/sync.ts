@@ -6,11 +6,34 @@
 import { offlineStorage } from "./storage";
 import { toast } from "sonner";
 
+const SYNC_LOCK = "rps-offline-job-sync";
+
+/**
+ * Sync all pending offline jobs. Single-flight across every caller AND every
+ * open tab via the Web Locks API — the TopBar mounts two sync indicators and
+ * sync.ts has its own online/load triggers, so without the lock the same job
+ * could be read as "pending" by two runners and submitted twice.
+ */
 export async function syncOfflineJobs(): Promise<void> {
-  // Check if online
   if (!navigator.onLine) {
     return;
   }
+
+  if (typeof navigator.locks?.request === "function") {
+    await navigator.locks.request(SYNC_LOCK, { ifAvailable: true }, async (lock) => {
+      if (!lock) return; // another runner (possibly another tab) is already syncing
+      await runSync();
+    });
+  } else {
+    await runSync();
+  }
+}
+
+async function runSync(): Promise<void> {
+  // Recover jobs stranded in "syncing" by a previous run that died mid-flight
+  // (tab closed, phone slept). Safe here: we hold the sync lock, so no live
+  // run owns them.
+  await offlineStorage.resetStuckSyncingJobs();
 
   const pendingJobs = await offlineStorage.getPendingJobs();
 
@@ -32,7 +55,7 @@ export async function syncOfflineJobs(): Promise<void> {
 
       // Upload photos first
       const { uploadFile } = await import("@/features/jobs/utils/upload");
-      
+
       const beforePhotos = await Promise.all(
         photos.before.map(async (file) => {
           return await uploadFile(file, {
@@ -62,6 +85,10 @@ export async function syncOfflineJobs(): Promise<void> {
         ...jobDataWithoutNumber,
         before_photos: beforePhotos,
         after_photos: afterPhotos,
+        // Idempotency key: if a previous attempt reached the server but the
+        // response was lost, the API returns the existing job instead of
+        // creating a duplicate.
+        client_ref: job.id,
       };
 
       // Submit job to server
@@ -72,16 +99,31 @@ export async function syncOfflineJobs(): Promise<void> {
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to sync job");
+        let message = "Failed to sync job";
+        try {
+          const error = await response.json();
+          message = error.error || message;
+        } catch {
+          message = `Failed to sync job (HTTP ${response.status})`;
+        }
+        throw new Error(message);
       }
 
-      // Mark as synced
-      await offlineStorage.updateOfflineJobStatus(job.id, "synced");
-
-      // Clean up the offline job and its photos after successful sync
-      await offlineStorage.deleteOfflineJob(job.id);
       syncedCount++;
+
+      // Local cleanup after a confirmed server write. A cleanup failure must
+      // NOT mark the job "error" — that would re-queue a job the server
+      // already has. The client_ref dedupe would catch the replay, but there
+      // is no reason to re-upload photos in the first place.
+      try {
+        await offlineStorage.updateOfflineJobStatus(job.id, "synced");
+        await offlineStorage.deleteOfflineJob(job.id);
+      } catch (cleanupError) {
+        console.error(
+          "Job synced to server but local cleanup failed:",
+          cleanupError
+        );
+      }
     } catch (error) {
       console.error("Error syncing offline job:", error);
       await offlineStorage.updateOfflineJobStatus(
@@ -98,30 +140,17 @@ export async function syncOfflineJobs(): Promise<void> {
   }
 }
 
-// Auto-sync when coming online (only in browser, not SSR)
+// Auto-sync when coming online (only in browser, not SSR).
+// syncOfflineJobs is internally single-flight, so no extra guard needed here.
 if (typeof window !== "undefined") {
-  // Use a flag to prevent multiple simultaneous syncs
-  let isSyncing = false;
-  
-  const safeSync = async () => {
-    if (isSyncing) return;
-    isSyncing = true;
-    try {
-      await syncOfflineJobs();
-    } finally {
-      isSyncing = false;
-    }
-  };
-
   window.addEventListener("online", () => {
-    safeSync();
+    syncOfflineJobs();
   });
 
   // Also sync on page load if online (with delay to avoid SSR issues)
   if (navigator.onLine) {
     setTimeout(() => {
-      safeSync();
+      syncOfflineJobs();
     }, 1000);
   }
 }
-

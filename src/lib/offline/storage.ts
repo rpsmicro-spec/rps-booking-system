@@ -152,6 +152,22 @@ class OfflineStorage {
     return allJobs.filter((job) => job.status === "pending" || job.status === "error");
   }
 
+  /**
+   * Reset jobs stranded in "syncing" back to "pending". A job left in
+   * "syncing" means a previous sync run died mid-flight (tab closed, phone
+   * slept); without this reset it would never be retried and never counted
+   * as pending. Only safe to call when no sync is running — the sync module
+   * guards with a Web Lock.
+   */
+  async resetStuckSyncingJobs(): Promise<number> {
+    const allJobs = await this.getOfflineJobs();
+    const stuck = allJobs.filter((job) => job.status === "syncing");
+    for (const job of stuck) {
+      await this.updateOfflineJobStatus(job.id, "pending");
+    }
+    return stuck.length;
+  }
+
   async updateOfflineJobStatus(
     id: string,
     status: OfflineJob["status"],
