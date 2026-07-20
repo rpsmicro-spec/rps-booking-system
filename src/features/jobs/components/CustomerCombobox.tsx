@@ -56,6 +56,9 @@ export function CustomerCombobox({
   // Track the selected customer's unique identifier to show correct checkmark
   const [selectedCustomerUniqueId, setSelectedCustomerUniqueId] =
     React.useState<string | null>(null);
+  // Cache of the unfiltered list so clearing a search (or reopening the
+  // popover) restores the full list instead of the last filtered results.
+  const fullListRef = React.useRef<Customer[]>([]);
 
   // Preload customers on mount for better UX
   React.useEffect(() => {
@@ -64,7 +67,9 @@ export function CustomerCombobox({
         const response = await fetch('/api/customers?search=');
         if (response.ok) {
           const data = await response.json();
-          setCustomers(data.customers || []);
+          const list = data.customers || [];
+          fullListRef.current = list;
+          setCustomers(list);
         }
       } catch (error) {
         console.error('Failed to preload customers:', error);
@@ -78,34 +83,54 @@ export function CustomerCombobox({
 
   // Fetch customers when search value changes or when opening the combobox
   React.useEffect(() => {
-    const fetchCustomers = async () => {
-      // Only fetch when the popover is open
-      if (!open) return;
-      
-      // If there's no search value and we already have customers, don't refetch
-      if (!searchValue.trim() && customers.length > 0) return;
+    // Only fetch when the popover is open
+    if (!open) return;
 
+    const search = searchValue.trim();
+
+    // No search: restore the cached full list rather than refetching
+    if (!search && fullListRef.current.length > 0) {
+      setCustomers(fullListRef.current);
+      setLoading(false);
+      return;
+    }
+
+    const controller = new AbortController();
+
+    const fetchCustomers = async () => {
       setLoading(true);
       try {
-        const searchParam = searchValue.trim() || "";
         const response = await fetch(
-          `/api/customers?search=${encodeURIComponent(searchParam)}`
+          `/api/customers?search=${encodeURIComponent(search)}`,
+          { signal: controller.signal }
         );
         if (response.ok) {
           const data = await response.json();
-          setCustomers(data.customers || []);
+          const list = data.customers || [];
+          if (!search) {
+            fullListRef.current = list;
+          }
+          setCustomers(list);
         }
       } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return;
+        }
         console.error("Failed to fetch customers:", error);
         setCustomers([]);
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
       }
     };
 
     const timeoutId = setTimeout(fetchCustomers, 300); // Debounce
-    return () => clearTimeout(timeoutId);
-  }, [searchValue, open]); // eslint-disable-line react-hooks/exhaustive-deps
+    return () => {
+      clearTimeout(timeoutId);
+      controller.abort();
+    };
+  }, [searchValue, open]);
 
   const handleSelect = (selectedValue: string) => {
     // The value is a unique identifier: "customer_name|email|contact_number"
