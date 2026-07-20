@@ -18,9 +18,11 @@ export async function GET(request: Request) {
     const limit = Number.isNaN(limitRaw) ? 50 : Math.max(1, Math.min(limitRaw, 100))
     const offset = Number.isNaN(offsetRaw) ? 0 : Math.max(0, offsetRaw)
 
+    // count: 'exact' rides along on the page query — one DB round-trip
+    // instead of a duplicated filtered count query.
     let query = supabase
       .from('jobs')
-      .select('*')
+      .select('*', { count: 'exact' })
       .is('deleted_at', null)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
@@ -52,7 +54,7 @@ export async function GET(request: Request) {
       query = query.lt('booking_date', endDate.toISOString())
     }
 
-    const { data, error } = await query
+    const { data, error, count } = await query
 
     if (error) {
       console.error('Jobs query error:', error.message)
@@ -61,36 +63,6 @@ export async function GET(request: Request) {
         { status: 400 }
       )
     }
-
-    // Get total count for pagination
-    let countQuery = supabase
-      .from('jobs')
-      .select('*', { count: 'exact', head: true })
-      .is('deleted_at', null)
-
-    if (status) {
-      countQuery = countQuery.eq('status', status)
-    }
-
-    if (search) {
-      const sanitized = search.replace(/[%_,.()"'\\]/g, '')
-      if (sanitized) {
-        countQuery = countQuery.or(
-          `job_number.ilike.%${sanitized}%,customer_name.ilike.%${sanitized}%,email.ilike.%${sanitized}%`
-        )
-      }
-    }
-
-    if (dateFrom) {
-      countQuery = countQuery.gte('booking_date', dateFrom)
-    }
-    if (dateTo) {
-      const endDate = new Date(dateTo)
-      endDate.setDate(endDate.getDate() + 1)
-      countQuery = countQuery.lt('booking_date', endDate.toISOString())
-    }
-
-    const { count } = await countQuery
 
     return NextResponse.json(
       {
@@ -124,23 +96,70 @@ export async function POST(request: Request) {
       )
     }
 
+    // Server-owned fields must never come from the request body: job_number
+    // and created_by are set below, and letting callers set id, timestamps,
+    // deleted_at, or public_token would forge/break records.
+    const {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      id: _id, job_number: _jobNumber, created_by: _createdBy, created_at: _createdAt,
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      updated_at: _updatedAt, deleted_at: _deletedAt, public_token: _publicToken,
+      client_ref: clientRefRaw,
+      ...jobFields
+    } = body
+
+    // Idempotency for offline sync: the client sends its local job id as
+    // client_ref. If a previous attempt already created this job (response
+    // lost mid-flight), return the existing row instead of duplicating it.
+    const clientRef =
+      typeof clientRefRaw === 'string' && clientRefRaw.length > 0 && clientRefRaw.length <= 128
+        ? clientRefRaw
+        : null
+
+    if (clientRef) {
+      const { data: existing } = await supabase
+        .from('jobs')
+        .select('*')
+        .filter('client_ref', 'eq', clientRef)
+        .maybeSingle()
+
+      if (existing) {
+        return NextResponse.json({ job: existing, deduplicated: true }, { status: 200 })
+      }
+    }
+
     // Always auto-generate job number to ensure uniqueness and proper sequencing
     // Manual job numbers are not allowed to prevent duplicates and counter desync
     const { generateAndReserveJobNumber } = await import('@/lib/job-number-generator')
     const jobNumber = await generateAndReserveJobNumber()
 
-    // Create job
+    // Create job. client_ref is only referenced when present so plain online
+    // creation keeps working even if the column migration hasn't run yet.
+    // (cast: client_ref is newer than the generated types)
     const { data, error } = await supabase
       .from('jobs')
       .insert({
-        ...body,
+        ...jobFields,
         job_number: jobNumber,
         created_by: user.id,
-      })
+        ...(clientRef ? { client_ref: clientRef } : {}),
+      } as never)
       .select()
       .single()
 
     if (error) {
+      // Unique violation on client_ref: a concurrent replay won the race —
+      // return the row it created.
+      if (clientRef && error.code === '23505' && error.message.includes('client_ref')) {
+        const { data: existing } = await supabase
+          .from('jobs')
+          .select('*')
+          .filter('client_ref', 'eq', clientRef)
+          .maybeSingle()
+        if (existing) {
+          return NextResponse.json({ job: existing, deduplicated: true }, { status: 200 })
+        }
+      }
       console.error('Job creation error:', error.message)
       return NextResponse.json(
         { error: 'Failed to create job' },

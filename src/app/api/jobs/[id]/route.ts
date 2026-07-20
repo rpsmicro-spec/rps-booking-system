@@ -57,10 +57,28 @@ export async function PATCH(
     const body = await request.json()
 
     // Prevent job_number from being changed - it's auto-generated and must remain unique
-    const { job_number, ...updateData } = body
+    const {
+      job_number,
+      // Server-owned fields: id/timestamps/creator/token/idempotency-key are
+      // never client-settable, and status changes must go through
+      // /api/jobs/[id]/status so workflow validation and history recording
+      // can't be bypassed with a raw PATCH.
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      id: _id, created_by: _createdBy, created_at: _createdAt, updated_at: _updatedAt,
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      deleted_at: _deletedAt, public_token: _publicToken, client_ref: _clientRef,
+      status: _status,
+      ...updateData
+    } = body
     if (job_number !== undefined) {
       return NextResponse.json(
         { error: 'Job number cannot be changed. It is auto-generated and must remain unique.' },
+        { status: 400 }
+      )
+    }
+    if (_status !== undefined) {
+      return NextResponse.json(
+        { error: 'Status cannot be changed here. Use the status endpoint.' },
         { status: 400 }
       )
     }

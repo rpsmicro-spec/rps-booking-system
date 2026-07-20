@@ -3,6 +3,7 @@
  */
 
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 /**
  * Extract file path from a Supabase Storage URL
@@ -58,7 +59,33 @@ export async function getSignedUrl(
   }
 
   const supabase = await createClient()
-  
+  return signWithClient(supabase, filePath, bucket, expiresIn)
+}
+
+/**
+ * Generate a signed URL using the service-role client. For pages served to
+ * unauthenticated visitors (public job tracking): the cookie-based client has
+ * no session there, and the storage policies only grant SELECT to
+ * `authenticated`, so signing fails for the page's actual audience.
+ */
+export async function getSignedUrlAdmin(
+  filePath: string,
+  bucket: 'invoices' | 'job-photos' | 'temp-uploads',
+  expiresIn: number = 3600
+): Promise<string | null> {
+  if (!filePath) {
+    return null
+  }
+
+  return signWithClient(createAdminClient(), filePath, bucket, expiresIn)
+}
+
+async function signWithClient(
+  supabase: Awaited<ReturnType<typeof createClient>> | ReturnType<typeof createAdminClient>,
+  filePath: string,
+  bucket: 'invoices' | 'job-photos' | 'temp-uploads',
+  expiresIn: number
+): Promise<string | null> {
   // Extract file path from URL if needed
   const path = extractFilePath(filePath, bucket)
   if (!path) {

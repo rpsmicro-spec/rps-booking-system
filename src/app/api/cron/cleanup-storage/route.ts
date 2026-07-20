@@ -10,16 +10,19 @@ export async function GET(request: Request) {
   const vercelCronHeader = request.headers.get('x-vercel-cron')
   const authHeader = request.headers.get('authorization')
   
-  // Allow if it's from Vercel Cron (secure by default)
   const isVercelCron = vercelCronHeader === '1'
-  
-  // Or allow if it has valid CRON_SECRET (for manual testing)
+
   const hasValidSecret =
     Boolean(process.env.CRON_SECRET) &&
     authHeader === `Bearer ${process.env.CRON_SECRET}`
 
-  // Reject unless from Vercel Cron or valid secret (if CRON_SECRET unset, only Vercel Cron can call)
-  if (!isVercelCron && !hasValidSecret) {
+  // When CRON_SECRET is configured, require it — the x-vercel-cron header is
+  // not a proven-unspoofable signal, and this endpoint deletes files. The
+  // header alone is accepted only when no secret is configured (Vercel sends
+  // the bearer token automatically once the CRON_SECRET env var is set).
+  const isAuthorized = process.env.CRON_SECRET ? hasValidSecret : isVercelCron
+
+  if (!isAuthorized) {
     return NextResponse.json(
       { error: 'Unauthorized' },
       { status: 401 }

@@ -1,8 +1,9 @@
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import { PublicJobView } from "@/features/jobs/components/PublicJobView";
 import Image from "next/image";
-import { getSignedUrl } from "@/lib/storage/signed-url";
+import { getSignedUrlAdmin } from "@/lib/storage/signed-url";
+import type { Job } from "@/types/types";
 import { getWhatsAppLink } from "@/lib/notifications/utils";
 import { COMPANY_INFO } from "@/lib/constants";
 import Link from "next/link";
@@ -13,12 +14,20 @@ export default async function PublicJobViewPage({
   params: Promise<{ token: string }>;
 }) {
   const { token } = await params;
-  const supabase = await createClient();
+  if (!token) {
+    notFound();
+  }
 
-  // Fetch job by public token (no auth required)
+  // The anon role has no SELECT access to jobs (RLS), so this page reads via
+  // the service-role client, keyed strictly on the exact token from the URL.
+  // Only customer-facing columns are selected — the full row contains internal
+  // fields (contacts, notes, DC data) that must not reach the RSC payload.
+  const supabase = createAdminClient();
   const { data: job, error } = await supabase
     .from("jobs")
-    .select("*")
+    .select(
+      "id, job_number, status, material_type, special_requirements, booking_date, delivery_date, before_photos, after_photos, invoice_file_path"
+    )
     .eq("public_token", token)
     .is("deleted_at", null)
     .single();
@@ -30,21 +39,24 @@ export default async function PublicJobViewPage({
   // Fetch status history for the job
   const { data: statusHistory } = await supabase
     .from("job_status_history")
-    .select("*")
+    .select("id, job_id, old_status, new_status, changed_at, changed_by")
     .eq("job_id", job.id)
     .order("changed_at", { ascending: true });
 
-  // Generate signed URL for invoice if it exists (private bucket)
+  // Generate signed URL for invoice if it exists (private bucket). Must use
+  // the admin signer: the visitor is unauthenticated and the invoices bucket
+  // only grants SELECT to authenticated users.
   let invoiceUrl: string | null = null;
   if (job.invoice_file_path) {
-    invoiceUrl = await getSignedUrl(job.invoice_file_path, "invoices", 3600); // 1 hour expiry
+    invoiceUrl = await getSignedUrlAdmin(job.invoice_file_path, "invoices", 3600); // 1 hour expiry
   }
 
-  // Pass signed URL to component
+  // Pass signed URL to component. Cast: only public columns were selected,
+  // and PublicJobView reads nothing beyond them.
   const jobWithSignedInvoice = {
     ...job,
     invoice_file_path: invoiceUrl,
-  };
+  } as unknown as Job;
 
   const whatsappLink = getWhatsAppLink();
 
