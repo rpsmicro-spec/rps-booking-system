@@ -190,7 +190,7 @@ function getResourceLabel(log: AuditLog): {
 export function ActivityPageClient() {
   const isMobile = useIsMobile();
   const [logs, setLogs] = useState<AuditLog[]>([]);
-  const [filteredLogs, setFilteredLogs] = useState<AuditLog[]>([]);
+  const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [dateFrom, setDateFrom] = useState<string | null>(null);
@@ -199,52 +199,42 @@ export function ActivityPageClient() {
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null)
   const [expandedTechnicalId, setExpandedTechnicalId] = useState<string | null>(null);
 
+  // Filters are applied server-side; changing one restarts from page 1.
   useEffect(() => {
-    fetchAuditLogs();
-  }, []);
-
-  useEffect(() => {
-    let filtered = logs;
-
-    // Apply search filter
-    if (search) {
-      const searchLower = search.toLowerCase();
-      filtered = filtered.filter(
-        (log) =>
-          log.user?.email?.toLowerCase().includes(searchLower) ||
-          log.user?.name?.toLowerCase().includes(searchLower) ||
-          log.action.toLowerCase().includes(searchLower) ||
-          log.resource_type?.toLowerCase().includes(searchLower) ||
-          JSON.stringify(log.details).toLowerCase().includes(searchLower),
-      );
-    }
-
-    // Apply date filters
-    if (dateFrom) {
-      const fromDate = new Date(dateFrom);
-      fromDate.setHours(0, 0, 0, 0);
-      filtered = filtered.filter((log) => new Date(log.created_at) >= fromDate);
-    }
-
-    if (dateTo) {
-      const toDate = new Date(dateTo);
-      toDate.setHours(23, 59, 59, 999);
-      filtered = filtered.filter((log) => new Date(log.created_at) <= toDate);
-    }
-
-    setFilteredLogs(filtered);
     setCurrentPage(1);
-  }, [logs, search, dateFrom, dateTo]);
+  }, [search, dateFrom, dateTo]);
 
-  const totalFiltered = filteredLogs.length;
-  const totalPages = Math.max(1, Math.ceil(totalFiltered / PAGE_SIZE));
+  useEffect(() => {
+    // Debounce search keystrokes and abort superseded requests so a slow
+    // older response can't overwrite the results of a newer one.
+    const controller = new AbortController();
+    const timeoutId = setTimeout(
+      () => fetchAuditLogs(controller.signal),
+      search ? 300 : 0,
+    );
+    return () => {
+      clearTimeout(timeoutId);
+      controller.abort();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, dateFrom, dateTo, currentPage]);
+
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const start = (currentPage - 1) * PAGE_SIZE;
-  const paginatedLogs = filteredLogs.slice(start, start + PAGE_SIZE);
 
-  const fetchAuditLogs = async () => {
+  const fetchAuditLogs = async (signal?: AbortSignal) => {
     setIsLoading(true);
     try {
-      const response = await fetch("/api/audit-log");
+      const params = new URLSearchParams();
+      if (search) params.append("search", search);
+      if (dateFrom) params.append("date_from", dateFrom);
+      if (dateTo) params.append("date_to", dateTo);
+      params.append("limit", PAGE_SIZE.toString());
+      params.append("offset", ((currentPage - 1) * PAGE_SIZE).toString());
+
+      const response = await fetch(`/api/audit-log?${params.toString()}`, {
+        signal,
+      });
       const result = await response.json();
 
       if (!response.ok) {
@@ -252,8 +242,19 @@ export function ActivityPageClient() {
         return;
       }
 
+      const newTotal = result.total || 0;
       setLogs(result.logs || []);
+      setTotal(newTotal);
+      // Clamp the page if the total shrank under us (e.g. filters narrowed
+      // while sitting on a late page).
+      const lastPage = Math.max(1, Math.ceil(newTotal / PAGE_SIZE));
+      if (currentPage > lastPage) {
+        setCurrentPage(lastPage);
+      }
     } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        return;
+      }
       console.error("An unexpected error occurred", error);
     } finally {
       setIsLoading(false);
@@ -363,12 +364,12 @@ export function ActivityPageClient() {
                 </Table>
               </div>
             )
-          ) : filteredLogs.length === 0 ? (
+          ) : logs.length === 0 ? (
             emptyState
           ) : isMobile ? (
             // Mobile Card View – lead with what happened, then meta; only technical details collapsible
             <div className="space-y-3">
-              {paginatedLogs.map((log) => {
+              {logs.map((log) => {
                 const istDate = utcToIstDateObject(log.created_at);
                 const res = getResourceLabel(log);
                 const summary = getActivitySummary(log);
@@ -481,12 +482,12 @@ export function ActivityPageClient() {
                 </Card>
                 );
               })}
-              {totalFiltered > PAGE_SIZE && (
+              {total > PAGE_SIZE && (
                 <div className="flex flex-col gap-3 pt-4 sm:flex-row sm:items-center sm:justify-between">
                   <p className="text-sm text-muted-foreground">
                     Showing {start + 1}-
-                    {Math.min(start + PAGE_SIZE, totalFiltered)} of{" "}
-                    {totalFiltered} activities
+                    {Math.min(start + PAGE_SIZE, total)} of{" "}
+                    {total} activities
                   </p>
                   <div className="flex w-full gap-2 sm:w-auto">
                     <Button
@@ -528,7 +529,7 @@ export function ActivityPageClient() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {paginatedLogs.map((log) => {
+                    {logs.map((log) => {
                       const resource = getResourceLabel(log);
                       const summary = getActivitySummary(log);
                       const hasDetails =
@@ -676,12 +677,12 @@ export function ActivityPageClient() {
                   </TableBody>
                 </Table>
               </div>
-              {totalFiltered > PAGE_SIZE && (
+              {total > PAGE_SIZE && (
                 <div className="flex flex-col gap-3 pt-4 sm:flex-row sm:items-center sm:justify-between">
                   <p className="text-sm text-muted-foreground">
                     Showing {start + 1}-
-                    {Math.min(start + PAGE_SIZE, totalFiltered)} of{" "}
-                    {totalFiltered} activities
+                    {Math.min(start + PAGE_SIZE, total)} of{" "}
+                    {total} activities
                   </p>
                   <div className="flex w-full gap-2 sm:w-auto">
                     <Button
