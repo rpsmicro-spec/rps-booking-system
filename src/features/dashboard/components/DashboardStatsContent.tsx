@@ -28,16 +28,62 @@ export async function DashboardStatsContent() {
   lastWeekStart.setDate(lastWeekStart.getDate() - 7);
   const lastWeekEnd = new Date(weekStart);
 
+  // Counts come from head-only count queries — fetching rows and counting
+  // client-side silently caps at PostgREST's 1000-row limit, freezing the
+  // stats once the table grows past it.
   const [
-    jobsResult,
+    totalJobsResult,
+    activeJobsResult,
+    completedJobsResult,
+    deliveredJobsResult,
+    inProgressJobsResult,
+    collectedJobsResult,
+    jobsThisWeekResult,
+    jobsLastWeekResult,
     completedTodayResult,
     completedThisWeekResult,
     completedLastWeekResult,
   ] = await Promise.all([
     supabase
       .from("jobs")
-      .select("id, status, created_at")
+      .select("id", { count: "exact", head: true })
       .is("deleted_at", null),
+    supabase
+      .from("jobs")
+      .select("id", { count: "exact", head: true })
+      .is("deleted_at", null)
+      .in("status", ["collected", "in_progress"]),
+    supabase
+      .from("jobs")
+      .select("id", { count: "exact", head: true })
+      .is("deleted_at", null)
+      .eq("status", "completed"),
+    supabase
+      .from("jobs")
+      .select("id", { count: "exact", head: true })
+      .is("deleted_at", null)
+      .eq("status", "delivered"),
+    supabase
+      .from("jobs")
+      .select("id", { count: "exact", head: true })
+      .is("deleted_at", null)
+      .eq("status", "in_progress"),
+    supabase
+      .from("jobs")
+      .select("id", { count: "exact", head: true })
+      .is("deleted_at", null)
+      .eq("status", "collected"),
+    supabase
+      .from("jobs")
+      .select("id", { count: "exact", head: true })
+      .is("deleted_at", null)
+      .gte("created_at", weekStart.toISOString()),
+    supabase
+      .from("jobs")
+      .select("id", { count: "exact", head: true })
+      .is("deleted_at", null)
+      .gte("created_at", lastWeekStart.toISOString())
+      .lt("created_at", lastWeekEnd.toISOString()),
     supabase
       .from("job_status_history")
       .select("job_id")
@@ -57,13 +103,10 @@ export async function DashboardStatsContent() {
       .lt("changed_at", lastWeekEnd.toISOString()),
   ]);
 
-  const allJobs = jobsResult.data ?? [];
-  const totalJobs = allJobs.length;
-  const activeJobs = allJobs.filter(
-    (job) => job.status === "collected" || job.status === "in_progress"
-  ).length;
-  const deliveredJobs = allJobs.filter((j) => j.status === "delivered").length;
-  const completedJobs = allJobs.filter((j) => j.status === "completed").length;
+  const totalJobs = totalJobsResult.count ?? 0;
+  const activeJobs = activeJobsResult.count ?? 0;
+  const deliveredJobs = deliveredJobsResult.count ?? 0;
+  const completedJobs = completedJobsResult.count ?? 0;
   const activePercentage =
     totalJobs > 0 ? Math.round((activeJobs / totalJobs) * 100) : 0;
   const completionRate =
@@ -81,15 +124,8 @@ export async function DashboardStatsContent() {
     completedLastWeekResult.data?.map((h) => h.job_id) ?? []
   ).size;
 
-  const jobsThisWeek = allJobs.filter(
-    (job) => job.created_at && new Date(job.created_at) >= weekStart
-  ).length;
-  const jobsLastWeek = allJobs.filter(
-    (job) =>
-      job.created_at &&
-      new Date(job.created_at) >= lastWeekStart &&
-      new Date(job.created_at) < lastWeekEnd
-  ).length;
+  const jobsThisWeek = jobsThisWeekResult.count ?? 0;
+  const jobsLastWeek = jobsLastWeekResult.count ?? 0;
   const wowChange =
     jobsLastWeek > 0
       ? Math.round(((jobsThisWeek - jobsLastWeek) / jobsLastWeek) * 100)
@@ -185,12 +221,10 @@ export async function DashboardStatsContent() {
           </div>
           <div className="flex items-center justify-between text-[9px] sm:text-[10px]">
             <span className="text-muted-foreground">
-              In Progress:{" "}
-              {allJobs.filter((j) => j.status === "in_progress").length}
+              In Progress: {inProgressJobsResult.count ?? 0}
             </span>
             <span className="text-muted-foreground/70">
-              Collected:{" "}
-              {allJobs.filter((j) => j.status === "collected").length}
+              Collected: {collectedJobsResult.count ?? 0}
             </span>
           </div>
           <div className="h-1.5 bg-muted rounded-full overflow-hidden">

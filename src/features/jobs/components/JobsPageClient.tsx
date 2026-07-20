@@ -23,6 +23,19 @@ export function JobsPageClient() {
   const [total, setTotal] = useState(0);
   const limit = 10;
 
+  // Clamp the page when the total shrinks below the current offset —
+  // deleting the last job on the last page otherwise strands the user on an
+  // empty page with the pagination controls hidden (they only render when
+  // total > limit).
+  const handleTotalChange = (newTotal: number) => {
+    setTotal(newTotal);
+    if (offset > 0 && offset >= newTotal) {
+      const lastPageOffset =
+        Math.max(0, Math.ceil(Math.max(newTotal, 1) / limit) - 1) * limit;
+      setOffset(lastPageOffset);
+    }
+  };
+
   const handleStatusChange = (newStatus: string | null) => {
     setStatus(newStatus);
     setOffset(0);
@@ -135,7 +148,7 @@ export function JobsPageClient() {
                 dateTo={dateTo}
                 limit={limit}
                 offset={offset}
-                onTotalChange={setTotal}
+                onTotalChange={handleTotalChange}
               />
             </div>
           </div>

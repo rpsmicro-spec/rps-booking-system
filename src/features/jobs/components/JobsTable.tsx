@@ -77,11 +77,19 @@ export function JobsTable({
   const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
-    fetchJobs()
+    // Debounce search keystrokes (the search prop changes per keystroke) and
+    // abort superseded requests so a slow older response can't overwrite the
+    // results of a newer one.
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => fetchJobs(controller.signal), search ? 300 : 0)
+    return () => {
+      clearTimeout(timeoutId)
+      controller.abort()
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, search, dateFrom, dateTo, limit, offset])
 
-  const fetchJobs = async () => {
+  const fetchJobs = async (signal?: AbortSignal) => {
     setIsLoading(true)
     try {
       const params = new URLSearchParams()
@@ -92,7 +100,7 @@ export function JobsTable({
       params.append('limit', limit.toString())
       params.append('offset', offset.toString())
 
-      const response = await fetch(`/api/jobs?${params.toString()}`)
+      const response = await fetch(`/api/jobs?${params.toString()}`, { signal })
       const result = await response.json()
 
       if (!response.ok) {
@@ -103,6 +111,9 @@ export function JobsTable({
       setJobs(result.jobs || [])
       onTotalChange?.(result.total || 0)
     } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        return
+      }
       console.error('Error fetching jobs:', error)
     } finally {
       setIsLoading(false)

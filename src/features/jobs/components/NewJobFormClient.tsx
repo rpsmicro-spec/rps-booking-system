@@ -19,14 +19,18 @@ export function NewJobFormClient() {
       const result = await response.json()
 
       if (!response.ok) {
-        toast.error(result.error || 'Failed to create job')
-        return
+        // Throw instead of returning normally: JobForm clears the saved
+        // draft after onSubmit resolves, and a failed create must keep it.
+        throw new Error(result.error || 'Failed to create job')
       }
 
       toast.success('Job created successfully!')
       router.push(`/jobs/${result.job.id}`)
-    } catch {
-      toast.error('An unexpected error occurred')
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error
+      }
+      throw new Error('An unexpected error occurred')
     }
   }
 

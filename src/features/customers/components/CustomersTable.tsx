@@ -62,11 +62,18 @@ export function CustomersTable({ search, limit = 50, offset = 0, onTotalChange }
   }
 
   useEffect(() => {
-    fetchCustomers()
+    // Debounce search keystrokes and abort superseded requests so a slow
+    // older response can't overwrite the results of a newer one.
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => fetchCustomers(controller.signal), search ? 300 : 0)
+    return () => {
+      clearTimeout(timeoutId)
+      controller.abort()
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search, limit, offset])
 
-  const fetchCustomers = async () => {
+  const fetchCustomers = async (signal?: AbortSignal) => {
     setIsLoading(true)
     setError(null)
     try {
@@ -75,7 +82,7 @@ export function CustomersTable({ search, limit = 50, offset = 0, onTotalChange }
       params.append('limit', limit.toString())
       params.append('offset', offset.toString())
 
-      const response = await fetch(`/api/customers?${params.toString()}`)
+      const response = await fetch(`/api/customers?${params.toString()}`, { signal })
       const result = await response.json()
 
       if (!response.ok) {
@@ -86,6 +93,9 @@ export function CustomersTable({ search, limit = 50, offset = 0, onTotalChange }
       setCustomers(result.customers || [])
       onTotalChange?.(result.total || 0)
     } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        return
+      }
       console.error('Error fetching customers:', error)
       setError('Failed to load customers. Please check your connection.')
     } finally {
@@ -130,7 +140,7 @@ export function CustomersTable({ search, limit = 50, offset = 0, onTotalChange }
     return (
       <div className="p-8 sm:p-12 text-center">
         <p className="text-sm text-destructive">{error}</p>
-        <Button variant="outline" size="sm" className="mt-4" onClick={fetchCustomers}>
+        <Button variant="outline" size="sm" className="mt-4" onClick={() => fetchCustomers()}>
           Try Again
         </Button>
       </div>
