@@ -76,6 +76,19 @@ async function runSync(): Promise<void> {
         })
       );
 
+      // Upload the invoice file if one was attached while offline
+      // (mirrors the online upload path in JobForm)
+      const invoiceFile = await offlineStorage.getOfflineJobInvoice(job);
+      const invoiceFilePath = invoiceFile
+        ? await uploadFile(invoiceFile, {
+            bucket: "invoices",
+            folder: "invoices",
+            maxSizeMB: 5,
+          })
+        : typeof job.data.invoice_file_path === "string"
+          ? job.data.invoice_file_path
+          : "";
+
       // Prepare job data with uploaded photo URLs
       // Remove job_number so the API generates a fresh one on sync
       // This ensures offline jobs get the next available job number when syncing
@@ -85,6 +98,7 @@ async function runSync(): Promise<void> {
         ...jobDataWithoutNumber,
         before_photos: beforePhotos,
         after_photos: afterPhotos,
+        invoice_file_path: invoiceFilePath,
         // Idempotency key: if a previous attempt reached the server but the
         // response was lost, the API returns the existing job instead of
         // creating a duplicate.

@@ -733,6 +733,12 @@ export function JobForm({ job, onSubmit, isSubmitting = false }: JobFormProps) {
           (data.after_photos?.filter(
             (p) => typeof p === "string"
           ) as string[]) || [];
+        // An invoice attached while offline can't be uploaded yet — store the
+        // File in IndexedDB so sync can upload it later
+        const offlineInvoiceFile =
+          data.invoice_file_path instanceof File
+            ? data.invoice_file_path
+            : null;
 
         // Convert IST date strings to UTC ISO datetime strings
         // Exclude confirmation field from submission
@@ -758,10 +764,14 @@ export function JobForm({ job, onSubmit, isSubmitting = false }: JobFormProps) {
         };
 
         await offlineStorage.init();
-        await offlineStorage.saveOfflineJob(submitData, {
-          before: beforePhotoFiles, // Save File objects for later upload
-          after: afterPhotoFiles, // Save File objects for later upload
-        });
+        await offlineStorage.saveOfflineJob(
+          submitData,
+          {
+            before: beforePhotoFiles, // Save File objects for later upload
+            after: afterPhotoFiles, // Save File objects for later upload
+          },
+          offlineInvoiceFile // Save invoice File for later upload
+        );
 
         toast.success(
           "Job saved offline. It will be synced automatically when you're back online.",

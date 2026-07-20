@@ -12,6 +12,7 @@ interface OfflineJob {
   id: string; // Temporary ID for offline jobs
   data: JobFormValues; // Job form data
   photoIds: { before: string[]; after: string[] }; // IDs of photos stored in photos store
+  invoiceFileId?: string; // ID of invoice file stored in photos store
   status: "pending" | "syncing" | "synced" | "error";
   createdAt: number;
   syncedAt?: number;
@@ -67,7 +68,8 @@ class OfflineStorage {
   // Offline Jobs Management
   async saveOfflineJob(
     jobData: JobFormValues,
-    photos: { before: File[]; after: File[] }
+    photos: { before: File[]; after: File[] },
+    invoiceFile?: File | null
   ): Promise<string> {
     if (!this.db) await this.init();
 
@@ -95,6 +97,14 @@ class OfflineStorage {
       afterPhotoIds.push(photoId);
     }
 
+    // Save invoice file (if any) to the photos store — it stores arbitrary
+    // files (ArrayBuffer + type + name), not just images
+    let invoiceFileId: string | undefined;
+    if (invoiceFile) {
+      invoiceFileId = `${id}-invoice-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+      await this.savePhoto(invoiceFileId, invoiceFile);
+    }
+
     const offlineJob: OfflineJob = {
       id,
       data: jobData,
@@ -102,6 +112,7 @@ class OfflineStorage {
         before: beforePhotoIds,
         after: afterPhotoIds,
       },
+      invoiceFileId,
       status: "pending",
       createdAt: Date.now(),
     };
@@ -132,6 +143,12 @@ class OfflineStorage {
     }
 
     return { before: beforePhotos, after: afterPhotos };
+  }
+
+  // Get the invoice file for an offline job (null if none was attached)
+  async getOfflineJobInvoice(job: OfflineJob): Promise<File | null> {
+    if (!job.invoiceFileId) return null;
+    return this.getPhoto(job.invoiceFileId);
   }
 
   async getOfflineJobs(): Promise<OfflineJob[]> {
@@ -215,9 +232,12 @@ class OfflineStorage {
     });
 
     if (job) {
-      // Delete associated photos
+      // Delete associated photos and invoice file
       for (const photoId of [...job.photoIds.before, ...job.photoIds.after]) {
         await this.deletePhoto(photoId);
+      }
+      if (job.invoiceFileId) {
+        await this.deletePhoto(job.invoiceFileId);
       }
     }
 
