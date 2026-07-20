@@ -24,6 +24,8 @@ export function SyncStatusIndicator() {
   // Check internet connection via our own API (same-origin, no CORS issues).
   // External checks (cloudflare.com, api.resend.com, supabase REST) were removed
   // because they always fail with CORS/401 errors from the browser.
+  // Must poll /api/ping (no auth) — polling an authed endpoint hits Supabase
+  // on every request and drains the database's Disk IO budget.
   const checkInternetConnection = useCallback(async () => {
     if (!navigator.onLine) {
       setIsOnline(false);
@@ -34,7 +36,7 @@ export function SyncStatusIndicator() {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000);
 
-      const res = await fetch("/api/auth/session", {
+      const res = await fetch("/api/ping", {
         method: "GET",
         cache: "no-store",
         signal: controller.signal,
@@ -98,15 +100,26 @@ export function SyncStatusIndicator() {
     window.addEventListener("online", updateOnlineStatus);
     window.addEventListener("offline", handleOffline);
 
-    // Poll for connection and pending jobs every 15 seconds
+    // Poll for connection and pending jobs every 60 seconds, but not in
+    // hidden tabs — a visibilitychange re-check covers them on return.
     const interval = setInterval(() => {
+      if (document.hidden) return;
       checkInternetConnection();
       loadPendingJobs();
-    }, 15000);
+    }, 60000);
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        checkInternetConnection();
+        loadPendingJobs();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
       window.removeEventListener("online", updateOnlineStatus);
       window.removeEventListener("offline", handleOffline);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
       clearInterval(interval);
     };
   }, [loadPendingJobs, checkInternetConnection]);
