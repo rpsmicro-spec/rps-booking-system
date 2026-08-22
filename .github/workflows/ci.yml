@@ -1,12 +1,46 @@
-name: CI
+name: CI/CD
+
+# One pipeline. Every push/PR runs CI (lint + typecheck + build). On main ONLY,
+# a green CI unlocks the strictly-ordered release:
+#   1. apply prod DB migrations (supabase db push),
+#   2. deploy the Next app to Vercel (CLI; git auto-deploy for main is off in
+#      vercel.json so nothing ships before migrations).
+#
+# The gate is STRUCTURAL: deploy-app `needs` migrate `needs` check, so GitHub
+# skips the whole release chain if CI is red. Deploy jobs are `if: main`, so
+# PRs run CI only. Same shape as lensdrop's ci.yml.
+#
+# Escape hatch when Actions is unavailable (quota, outage): run the same two
+# steps by hand, in the same order, from a machine with the Supabase CLI and
+# Vercel CLI logged in:
+#   supabase db push            # against the linked prod project
+#   npx vercel deploy --prod    # then, and only then, the app
+#
+# Required GitHub secrets (deploy jobs only, never on PR runs):
+#   SUPABASE_ACCESS_TOKEN   - Supabase personal access token
+#   SUPABASE_PROJECT_REF    - prod project reference id
+#   VERCEL_TOKEN            - Vercel account token (Settings -> Tokens)
 
 on:
   pull_request:
   push:
     branches: [main]
 
+# PR runs: cancel superseded runs on the same ref (save minutes).
+# main runs: never cancel - releases serialize and must not die mid-migration.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+# Vercel org/project ids (not secrets) let the CLI target the project without a
+# .vercel link in CI.
+env:
+  VERCEL_ORG_ID: team_8RT1NV3JCyu0jV6BrmKRiQb1
+  VERCEL_PROJECT_ID: prj_oN1kn0uI2ktoAIZbydJuEI7cSTEQ
+
 jobs:
-  checks:
+  check:
+    name: Lint, typecheck & build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -37,3 +71,41 @@ jobs:
           FROM_EMAIL: noreply@example.com
           NEXT_PUBLIC_APP_URL: http://localhost:3000
           CRON_SECRET: placeholder
+
+  # ---- Release (main only, gated on a green `check`) ----------------------
+
+  migrate:
+    name: Migrate prod database
+    needs: check
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: supabase/setup-cli@v3
+        with:
+          version: latest
+
+      - name: supabase db push (prod)
+        run: |
+          supabase link --project-ref "$SUPABASE_PROJECT_REF"
+          supabase db push --yes
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+
+  deploy-app:
+    name: Deploy app (Vercel)
+    needs: migrate # the app never goes live before the schema it expects
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: vercel deploy --prod
+        run: |
+          if [ -z "$VERCEL_TOKEN" ]; then
+            echo "::error::VERCEL_TOKEN secret is not set. Git auto-deploy for main is off (vercel.json), so nothing ships until it is."
+            exit 1
+          fi
+          npx vercel deploy --prod --yes --token "$VERCEL_TOKEN"
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
