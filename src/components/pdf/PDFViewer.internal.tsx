@@ -170,8 +170,13 @@ export function PDFViewerInternal({
 
         <div className="overflow-auto" style={{ height, maxHeight: height }}>
           <div className="flex justify-center p-4">
+            {/* react-pdf 11 suspends and throws to the nearest Error
+                Boundary by default. Opt out so the loading/error props and
+                onLoadError (which switches to the iframe fallback) keep
+                driving this viewer. */}
             <Document
               file={url}
+              suspense={false}
               onLoadSuccess={onDocumentLoadSuccess}
               onLoadError={onDocumentLoadError}
               loading={
