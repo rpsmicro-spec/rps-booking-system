@@ -1,12 +1,11 @@
 version: 2
 updates:
   # npm packages: security PRs open immediately; version updates arrive
-  # weekly with all patch/minor bumps grouped into a single PR.
+  # monthly with all patch/minor bumps grouped into a single PR.
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
-      interval: "weekly"
-      day: "monday"
+      interval: "monthly"
       time: "06:00"
       timezone: "Asia/Kolkata"
     groups:
