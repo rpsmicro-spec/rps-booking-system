@@ -20,6 +20,12 @@ updates:
           - "minor"
           - "patch"
     open-pull-requests-limit: 10
+    # ESLint 10 breaks lint: eslint-plugin-import 2.32 and
+    # eslint-plugin-jsx-a11y 6.10 (pulled in by eslint-config-next) only
+    # declare peers up to ESLint 9 (#65). Drop this once they support 10.
+    ignore:
+      - dependency-name: "eslint"
+        update-types: ["version-update:semver-major"]
     labels:
       - "dependencies"
     commit-message:
