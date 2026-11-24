@@ -47,10 +47,12 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // Refresh the auth token on every request
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  // Refresh the session if needed and read the user from the JWT. getClaims
+  // verifies the token locally when the project uses asymmetric signing keys
+  // (no round trip to Supabase Auth on every navigation) and falls back to a
+  // server check otherwise. Pages still call getUser() for authoritative checks.
+  const { data: claimsData } = await supabase.auth.getClaims()
+  const user = claimsData?.claims ?? null
 
   const { pathname } = request.nextUrl
 

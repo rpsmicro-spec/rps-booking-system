@@ -4,6 +4,7 @@
 
 import { createClient } from '@/lib/supabase/client'
 import { compressImage, validateImageFile } from './image-optimization'
+import { NetworkError } from '@/lib/offline/network'
 
 export interface UploadOptions {
   bucket: 'job-photos' | 'invoices' | 'temp-uploads'
@@ -134,6 +135,12 @@ export async function uploadFile(
     })
 
   if (error) {
+    // StorageUnknownError wraps a fetch() rejection (no HTTP response at
+    // all) — that is a network failure, not a rejected upload. Callers use
+    // the distinction to fall back to saving offline.
+    if ((error as { name?: string }).name === 'StorageUnknownError') {
+      throw new NetworkError(`Upload failed: ${error.message}`, { cause: error })
+    }
     throw new Error(`Upload failed: ${error.message}`)
   }
 

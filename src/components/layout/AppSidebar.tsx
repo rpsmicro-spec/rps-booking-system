@@ -34,6 +34,7 @@ import {
 import { SidebarLogo } from "./SidebarLogo";
 import { NavUser } from "./NavUser";
 import { ThemeSelect } from "./ThemeSelect";
+import { FontScaleSegmented } from "./FontScaleControl";
 import { Separator } from "@/components/ui/separator";
 
 const navItems = [
@@ -130,6 +131,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <div className="flex flex-col gap-2">
           <Separator />
           <ThemeSelect />
+          <FontScaleSegmented />
           <NavUser />
         </div>
       </SidebarFooter>

@@ -75,8 +75,12 @@ export function utcToIstDateObject(utcDateString: string | null | undefined): Da
     const utcDate = new Date(utcDateString);
     if (isNaN(utcDate.getTime())) return null;
     
-    // Convert to IST by adding offset
-    return new Date(utcDate.getTime() + IST_OFFSET_MS);
+    // Return a Date whose *local* fields (what date-fns `format` reads) show
+    // IST wall-clock time in any runtime timezone. Adding only the IST offset
+    // was right on UTC servers but double-shifted times in browsers already
+    // in IST (every phone in India saw times 5h30 late).
+    const runtimeOffsetMs = utcDate.getTimezoneOffset() * 60 * 1000;
+    return new Date(utcDate.getTime() + IST_OFFSET_MS + runtimeOffsetMs);
   } catch {
     return null;
   }

@@ -132,7 +132,7 @@ export function PendingInvitations({ refreshTrigger }: PendingInvitationsProps) 
                         {ROLE_LABELS[invitation.role as UserRole]}
                       </Badge>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="tabular-nums">
                       {invitation.invited_at
                         ? new Date(invitation.invited_at).toLocaleDateString()
                         : '-'}

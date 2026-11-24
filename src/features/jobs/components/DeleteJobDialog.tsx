@@ -14,6 +14,8 @@ import {
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
+import { useOnlineStatus } from '@/hooks/use-online-status'
+import { removeJobFromCaches } from '@/lib/swr/job-cache'
 
 interface DeleteJobDialogProps {
   jobId: string
@@ -25,6 +27,8 @@ export function DeleteJobDialog({ jobId, jobNumber, triggerClassName }: DeleteJo
   const router = useRouter()
   const [isOpen, setIsOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  // Deletes are online-only (never queued): too risky to replay later.
+  const isOnline = useOnlineStatus()
 
   const handleDelete = async () => {
     setIsDeleting(true)
@@ -41,6 +45,7 @@ export function DeleteJobDialog({ jobId, jobNumber, triggerClassName }: DeleteJo
       }
 
       toast.success('Job deleted successfully')
+      await removeJobFromCaches(jobId)
       router.push('/jobs')
       router.refresh()
     } catch {
@@ -54,8 +59,14 @@ export function DeleteJobDialog({ jobId, jobNumber, triggerClassName }: DeleteJo
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="destructive" size="sm" className={cn('text-xs sm:text-sm', triggerClassName)}>
-          Delete Job
+        <Button
+          variant="destructive"
+          size="sm"
+          className={cn(triggerClassName)}
+          disabled={!isOnline}
+          title={isOnline ? undefined : "You're offline — deleting needs a connection"}
+        >
+          {isOnline ? 'Delete Job' : "Delete (offline)"}
         </Button>
       </DialogTrigger>
       <DialogContent>
@@ -76,7 +87,7 @@ export function DeleteJobDialog({ jobId, jobNumber, triggerClassName }: DeleteJo
           <Button
             variant="destructive"
             onClick={handleDelete}
-            disabled={isDeleting}
+            disabled={isDeleting || !isOnline}
           >
             {isDeleting ? 'Deleting...' : 'Delete'}
           </Button>

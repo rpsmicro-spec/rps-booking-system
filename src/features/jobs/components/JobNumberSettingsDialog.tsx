@@ -253,6 +253,9 @@ export function JobNumberSettingsDialog({
                 id="next_number"
                 type="number"
                 min="1"
+                inputMode="numeric"
+                autoComplete="off"
+                className="tabular-nums"
                 {...register("next_number", { valueAsNumber: true })}
                 disabled={!canEdit}
                 readOnly={!canEdit}

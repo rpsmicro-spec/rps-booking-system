@@ -227,7 +227,7 @@ export function UsersTable({ refreshTrigger }: UsersTableProps) {
                       </div>
                       <div className="flex items-center gap-2 mt-2">
                         <Calendar className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-xs tabular-nums text-muted-foreground">
                           Joined: {new Date(user.created_at).toLocaleDateString()}
                         </p>
                       </div>
@@ -345,7 +345,7 @@ export function UsersTable({ refreshTrigger }: UsersTableProps) {
                   <TableCell>
                     <Badge variant="secondary">Active</Badge>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="tabular-nums">
                     {new Date(user.created_at).toLocaleDateString()}
                   </TableCell>
                   <TableCell className="text-right">

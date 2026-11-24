@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { EnhancedPhoneInput } from "./enhanced-phone-input";
 import { Button } from "./button";
+import { Label } from "./label";
 import { Plus, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -14,6 +15,8 @@ interface MultiPhoneInputProps {
   disabled?: boolean;
   contactName?: string;
   className?: string;
+  /** Extra classes for each phone field (e.g. a height override). */
+  inputClassName?: string;
 }
 
 export function MultiPhoneInput({
@@ -24,6 +27,7 @@ export function MultiPhoneInput({
   disabled = false,
   contactName,
   className,
+  inputClassName,
 }: MultiPhoneInputProps) {
   const [additionalPhones, setAdditionalPhones] = useState<string[]>(
     additionalValues.length > 0 ? additionalValues : []
@@ -53,9 +57,9 @@ export function MultiPhoneInput({
       {/* Primary Phone Number */}
       <div className="space-y-1.5">
         <div className="flex items-center gap-2">
-          <label className="text-xs font-medium text-muted-foreground">
+          <Label htmlFor="primary_contact_number" className="text-muted-foreground">
             Primary Phone Number
-          </label>
+          </Label>
           <span className="text-xs text-muted-foreground">(WhatsApp notifications)</span>
         </div>
         <EnhancedPhoneInput
@@ -70,6 +74,7 @@ export function MultiPhoneInput({
           showClipboardPaste={true}
           showValidation={true}
           showRecentContacts={true}
+          className={inputClassName}
         />
       </div>
 
@@ -77,9 +82,12 @@ export function MultiPhoneInput({
       {additionalPhones.map((phone, index) => (
         <div key={index} className="space-y-1.5">
           <div className="flex items-center justify-between">
-            <label className="text-xs font-medium text-muted-foreground">
+            <Label
+              htmlFor={`additional_phone_${index}`}
+              className="text-muted-foreground"
+            >
               Additional Phone #{index + 1}
-            </label>
+            </Label>
             <Button
               type="button"
               variant="ghost"
@@ -104,6 +112,7 @@ export function MultiPhoneInput({
             showClipboardPaste={true}
             showValidation={true}
             showRecentContacts={false}
+            className={inputClassName}
           />
         </div>
       ))}

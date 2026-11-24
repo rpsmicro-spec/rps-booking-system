@@ -14,6 +14,7 @@ import { formatAddress } from "@/lib/utils/address";
 import type { Job } from "@/types/types";
 import { useIsMobile } from "@/hooks/use-mobile";
 import Link from "next/link";
+import { formatPhoneDisplay } from "@/lib/utils/format-phone";
 
 interface CustomerDetailsDialogProps {
   job: Job;
@@ -33,7 +34,7 @@ export function CustomerDetailsDialog({ job }: CustomerDetailsDialogProps) {
 
   if (!isMobile) {
     return (
-      <Button variant="outline" size="sm" className="text-xs sm:text-sm" asChild>
+      <Button variant="outline" size="sm" asChild>
         <Link href={customerDetailHref}>
           <Info className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
           <span className="hidden sm:inline">View Customer Details</span>
@@ -46,7 +47,7 @@ export function CustomerDetailsDialog({ job }: CustomerDetailsDialogProps) {
   return (
     <Drawer>
       <DrawerTrigger asChild>
-        <Button variant="outline" size="sm" className="text-xs sm:text-sm">
+        <Button variant="outline" size="sm">
           <Info className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
           <span className="hidden sm:inline">View Customer Details</span>
           <span className="sm:hidden">Customer</span>
@@ -115,8 +116,8 @@ export function CustomerDetailsDialog({ job }: CustomerDetailsDialogProps) {
                 <div className="space-y-1.5">
                   {job.contact_number && (
                     <div className="flex items-center gap-2 flex-wrap">
-                      <p className="text-sm font-medium wrap-break-word">
-                        {job.contact_number}
+                      <p className="text-sm font-medium tabular-nums wrap-break-word">
+                        {formatPhoneDisplay(job.contact_number)}
                       </p>
                       <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded shrink-0">
                         Primary
@@ -128,9 +129,9 @@ export function CustomerDetailsDialog({ job }: CustomerDetailsDialogProps) {
                     .map((phone, index) => (
                       <p
                         key={index}
-                        className="text-sm text-muted-foreground wrap-break-word"
+                        className="text-sm tabular-nums text-muted-foreground wrap-break-word"
                       >
-                        {phone}
+                        {formatPhoneDisplay(phone)}
                       </p>
                     ))}
                 </div>

@@ -23,6 +23,7 @@ import {
 import { format } from "date-fns";
 import { utcToIstDateObject } from "@/lib/utils/date-ist";
 import { formatAddressSingleLine } from "@/lib/utils/address";
+import { formatPhoneDisplay } from "@/lib/utils/format-phone";
 
 interface JobCardMobileProps {
   job: Job;
@@ -30,6 +31,8 @@ interface JobCardMobileProps {
   showActions?: boolean;
   onEdit?: (jobId: string) => void;
   onDelete?: (job: Job) => void;
+  /** Edit/Delete are online-only: show them disabled while offline. */
+  offline?: boolean;
 }
 
 export function JobCardMobile({
@@ -38,6 +41,7 @@ export function JobCardMobile({
   showActions = false,
   onEdit,
   onDelete,
+  offline = false,
 }: JobCardMobileProps) {
   const handleCardClick = () => {
     if (onCardClick) {
@@ -128,7 +132,7 @@ export function JobCardMobile({
         {/* Header: Job Number + Customer | Badge + Chevron */}
         <div className="flex items-start gap-3">
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-base text-foreground truncate">
+            <h3 className="font-semibold text-base tabular-nums text-foreground truncate">
               {job.job_number}
             </h3>
             <p className="text-sm text-foreground/90 mt-0.5 wrap-break-word">
@@ -148,7 +152,7 @@ export function JobCardMobile({
           <div className="flex items-center gap-2 shrink-0">
             {job.status && (
               <Badge
-                className={`${getStatusBadgeCustomClasses(job.status as JobStatus)} text-[10px] px-2 py-0 h-5 font-medium`}
+                className={`${getStatusBadgeCustomClasses(job.status as JobStatus)} text-xs px-2 py-0 h-5 font-medium`}
               >
                 {STATUS_LABELS[job.status as JobStatus] || "Unknown"}
               </Badge>
@@ -176,31 +180,25 @@ export function JobCardMobile({
           {dcNumber && (
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <FileText className="h-3.5 w-3.5 shrink-0 text-muted-foreground/70" />
-              <span className="wrap-break-word">DC: {dcNumber}</span>
+              <span className="tabular-nums wrap-break-word">DC: {dcNumber}</span>
+            </div>
+          )}
+          {bookingDate && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Calendar className="h-3.5 w-3.5 shrink-0 text-muted-foreground/70" />
+              <span className="tabular-nums">Booked {bookingDate}</span>
+            </div>
+          )}
+          {deliveryDate && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Truck className="h-3.5 w-3.5 shrink-0 text-muted-foreground/70" />
+              <span className="tabular-nums">Delivery {deliveryDate}</span>
             </div>
           )}
         </div>
 
-        <div className="space-y-3 pt-1">
-        {/* Dates Row */}
-        {(bookingDate || deliveryDate) && (
-          <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
-            {bookingDate && (
-              <div className="flex items-center gap-1.5">
-                <Calendar className="h-3.5 w-3.5 shrink-0 text-muted-foreground/70" />
-                <span>Booked {bookingDate}</span>
-              </div>
-            )}
-            {deliveryDate && (
-              <div className="flex items-center gap-1.5">
-                <Truck className="h-3.5 w-3.5 shrink-0 text-muted-foreground/70" />
-                <span>Delivery {deliveryDate}</span>
-              </div>
-            )}
-          </div>
-        )}
-
         {/* Media & invoice chips */}
+        {(photoCount > 0 || videoCount > 0 || hasInvoice) && (
         <div className="flex items-center gap-2 flex-wrap">
           {photoCount > 0 && (
             <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted/60 text-xs font-medium tabular-nums">
@@ -221,6 +219,7 @@ export function JobCardMobile({
             </span>
           )}
         </div>
+        )}
 
         {/* Contact Info */}
         {(primaryPhone || primaryEmail) && (
@@ -229,11 +228,11 @@ export function JobCardMobile({
               <a
                 href={`tel:${primaryPhone}`}
                 onClick={(e) => e.stopPropagation()}
-                className="flex items-center gap-1.5 text-xs text-primary hover:underline"
+                className="flex min-w-0 max-w-full items-center gap-1.5 text-xs text-primary hover:underline"
               >
                 <Phone className="h-3.5 w-3.5 shrink-0" />
-                <span className="truncate">
-                  {primaryPhone}
+                <span className="truncate tabular-nums">
+                  {formatPhoneDisplay(primaryPhone)}
                   {totalPhones > 0 && (
                     <span className="text-muted-foreground ml-1">
                       + {totalPhones}
@@ -246,13 +245,13 @@ export function JobCardMobile({
               <a
                 href={`mailto:${primaryEmail}`}
                 onClick={(e) => e.stopPropagation()}
-                className="flex items-center gap-1.5 text-xs text-primary hover:underline"
+                className="flex min-w-0 max-w-full items-center gap-1.5 text-xs text-primary hover:underline"
               >
                 <Mail className="h-3.5 w-3.5 shrink-0" />
                 <span className="truncate">
                   {primaryEmail}
                   {totalEmails > 0 && (
-                    <span className="text-muted-foreground ml-1">
+                    <span className="text-muted-foreground tabular-nums ml-1">
                       + {totalEmails}
                     </span>
                   )}
@@ -280,7 +279,19 @@ export function JobCardMobile({
                 View
               </Link>
             </Button>
-            {onEdit && (
+            {onEdit && offline && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1 text-xs h-8"
+                disabled
+                title="You're offline — editing needs a connection"
+              >
+                <Edit className="mr-1.5 h-3.5 w-3.5" />
+                Edit (offline)
+              </Button>
+            )}
+            {onEdit && !offline && (
               <Button
                 variant="outline"
                 size="sm"
@@ -302,6 +313,9 @@ export function JobCardMobile({
                 variant="outline"
                 size="sm"
                 className="text-xs h-8 text-destructive hover:text-destructive px-3"
+                disabled={offline}
+                aria-label={offline ? "Delete (offline)" : "Delete"}
+                title={offline ? "You're offline — deleting needs a connection" : undefined}
                 onClick={(e) => {
                   e.stopPropagation();
                   onDelete(job);
@@ -312,7 +326,6 @@ export function JobCardMobile({
             )}
           </div>
         )}
-        </div>
       </div>
     </article>
   );

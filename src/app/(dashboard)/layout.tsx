@@ -5,6 +5,7 @@ import { MobileNav } from "@/components/layout/MobileNav";
 import { FloatingActionButton } from "@/components/layout/FloatingActionButton";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import { GlobalSearchProvider } from "@/components/search/GlobalSearchProvider";
+import { SWRProvider } from "@/components/providers/SWRProvider";
 import { ReactNode } from "react";
 import {
   SidebarProvider,
@@ -18,9 +19,10 @@ export default async function DashboardLayout({
 }: {
   children: ReactNode;
 }) {
-  await requireAuth(); // Redirects to login if not authenticated
+  const { user } = await requireAuth(); // Redirects to login if not authenticated
 
   return (
+    <SWRProvider userId={user.id}>
     <GlobalSearchProvider>
     <SidebarProvider>
       {/* Hide sidebar on mobile since we have bottom nav */}
@@ -61,5 +63,6 @@ export default async function DashboardLayout({
       </SidebarInset>
     </SidebarProvider>
     </GlobalSearchProvider>
+    </SWRProvider>
   );
 }

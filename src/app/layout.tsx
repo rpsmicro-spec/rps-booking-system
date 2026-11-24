@@ -1,19 +1,26 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
+import { fontScaleInitScript } from "@/lib/font-scale";
 import { ServiceWorkerRegistration } from "@/components/pwa/ServiceWorkerRegistration";
 import { UpdateNotification } from "@/components/pwa/UpdateNotification";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// The UI font. globals.css points --font-sans at --font-inter.
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
+  display: "swap",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+// Only used by a few `font-mono` spots (job number pattern, activity JSON),
+// so it is not preloaded.
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-jetbrains-mono",
   subsets: ["latin"],
+  display: "swap",
+  preload: false,
 });
 
 export const metadata: Metadata = {
@@ -52,8 +59,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html
+      lang="en"
+      suppressHydrationWarning
+      // Font variables live on <html> so the :root-level --font-sans/--font-mono
+      // tokens in globals.css can resolve them.
+      className={`${inter.variable} ${jetbrainsMono.variable}`}
+    >
       <head>
+        {/* Apply the saved text size before first paint */}
+        <script dangerouslySetInnerHTML={{ __html: fontScaleInitScript }} />
         {/* Prevent browser's native PWA install banner - must run before React loads */}
         <script
           dangerouslySetInnerHTML={{
@@ -72,9 +87,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body className="font-sans antialiased">
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"

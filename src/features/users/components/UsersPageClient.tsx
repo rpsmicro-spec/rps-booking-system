@@ -3,7 +3,8 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { UserPlus, Info } from 'lucide-react'
+import { UserPlus, Info, Users } from 'lucide-react'
+import { PageHeader } from '@/components/layout/PageHeader'
 import { UsersTable } from './UsersTable'
 import { PendingInvitations } from './PendingInvitations'
 import { InviteUserDialog } from './InviteUserDialog'
@@ -20,11 +21,13 @@ export function UsersPageClient() {
   }
 
   return (
-    <div className="flex-1 space-y-6 p-4 md:p-8 pt-6">
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center justify-between">
-          <h2 className="text-3xl font-bold tracking-tight">User Management</h2>
-          <div className="flex items-center gap-2">
+    <div className="flex-1 space-y-4 md:space-y-6">
+      <PageHeader
+        icon={Users}
+        title="User Management"
+        description="Manage team members, roles, and permissions for your organization."
+        actions={
+          <>
             <Button
               variant="outline"
               size="icon"
@@ -46,12 +49,9 @@ export function UsersPageClient() {
               <UserPlus className="h-4 w-4" />
               <span className="sr-only">Invite User</span>
             </Button>
-          </div>
-        </div>
-        <p className="text-sm text-muted-foreground">
-          Manage team members, roles, and permissions for your organization.
-        </p>
-      </div>
+          </>
+        }
+      />
 
       <Card>
         <CardHeader>

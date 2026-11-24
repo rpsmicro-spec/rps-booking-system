@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import useSWR from 'swr'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
@@ -13,7 +14,7 @@ import {
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { MoreHorizontal, Eye, Edit, Trash2 } from 'lucide-react'
+import { MoreHorizontal, Eye, Edit, Trash2, Loader2 } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,7 +39,15 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@/components/ui/empty'
-import { TableSkeleton } from '@/components/ui/skeletons'
+import { ClientOnly } from '@/components/client-only'
+import { CachedDataNote } from '@/components/offline/CachedDataNote'
+import { useOnlineStatus } from '@/hooks/use-online-status'
+import {
+  removeJobFromCaches,
+  seedJobDetailsFromList,
+  type JobsListResponse,
+} from '@/lib/swr/job-cache'
+import { JobsListSkeleton } from './JobsListSkeleton'
 import { Briefcase } from 'lucide-react'
 import type { Job, JobStatus } from '@/types/types'
 import { format } from 'date-fns'
@@ -47,7 +56,7 @@ import { toast } from 'sonner'
 import { STATUS_LABELS, getStatusBadgeCustomClasses } from '@/lib/constants'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { JobCardMobile } from './JobCardMobile'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { formatPhoneDisplay } from "@/lib/utils/format-phone";
 
 interface JobsTableProps {
   status?: string | null
@@ -59,7 +68,48 @@ interface JobsTableProps {
   onTotalChange?: (total: number) => void
 }
 
-export function JobsTable({
+/** Stable SWR key per filter/search/page (same param order every time). */
+export function jobsListKey(p: {
+  status?: string | null
+  search?: string
+  dateFrom?: string | null
+  dateTo?: string | null
+  limit: number
+  offset: number
+}) {
+  const params = new URLSearchParams()
+  if (p.status) params.append('status', p.status)
+  if (p.search) params.append('search', p.search)
+  if (p.dateFrom) params.append('dateFrom', p.dateFrom)
+  if (p.dateTo) params.append('dateTo', p.dateTo)
+  params.append('limit', p.limit.toString())
+  params.append('offset', p.offset.toString())
+  return `/api/jobs?${params.toString()}`
+}
+
+function useDebouncedValue<T>(value: T, delayMs: number): T {
+  const [debounced, setDebounced] = useState(value)
+  useEffect(() => {
+    // Clearing the search applies at once; typing is debounced.
+    const id = setTimeout(() => setDebounced(value), value ? delayMs : 0)
+    return () => clearTimeout(id)
+  }, [value, delayMs])
+  return debounced
+}
+
+/**
+ * Client-only so the persisted cache can render on the very first client
+ * paint without a hydration mismatch; server + hydration show the skeleton.
+ */
+export function JobsTable(props: JobsTableProps) {
+  return (
+    <ClientOnly fallback={<JobsListSkeleton rows={props.limit ?? 10} />}>
+      <JobsTableInner {...props} />
+    </ClientOnly>
+  )
+}
+
+function JobsTableInner({
   status,
   search,
   dateFrom,
@@ -70,55 +120,31 @@ export function JobsTable({
 }: JobsTableProps) {
   const router = useRouter()
   const isMobile = useIsMobile()
-  const [jobs, setJobs] = useState<Job[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const isOnline = useOnlineStatus()
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [jobToDelete, setJobToDelete] = useState<Job | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
 
+  const debouncedSearch = useDebouncedValue(search ?? '', 300)
+  const swrKey = jobsListKey({ status, search: debouncedSearch, dateFrom, dateTo, limit, offset })
+  // Stale-while-revalidate: cached page renders instantly, then refreshes.
+  // keepPreviousData (provider) keeps the old page visible while a new
+  // filter/page loads; SWR ignores responses for superseded keys.
+  const { data, error, isLoading, mutate } = useSWR<JobsListResponse>(swrKey)
+  const jobs = data?.jobs ?? []
+  const showingPrevious = isLoading && !!data
+
   useEffect(() => {
-    // Debounce search keystrokes (the search prop changes per keystroke) and
-    // abort superseded requests so a slow older response can't overwrite the
-    // results of a newer one.
-    const controller = new AbortController()
-    const timeoutId = setTimeout(() => fetchJobs(controller.signal), search ? 300 : 0)
-    return () => {
-      clearTimeout(timeoutId)
-      controller.abort()
-    }
+    if (data && !showingPrevious) onTotalChange?.(data.total || 0)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status, search, dateFrom, dateTo, limit, offset])
+  }, [data, showingPrevious])
 
-  const fetchJobs = async (signal?: AbortSignal) => {
-    setIsLoading(true)
-    try {
-      const params = new URLSearchParams()
-      if (status) params.append('status', status)
-      if (search) params.append('search', search)
-      if (dateFrom) params.append('dateFrom', dateFrom)
-      if (dateTo) params.append('dateTo', dateTo)
-      params.append('limit', limit.toString())
-      params.append('offset', offset.toString())
+  // Cheap detail-cache seeding from the rows we already have.
+  useEffect(() => {
+    if (data?.jobs && !showingPrevious) seedJobDetailsFromList(data.jobs)
+  }, [data, showingPrevious])
 
-      const response = await fetch(`/api/jobs?${params.toString()}`, { signal })
-      const result = await response.json()
-
-      if (!response.ok) {
-        console.error('Failed to fetch jobs:', result.error)
-        return
-      }
-
-      setJobs(result.jobs || [])
-      onTotalChange?.(result.total || 0)
-    } catch (error) {
-      if (error instanceof DOMException && error.name === 'AbortError') {
-        return
-      }
-      console.error('Error fetching jobs:', error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
+  const prefetchJob = (jobId: string) => router.prefetch(`/jobs/${jobId}`)
 
   const handleRowClick = (jobId: string) => {
     router.push(`/jobs/${jobId}`)
@@ -149,7 +175,8 @@ export function JobsTable({
       toast.success('Job deleted successfully')
       setDeleteDialogOpen(false)
       setJobToDelete(null)
-      await fetchJobs()
+      await removeJobFromCaches(jobToDelete.id)
+      void mutate()
     } catch {
       toast.error('An unexpected error occurred')
     } finally {
@@ -157,27 +184,36 @@ export function JobsTable({
     }
   }
 
-  if (isLoading) {
-    return isMobile ? (
-      <div className="space-y-3">
-        {[...Array(5)].map((_, i) => (
-          <Card key={i} className="animate-pulse">
-            <CardHeader>
-              <div className="h-4 bg-muted rounded w-1/3"></div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="h-3 bg-muted rounded w-2/3"></div>
-                <div className="h-3 bg-muted rounded w-1/2"></div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    ) : (
-      <TableSkeleton rows={5} columns={5} />
-    )
+  // First load with nothing cached: layout-matched skeleton.
+  if (!data) {
+    if (error) {
+      return (
+        <div className="p-8 sm:p-12 text-center">
+          <p className="text-sm text-destructive">
+            {!isOnline
+              ? "You're offline and this list hasn't been loaded on this phone yet."
+              : 'Failed to load jobs. Please check your connection.'}
+          </p>
+          <Button variant="outline" size="sm" className="mt-4" onClick={() => void mutate()}>
+            Try Again
+          </Button>
+        </div>
+      )
+    }
+    return <JobsListSkeleton rows={limit} />
   }
+
+  const statusLine = (
+    <div className="flex min-h-4 items-center gap-2 empty:hidden">
+      <CachedDataNote swrKey={swrKey} error={error} hasData={!!data} />
+      {showingPrevious && (
+        <span className="flex items-center gap-1.5 text-xs text-muted-foreground" role="status">
+          <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+          Loading…
+        </span>
+      )}
+    </div>
+  )
 
   const emptyState = (
     <div className="p-8 sm:p-12">
@@ -205,22 +241,25 @@ export function JobsTable({
   if (isMobile) {
     return (
       <>
-        <div className="space-y-3">
+        {statusLine}
+        <div className={`space-y-3 transition-opacity ${showingPrevious ? 'opacity-60' : ''}`}>
           {jobs.length === 0 ? (
             emptyState
           ) : (
             jobs.map((job) => (
-              <JobCardMobile
-                key={job.id}
-                job={job}
-                onCardClick={handleRowClick}
-                showActions={true}
-                onEdit={(jobId) => router.push(`/jobs/${jobId}/edit`)}
-                onDelete={(job) => {
-                  const e = { stopPropagation: () => {} } as React.MouseEvent
-                  handleDeleteClick(e, job)
-                }}
-              />
+              <div key={job.id} onTouchStart={() => prefetchJob(job.id)}>
+                <JobCardMobile
+                  job={job}
+                  onCardClick={handleRowClick}
+                  showActions={true}
+                  onEdit={(jobId) => router.push(`/jobs/${jobId}/edit`)}
+                  onDelete={(job) => {
+                    const e = { stopPropagation: () => {} } as React.MouseEvent
+                    handleDeleteClick(e, job)
+                  }}
+                  offline={!isOnline}
+                />
+              </div>
             ))
           )}
         </div>
@@ -237,7 +276,7 @@ export function JobsTable({
               <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
               <AlertDialogAction
                 onClick={handleDeleteConfirm}
-                disabled={isDeleting}
+                disabled={isDeleting || !isOnline}
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               >
                 {isDeleting ? 'Deleting...' : 'Delete'}
@@ -251,7 +290,9 @@ export function JobsTable({
 
   // Desktop Table View
   return (
-    <div className="rounded-md border">
+    <div className="space-y-2">
+    {statusLine}
+    <div className={`rounded-md border transition-opacity ${showingPrevious ? 'opacity-60' : ''}`}>
       <Table>
         <TableHeader>
           <TableRow>
@@ -276,15 +317,16 @@ export function JobsTable({
                 key={job.id}
                 className="cursor-pointer"
                 onClick={() => handleRowClick(job.id)}
+                onPointerEnter={() => prefetchJob(job.id)}
               >
-                <TableCell className="font-medium">{job.job_number}</TableCell>
+                <TableCell className="font-medium tabular-nums">{job.job_number}</TableCell>
                 <TableCell>{job.customer_name}</TableCell>
                 <TableCell>
                   <Badge className={getStatusBadgeCustomClasses(job.status as JobStatus)}>
                     {job.status ? (STATUS_LABELS[job.status as JobStatus] || 'Unknown') : 'Unknown'}
                   </Badge>
                 </TableCell>
-                <TableCell>
+                <TableCell className="tabular-nums">
                   {job.booking_date
                     ? (() => {
                         const istDate = utcToIstDateObject(job.booking_date);
@@ -295,7 +337,11 @@ export function JobsTable({
                 <TableCell>
                   {job.contact_number || job.email ? (
                     <div className="text-sm">
-                      {job.contact_number && <div>{job.contact_number}</div>}
+                      {job.contact_number && (
+                        <div className="tabular-nums">
+                          {formatPhoneDisplay(job.contact_number)}
+                        </div>
+                      )}
                       {job.email && (
                         <div className="text-muted-foreground truncate max-w-[200px]">
                           {job.email}
@@ -320,19 +366,27 @@ export function JobsTable({
                           View Details
                         </Link>
                       </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link href={`/jobs/${job.id}/edit`}>
+                      {isOnline ? (
+                        <DropdownMenuItem asChild>
+                          <Link href={`/jobs/${job.id}/edit`}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Edit
+                          </Link>
+                        </DropdownMenuItem>
+                      ) : (
+                        <DropdownMenuItem disabled>
                           <Edit className="mr-2 h-4 w-4" />
-                          Edit
-                        </Link>
-                      </DropdownMenuItem>
+                          Edit (offline)
+                        </DropdownMenuItem>
+                      )}
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         onClick={(e) => handleDeleteClick(e, job)}
                         className="text-destructive"
+                        disabled={!isOnline}
                       >
                         <Trash2 className="mr-2 h-4 w-4" />
-                        Delete
+                        {isOnline ? 'Delete' : "Delete (offline)"}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -355,7 +409,7 @@ export function JobsTable({
             <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteConfirm}
-              disabled={isDeleting}
+              disabled={isDeleting || !isOnline}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {isDeleting ? 'Deleting...' : 'Delete'}
@@ -363,6 +417,7 @@ export function JobsTable({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </div>
     </div>
   )
 }

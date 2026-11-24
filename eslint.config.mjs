@@ -14,6 +14,10 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Generated types:
     "src/types/database.types.ts",
+    // Service worker output from next-pwa (next build --webpack):
+    "public/sw.js",
+    "public/workbox-*.js",
+    "public/fallback-*.js",
   ]),
 ]);
 
