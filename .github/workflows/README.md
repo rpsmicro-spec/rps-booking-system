@@ -14,7 +14,7 @@ Required secrets: `SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_REF`,
 If Actions is unavailable, deploy by hand **in this order**:
 
 ```sh
-supabase db push
+supabase db push --remote
 npx vercel deploy --prod
 ```
 

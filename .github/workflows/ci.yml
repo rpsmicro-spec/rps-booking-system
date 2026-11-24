@@ -13,7 +13,7 @@ name: CI/CD
 # Escape hatch when Actions is unavailable (quota, outage): run the same two
 # steps by hand, in the same order, from a machine with the Supabase CLI and
 # Vercel CLI logged in:
-#   supabase db push            # against the linked prod project
+#   supabase db push --remote   # against the linked prod project
 #   npx vercel deploy --prod    # then, and only then, the app
 #
 # Required GitHub secrets (deploy jobs only, never on PR runs):
@@ -35,7 +35,7 @@ concurrency:
 # Vercel org/project ids (not secrets) let the CLI target the project without a
 # .vercel link in CI.
 env:
-  VERCEL_ORG_ID: team_8RT1NV3JCyu0jV6BrmKRiQb1
+  VERCEL_ORG_ID: team_3mvLX3MSFUpVOxOEazLAz5mU
   VERCEL_PROJECT_ID: prj_oN1kn0uI2ktoAIZbydJuEI7cSTEQ
 
 jobs:
@@ -84,12 +84,12 @@ jobs:
 
       - uses: supabase/setup-cli@v3
         with:
-          version: latest
+          version: 3.3.0
 
       - name: supabase db push (prod)
         run: |
           supabase link --project-ref "$SUPABASE_PROJECT_REF"
-          supabase db push --yes
+          supabase db push --remote --yes
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
