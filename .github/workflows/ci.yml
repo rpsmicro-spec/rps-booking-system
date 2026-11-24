@@ -35,7 +35,7 @@ concurrency:
 # Vercel org/project ids (not secrets) let the CLI target the project without a
 # .vercel link in CI.
 env:
-  VERCEL_ORG_ID: team_8RT1NV3JCyu0jV6BrmKRiQb1
+  VERCEL_ORG_ID: team_3mvLX3MSFUpVOxOEazLAz5mU
   VERCEL_PROJECT_ID: prj_oN1kn0uI2ktoAIZbydJuEI7cSTEQ
 
 jobs:
