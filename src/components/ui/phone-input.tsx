@@ -225,11 +225,12 @@ export function PhoneInput({
       <Input
         {...props}
         type="tel"
+        inputMode="tel"
         autoComplete="tel"
         value={displayValue}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
-        className={cn(className, "pr-10")}
+        className={cn("tabular-nums", className, "pr-10")}
         placeholder={defaultCountryCode + " XXXXX XXXXX"}
       />
       <Tooltip>

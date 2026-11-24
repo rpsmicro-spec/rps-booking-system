@@ -1,7 +1,8 @@
 import { requireAuth } from '@/lib/auth/helpers'
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Pencil } from 'lucide-react'
+import { PageHeader } from '@/components/layout/PageHeader'
 import { EditJobFormClient } from '@/features/jobs/components/EditJobFormClient'
 
 export default async function EditJobPage({
@@ -25,19 +26,13 @@ export default async function EditJobPage({
   }
 
   return (
-    <div className="flex-1 space-y-4">
-      <div className="pt-2 md:pt-4">
-        <h2 className="text-3xl font-bold tracking-tight">Edit Job</h2>
-      </div>
-      <Card>
-        <CardHeader>
-          <CardTitle>Job Information</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <EditJobFormClient job={job} />
-        </CardContent>
-      </Card>
+    <div className="flex-1 space-y-4 md:space-y-6">
+      <PageHeader
+        icon={Pencil}
+        title="Edit Job"
+        description="Update the details of this repair job."
+      />
+      <EditJobFormClient job={job} />
     </div>
   )
 }
-

@@ -10,6 +10,7 @@ import { JobNumberSettingsDialog } from "./JobNumberSettingsDialog";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { RecentJobs } from "./RecentJobs";
 import { PullToSearch } from "@/components/pwa/PullToSearch";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 export function JobsPageClient() {
   const isMobile = useIsMobile();
@@ -60,29 +61,23 @@ export function JobsPageClient() {
 
   return (
     <PullToSearch>
-      <div className="flex-1 space-y-6">
-        <div className="flex flex-col gap-2 pt-2 md:pt-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Briefcase className="h-6 w-6 md:h-7 md:w-7 text-muted-foreground" />
-              <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Jobs</h2>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => setSettingsDialogOpen(true)}
-                title="Job Number Settings"
-                className="hidden sm:flex"
-              >
-                <Settings className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Manage and track all your job orders, from collection to delivery.
-          </p>
-        </div>
+      <div className="flex-1 space-y-4 md:space-y-6">
+        <PageHeader
+          icon={Briefcase}
+          title="Jobs"
+          description="Manage and track all your job orders, from collection to delivery."
+          actions={
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setSettingsDialogOpen(true)}
+              title="Job Number Settings"
+              className="hidden sm:flex"
+            >
+              <Settings className="h-4 w-4" />
+            </Button>
+          }
+        />
 
         <div className="space-y-4">
           {/* Recent Jobs - Show on mobile or when no filters/search */}

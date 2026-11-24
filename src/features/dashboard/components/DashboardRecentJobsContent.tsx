@@ -18,7 +18,7 @@ export async function DashboardRecentJobsContent() {
   const jobs = (recentJobs ?? []) as Job[];
 
   return (
-    <div className="space-y-4">
+    <div className="min-w-0 space-y-4">
       <h3 className="text-lg md:text-xl font-semibold tracking-tight">
         Recent Jobs
       </h3>

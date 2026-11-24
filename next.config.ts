@@ -1,18 +1,40 @@
 import type { NextConfig } from "next";
 import withPWA from "@ducanh2912/next-pwa";
 
+type RemotePattern = NonNullable<NonNullable<NextConfig["images"]>["remotePatterns"]>[number];
+
+/**
+ * next/image pattern for the Supabase instance this build talks to, read
+ * from NEXT_PUBLIC_SUPABASE_URL at config time (local stacks run on
+ * different ports, e.g. 54321 or 54421). Hosted *.supabase.co projects are
+ * covered by the static https patterns below.
+ */
+function supabaseStoragePattern(): RemotePattern[] {
+  const raw = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!raw) return [];
+  try {
+    const url = new URL(raw);
+    if (url.hostname.endsWith(".supabase.co")) return [];
+    return [
+      {
+        protocol: url.protocol.replace(":", "") as "http" | "https",
+        hostname: url.hostname,
+        ...(url.port ? { port: url.port } : {}),
+        pathname: "/storage/v1/**",
+      },
+    ];
+  } catch {
+    return [];
+  }
+}
+
 const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ["lucide-react", "date-fns"],
   },
   images: {
     remotePatterns: [
-      {
-        protocol: "http",
-        hostname: "127.0.0.1",
-        port: "54321",
-        pathname: "/storage/v1/**",
-      },
+      ...supabaseStoragePattern(),
       {
         protocol: "https",
         hostname: "vkboymfxqspiffwaivxj.supabase.co",

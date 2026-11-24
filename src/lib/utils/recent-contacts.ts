@@ -1,3 +1,5 @@
+import { formatPhoneDisplay } from "./format-phone";
+
 /**
  * Utility functions for managing recent contacts
  * Stores frequently used contacts in localStorage for quick access
@@ -125,29 +127,8 @@ export function removeRecentContact(phone: string): void {
 }
 
 /**
- * Format phone number for display
+ * Format phone number for display. Kept as an alias of the shared formatter.
  */
 export function formatPhoneForDisplay(phone: string): string {
-  // Remove all non-digit characters except +
-  const cleaned = phone.replace(/[^\d+]/g, "");
-
-  // Indian format: +91 XXXXX XXXXX
-  if (cleaned.startsWith("+91")) {
-    const digits = cleaned.slice(3);
-    if (digits.length === 10) {
-      return `+91 ${digits.slice(0, 5)} ${digits.slice(5)}`;
-    }
-  }
-
-  // Default format with country code
-  if (cleaned.startsWith("+")) {
-    const countryCode = cleaned.slice(0, cleaned.length - 10);
-    const number = cleaned.slice(cleaned.length - 10);
-    if (number.length === 10) {
-      return `${countryCode} ${number.slice(0, 5)} ${number.slice(5)}`;
-    }
-  }
-
-  return phone;
+  return formatPhoneDisplay(phone);
 }
-

@@ -49,6 +49,7 @@ import { utcToIstDateObject } from "@/lib/utils/date-ist";
 import { JobCardMobile } from '@/features/jobs/components/JobCardMobile'
 import type { JobStatus } from '@/types/types'
 import { toast } from 'sonner'
+import { formatPhoneDisplay } from '@/lib/utils/format-phone'
 import { JOB_STATUS, STATUS_LABELS, getStatusBadgeCustomClasses } from '@/lib/constants'
 
 interface CustomerDetailProps {
@@ -131,16 +132,16 @@ export function CustomerDetail({ customer, jobs }: CustomerDetailProps) {
   const hasNotes = customerNotes != null && customerNotes !== ''
 
   return (
-    <div className="space-y-5 sm:space-y-6 md:space-y-8">
+    <div className="space-y-4 md:space-y-6">
       {/* Header: name + quick actions (no card) */}
-      <header className="flex flex-col gap-3 sm:gap-4 pt-2 md:pt-4">
+      <header className="flex flex-col gap-3 sm:gap-4 pt-1 md:pt-2">
         <div className="flex flex-col gap-2 min-w-0">
           <div className="flex items-center gap-3 min-w-0">
             <div className="rounded-full bg-muted/80 p-2 sm:p-2.5 shrink-0">
               <User className="h-5 w-5 sm:h-6 sm:w-6 text-muted-foreground" />
             </div>
             <div className="min-w-0 flex-1">
-              <h1 className="text-xl font-bold tracking-tight truncate sm:text-2xl md:text-3xl">
+              <h1 className="text-2xl md:text-3xl font-bold tracking-tight truncate">
                 {customer.customer_name}
               </h1>
               <p className="text-xs text-muted-foreground mt-0.5 sm:text-sm">
@@ -247,7 +248,7 @@ export function CustomerDetail({ customer, jobs }: CustomerDetailProps) {
                         <Phone className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
                         <div className="min-w-0">
                           <dt className="text-xs text-muted-foreground">Phone</dt>
-                          <dd className="text-sm font-medium wrap-break-word">{customer.contact_number}</dd>
+                          <dd className="text-sm font-medium tabular-nums wrap-break-word">{formatPhoneDisplay(customer.contact_number)}</dd>
                         </div>
                       </div>
                     )}
@@ -290,7 +291,7 @@ export function CustomerDetail({ customer, jobs }: CustomerDetailProps) {
       {/* All Jobs */}
       <div className="space-y-4">
         <h3 className="text-lg md:text-xl font-semibold tracking-tight">
-          All Jobs ({jobs.length})
+          All Jobs <span className="tabular-nums">({jobs.length})</span>
         </h3>
         {jobs.length === 0 ? (
             <div className="p-8 sm:p-12">
@@ -347,7 +348,7 @@ export function CustomerDetail({ customer, jobs }: CustomerDetailProps) {
                 <TableBody>
                   {jobs.map((job) => (
                     <TableRow key={job.id}>
-                      <TableCell className="font-medium">
+                      <TableCell className="font-medium tabular-nums">
                         <Link
                           href={`/jobs/${job.id}`}
                           className="hover:underline"
@@ -360,7 +361,7 @@ export function CustomerDetail({ customer, jobs }: CustomerDetailProps) {
                           {job.status ? (STATUS_LABELS[job.status as JobStatus] || 'Unknown') : 'Unknown'}
                         </Badge>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="tabular-nums">
                         {job.booking_date
                           ? (() => {
                               const istDate = utcToIstDateObject(job.booking_date);
@@ -368,7 +369,7 @@ export function CustomerDetail({ customer, jobs }: CustomerDetailProps) {
                             })()
                           : '-'}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="tabular-nums">
                         {job.delivery_date
                           ? (() => {
                               const istDate = utcToIstDateObject(job.delivery_date);

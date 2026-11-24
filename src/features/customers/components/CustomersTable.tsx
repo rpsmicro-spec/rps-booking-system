@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import useSWR from 'swr'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
@@ -20,11 +21,14 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@/components/ui/empty'
-import { TableSkeleton } from '@/components/ui/skeletons'
+import { ClientOnly } from '@/components/client-only'
+import { CachedDataNote } from '@/components/offline/CachedDataNote'
+import { useOnlineStatus } from '@/hooks/use-online-status'
+import { CustomersListSkeleton } from './CustomersListSkeleton'
 import { format } from 'date-fns'
+import { formatPhoneDisplay } from '@/lib/utils/format-phone'
 import { useIsMobile } from '@/hooks/use-mobile'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { ChevronRight } from 'lucide-react'
+import { ChevronRight, Loader2 } from 'lucide-react'
 
 interface Customer {
   customer_name: string
@@ -49,58 +53,52 @@ interface CustomersTableProps {
   onTotalChange?: (total: number) => void
 }
 
-export function CustomersTable({ search, limit = 50, offset = 0, onTotalChange }: CustomersTableProps) {
+interface CustomersResponse {
+  customers: Customer[]
+  total: number
+}
+
+function useDebouncedValue<T>(value: T, delayMs: number): T {
+  const [debounced, setDebounced] = useState(value)
+  useEffect(() => {
+    const id = setTimeout(() => setDebounced(value), value ? delayMs : 0)
+    return () => clearTimeout(id)
+  }, [value, delayMs])
+  return debounced
+}
+
+/** Client-only so the persisted cache paints immediately (see JobsTable). */
+export function CustomersTable(props: CustomersTableProps) {
+  return (
+    <ClientOnly fallback={<CustomersListSkeleton rows={props.limit ?? 10} />}>
+      <CustomersTableInner {...props} />
+    </ClientOnly>
+  )
+}
+
+function CustomersTableInner({ search, limit = 50, offset = 0, onTotalChange }: CustomersTableProps) {
   const router = useRouter()
   const isMobile = useIsMobile()
-  const [customers, setCustomers] = useState<Customer[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const isOnline = useOnlineStatus()
+
+  const debouncedSearch = useDebouncedValue(search ?? '', 300)
+  const params = new URLSearchParams()
+  if (debouncedSearch) params.append('search', debouncedSearch)
+  params.append('limit', limit.toString())
+  params.append('offset', offset.toString())
+  const swrKey = `/api/customers?${params.toString()}`
+  const { data, error, isLoading, mutate } = useSWR<CustomersResponse>(swrKey)
+  const customers = data?.customers ?? []
+  const showingPrevious = isLoading && !!data
+
+  useEffect(() => {
+    if (data && !showingPrevious) onTotalChange?.(data.total || 0)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, showingPrevious])
 
   const handleRowClick = (customerName: string) => {
     const customerKey = encodeURIComponent(customerName)
     router.push(`/customers/${customerKey}`)
-  }
-
-  useEffect(() => {
-    // Debounce search keystrokes and abort superseded requests so a slow
-    // older response can't overwrite the results of a newer one.
-    const controller = new AbortController()
-    const timeoutId = setTimeout(() => fetchCustomers(controller.signal), search ? 300 : 0)
-    return () => {
-      clearTimeout(timeoutId)
-      controller.abort()
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, limit, offset])
-
-  const fetchCustomers = async (signal?: AbortSignal) => {
-    setIsLoading(true)
-    setError(null)
-    try {
-      const params = new URLSearchParams()
-      if (search) params.append('search', search)
-      params.append('limit', limit.toString())
-      params.append('offset', offset.toString())
-
-      const response = await fetch(`/api/customers?${params.toString()}`, { signal })
-      const result = await response.json()
-
-      if (!response.ok) {
-        setError('Failed to load customers. Please try again.')
-        return
-      }
-
-      setCustomers(result.customers || [])
-      onTotalChange?.(result.total || 0)
-    } catch (error) {
-      if (error instanceof DOMException && error.name === 'AbortError') {
-        return
-      }
-      console.error('Error fetching customers:', error)
-      setError('Failed to load customers. Please check your connection.')
-    } finally {
-      setIsLoading(false)
-    }
   }
 
   const formatAddress = (customer: Customer): string => {
@@ -114,38 +112,35 @@ export function CustomersTable({ search, limit = 50, offset = 0, onTotalChange }
     return parts.length > 0 ? parts.join(', ') : '-'
   }
 
-  if (isLoading) {
-    return isMobile ? (
-      <div className="space-y-3">
-        {[...Array(5)].map((_, i) => (
-          <Card key={i} className="animate-pulse">
-            <CardHeader>
-              <div className="h-4 bg-muted rounded w-1/3"></div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="h-3 bg-muted rounded w-2/3"></div>
-                <div className="h-3 bg-muted rounded w-1/2"></div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    ) : (
-      <TableSkeleton rows={5} columns={5} />
-    )
+  if (!data) {
+    if (error) {
+      return (
+        <div className="p-8 sm:p-12 text-center">
+          <p className="text-sm text-destructive">
+            {!isOnline
+              ? "You're offline and this list hasn't been loaded on this phone yet."
+              : 'Failed to load customers. Please check your connection.'}
+          </p>
+          <Button variant="outline" size="sm" className="mt-4" onClick={() => void mutate()}>
+            Try Again
+          </Button>
+        </div>
+      )
+    }
+    return <CustomersListSkeleton rows={limit} />
   }
 
-  if (error) {
-    return (
-      <div className="p-8 sm:p-12 text-center">
-        <p className="text-sm text-destructive">{error}</p>
-        <Button variant="outline" size="sm" className="mt-4" onClick={() => fetchCustomers()}>
-          Try Again
-        </Button>
-      </div>
-    )
-  }
+  const statusLine = (
+    <div className="flex min-h-4 items-center gap-2 empty:hidden">
+      <CachedDataNote swrKey={swrKey} error={error} hasData={!!data} />
+      {showingPrevious && (
+        <span className="flex items-center gap-1.5 text-xs text-muted-foreground" role="status">
+          <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+          Loading…
+        </span>
+      )}
+    </div>
+  )
 
   const emptyState = (
     <div className="p-8 sm:p-12">
@@ -171,6 +166,8 @@ export function CustomersTable({ search, limit = 50, offset = 0, onTotalChange }
   if (isMobile) {
     return (
       <div className="space-y-3">
+        {statusLine}
+        <div className={`space-y-3 transition-opacity ${showingPrevious ? 'opacity-60' : ''}`}>
         {customers.length === 0 ? (
           emptyState
         ) : (
@@ -228,7 +225,7 @@ export function CustomersTable({ search, limit = 50, offset = 0, onTotalChange }
                     {customer.created_at && (
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
                         <Calendar className="h-3.5 w-3.5 shrink-0 text-muted-foreground/70" />
-                        <span>Created {format(new Date(customer.created_at), 'MMM dd, yyyy')}</span>
+                        <span className="tabular-nums">Created {format(new Date(customer.created_at), 'MMM dd, yyyy')}</span>
                       </div>
                     )}
                   </div>
@@ -244,7 +241,7 @@ export function CustomersTable({ search, limit = 50, offset = 0, onTotalChange }
                             className="flex items-center gap-1.5 text-xs text-primary hover:underline"
                           >
                             <Phone className="h-3.5 w-3.5 shrink-0" />
-                            <span className="truncate">{customer.contact_number}</span>
+                            <span className="truncate tabular-nums">{formatPhoneDisplay(customer.contact_number)}</span>
                           </a>
                         )}
                         {customer.email && (
@@ -279,13 +276,16 @@ export function CustomersTable({ search, limit = 50, offset = 0, onTotalChange }
             )
           })
         )}
+        </div>
       </div>
     )
   }
 
   // Desktop Table View
   return (
-    <div className="rounded-md border">
+    <div className="space-y-2">
+    {statusLine}
+    <div className={`rounded-md border transition-opacity ${showingPrevious ? 'opacity-60' : ''}`}>
       <Table>
         <TableHeader>
           <TableRow>
@@ -316,7 +316,7 @@ export function CustomersTable({ search, limit = 50, offset = 0, onTotalChange }
                     <div>
                       <div className="font-medium">{customer.customer_name}</div>
                       {customer.created_at && (
-                        <div className="text-xs text-muted-foreground mt-0.5">
+                        <div className="text-xs text-muted-foreground tabular-nums mt-0.5">
                           Created {format(new Date(customer.created_at), 'MMM dd, yyyy')}
                         </div>
                       )}
@@ -333,7 +333,7 @@ export function CustomersTable({ search, limit = 50, offset = 0, onTotalChange }
                       {customer.contact_number && (
                         <div className="flex items-center gap-2">
                           <Phone className="h-3 w-3 text-muted-foreground" />
-                          <span>{customer.contact_number}</span>
+                          <span className="tabular-nums">{formatPhoneDisplay(customer.contact_number)}</span>
                         </div>
                       )}
                       {!customer.email && !customer.contact_number && <span className="text-muted-foreground">-</span>}
@@ -348,7 +348,7 @@ export function CustomersTable({ search, limit = 50, offset = 0, onTotalChange }
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <Briefcase className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium">{customer.job_count}</span>
+                      <span className="font-medium tabular-nums">{customer.job_count}</span>
                     </div>
                   </TableCell>
                   <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
@@ -366,6 +366,6 @@ export function CustomersTable({ search, limit = 50, offset = 0, onTotalChange }
         </TableBody>
       </Table>
     </div>
+    </div>
   )
 }
-

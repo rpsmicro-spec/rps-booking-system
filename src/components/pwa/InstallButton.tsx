@@ -68,13 +68,14 @@ export function InstallButton() {
   return (
     <Button
       variant="ghost"
-      size="sm"
+      size="icon"
       onClick={handleInstall}
-      className="gap-2 shrink-0"
+      className="size-9 shrink-0 text-muted-foreground hover:text-foreground md:w-auto md:px-2.5"
       title="Install app on your device"
+      aria-label="Install app"
     >
-      <Download className="h-4 w-4 shrink-0" />
-      <span className="hidden md:inline">Install App</span>
+      <Download className="size-[18px] shrink-0" />
+      <span className="hidden text-sm md:inline">Install App</span>
     </Button>
   );
 }

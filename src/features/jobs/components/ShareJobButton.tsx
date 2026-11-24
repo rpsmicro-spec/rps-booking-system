@@ -103,12 +103,12 @@ export function ShareJobButton({ job, jobNumber }: ShareJobButtonProps) {
       {copied ? (
         <>
           <Check className="h-3.5 w-3.5 mr-1.5" />
-          <span className="text-xs">Copied</span>
+          <span>Copied</span>
         </>
       ) : (
         <>
           <Share2 className="h-3.5 w-3.5 mr-1.5" />
-          <span className="text-xs">Share</span>
+          <span>Share</span>
         </>
       )}
     </Button>

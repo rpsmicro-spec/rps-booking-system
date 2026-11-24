@@ -216,7 +216,7 @@ export function RecentJobsTable({ initialJobs }: RecentJobsTableProps = {}) {
               <TabsTrigger value="today" className="text-sm font-medium">
                 Today
                 {jobs.length > 0 && timeRange === "today" && (
-                  <span className="ml-1.5 text-xs font-normal opacity-70">
+                  <span className="ml-1.5 text-xs font-normal tabular-nums opacity-70">
                     ({jobs.length})
                   </span>
                 )}
@@ -224,7 +224,7 @@ export function RecentJobsTable({ initialJobs }: RecentJobsTableProps = {}) {
               <TabsTrigger value="week" className="text-sm font-medium">
                 This Week
                 {jobs.length > 0 && timeRange === "week" && (
-                  <span className="ml-1.5 text-xs font-normal opacity-70">
+                  <span className="ml-1.5 text-xs font-normal tabular-nums opacity-70">
                     ({jobs.length})
                   </span>
                 )}
@@ -285,7 +285,7 @@ export function RecentJobsTable({ initialJobs }: RecentJobsTableProps = {}) {
                   className="cursor-pointer"
                   onClick={() => handleRowClick(job.id)}
                 >
-                  <TableCell className="font-medium">
+                  <TableCell className="font-medium tabular-nums">
                     {job.job_number}
                   </TableCell>
                   <TableCell>{job.customer_name}</TableCell>
@@ -300,7 +300,7 @@ export function RecentJobsTable({ initialJobs }: RecentJobsTableProps = {}) {
                         : "Unknown"}
                     </Badge>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="tabular-nums">
                     {job.booking_date
                       ? (() => {
                           const istDate = utcToIstDateObject(job.booking_date);

@@ -44,6 +44,8 @@ import {
 } from "@/components/ui/collapsible";
 import { ShareJobButton } from "./ShareJobButton";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { formatPhoneDisplay } from "@/lib/utils/format-phone";
 import { ChevronDown } from "lucide-react";
 
 // WhatsApp Icon Component
@@ -207,18 +209,16 @@ export function JobDetail({
 
     return (
       <>
-        <Card className="w-full">
-          <CardContent className="pt-4 px-4 pb-4">
+        <Card className="w-full py-4">
+          <CardContent className="px-4">
             {job.status && (
               <div className="flex flex-col gap-3">
                 <div className="w-full">
-                  <p className="text-xs font-medium text-muted-foreground mb-2">
-                    Update Status
-                  </p>
+                  <Label className="mb-2">Update Status</Label>
                   <StatusUpdate
                     currentStatus={job.status as JobStatus}
                     jobId={job.id}
-                    onStatusUpdate={onStatusUpdate}
+                    jobNumber={job.job_number}
                   />
                 </div>
                 <div className="flex w-full flex-wrap items-center gap-2 [&>button]:flex-1 [&>button]:min-w-0 [&>button]:sm:flex-initial">
@@ -231,7 +231,7 @@ export function JobDetail({
                       className="h-8 px-3"
                     >
                       <Mail className="h-3.5 w-3.5 mr-1.5" />
-                      <span className="text-xs">
+                      <span>
                         {isSendingEmail ? "Sending..." : "Email"}
                       </span>
                     </Button>
@@ -251,7 +251,7 @@ export function JobDetail({
                             rel="noopener noreferrer"
                           >
                             <WhatsAppIcon className="h-3.5 w-3.5 mr-1.5" />
-                            <span className="text-xs">WhatsApp</span>
+                            <span>WhatsApp</span>
                           </a>
                         </Button>
                       ) : (
@@ -269,7 +269,7 @@ export function JobDetail({
                               rel="noopener noreferrer"
                             >
                               <WhatsAppIcon className="h-3.5 w-3.5 mr-1.5" />
-                              <span className="text-xs">{phoneData.label}</span>
+                              <span>{phoneData.label}</span>
                             </a>
                           </Button>
                         ))
@@ -286,7 +286,7 @@ export function JobDetail({
                     >
                       {/* eslint-disable-next-line jsx-a11y/alt-text */}
                       <Image className="h-3.5 w-3.5 mr-1.5" aria-hidden="true" />
-                      <span className="text-xs">Media</span>
+                      <span>Media</span>
                     </Button>
                   )}
                   {hasInvoice && (
@@ -297,7 +297,7 @@ export function JobDetail({
                       className="h-8 px-3"
                     >
                       <FileText className="h-3.5 w-3.5 mr-1.5" />
-                      <span className="text-xs">Invoice</span>
+                      <span>Invoice</span>
                     </Button>
                   )}
                 </div>
@@ -373,8 +373,8 @@ export function JobDetail({
   return (
     <div className="space-y-3 w-full">
       {/* Job details + Status Timeline in one card */}
-      <Card className="w-full">
-        <CardContent className="pt-4 px-4 pb-4">
+      <Card className="w-full py-4">
+        <CardContent className="px-4">
           <div className="grid gap-3 md:grid-cols-2">
               <div className="flex items-start gap-3">
                 <div className="shrink-0 mt-0.5">
@@ -383,10 +383,10 @@ export function JobDetail({
                   </div>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-muted-foreground mb-1">
+                  <p className="text-xs text-muted-foreground mb-1">
                     Job Number
                   </p>
-                  <p className="text-sm font-medium wrap-break-word">
+                  <p className="text-sm md:text-base text-foreground tabular-nums wrap-break-word">
                     {job.job_number}
                   </p>
                 </div>
@@ -399,10 +399,10 @@ export function JobDetail({
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-muted-foreground mb-1">
+                    <p className="text-xs text-muted-foreground mb-1">
                       Booking Date
                     </p>
-                    <p className="text-sm font-medium">
+                    <p className="text-sm md:text-base text-foreground tabular-nums">
                       {(() => {
                         const istDate = utcToIstDateObject(job.booking_date);
                         return istDate ? format(istDate, "MMM dd, yyyy") : "";
@@ -419,10 +419,10 @@ export function JobDetail({
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-muted-foreground mb-1">
+                    <p className="text-xs text-muted-foreground mb-1">
                       Delivery Date
                     </p>
-                    <p className="text-sm font-medium">
+                    <p className="text-sm md:text-base text-foreground tabular-nums">
                       {(() => {
                         const istDate = utcToIstDateObject(job.delivery_date);
                         return istDate ? format(istDate, "MMM dd, yyyy") : "";
@@ -440,17 +440,17 @@ export function JobDetail({
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-muted-foreground mb-1">
+                    <p className="text-xs text-muted-foreground mb-1">
                       Customer DC Number
                     </p>
-                    <p className="text-sm font-medium wrap-break-word">
+                    <p className="text-sm md:text-base text-foreground tabular-nums wrap-break-word">
                       {
                         (job as Job & { customer_dc_number?: string })
                           .customer_dc_number
                       }
                       {(job as Job & { customer_dc_date?: string })
                         .customer_dc_date && (
-                        <span className="text-xs font-normal text-muted-foreground ml-1.5 block sm:inline">
+                        <span className="text-xs font-normal tabular-nums text-muted-foreground ml-1.5 block sm:inline">
                           •{" "}
                           {(() => {
                             const dcDate = (job as Job & { customer_dc_date?: string })
@@ -473,10 +473,10 @@ export function JobDetail({
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-muted-foreground mb-1">
+                    <p className="text-xs text-muted-foreground mb-1">
                       Material Type
                     </p>
-                    <p className="text-sm wrap-break-word">
+                    <p className="text-sm md:text-base text-foreground wrap-break-word">
                       {job.material_type}
                     </p>
                   </div>
@@ -491,10 +491,10 @@ export function JobDetail({
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-muted-foreground mb-1">
+                    <p className="text-xs text-muted-foreground mb-1">
                       Contact Person
                     </p>
-                    <p className="text-sm font-medium wrap-break-word">
+                    <p className="text-sm md:text-base text-foreground wrap-break-word">
                       {
                         (job as Job & { contact_person_name?: string })
                           .contact_person_name
@@ -528,14 +528,14 @@ export function JobDetail({
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-muted-foreground mb-1">
+                    <p className="text-xs text-muted-foreground mb-1">
                       Phone Numbers
                     </p>
                     <div className="space-y-1.5">
                       {job.contact_number && (
                         <div className="flex items-center gap-2">
-                          <p className="text-sm font-medium wrap-break-word">
-                            {job.contact_number}
+                          <p className="text-sm md:text-base text-foreground tabular-nums wrap-break-word">
+                            {formatPhoneDisplay(job.contact_number)}
                           </p>
                           <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded">
                             Primary
@@ -547,9 +547,9 @@ export function JobDetail({
                         .map((phone, index) => (
                           <p
                             key={index}
-                            className="text-sm text-muted-foreground wrap-break-word"
+                            className="text-sm md:text-base text-foreground tabular-nums wrap-break-word"
                           >
-                            {phone}
+                            {formatPhoneDisplay(phone)}
                           </p>
                         ))}
                     </div>
@@ -566,13 +566,13 @@ export function JobDetail({
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-muted-foreground mb-1">
+                    <p className="text-xs text-muted-foreground mb-1">
                       Email Addresses
                     </p>
                     <div className="space-y-1.5">
                       {job.email && (
                         <div className="flex items-center gap-2">
-                          <p className="text-sm font-medium wrap-break-word break-all">
+                          <p className="text-sm md:text-base text-foreground wrap-break-word break-all">
                             {job.email}
                           </p>
                           <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded shrink-0">
@@ -585,7 +585,7 @@ export function JobDetail({
                         .map((email, index) => (
                           <p
                             key={index}
-                            className="text-sm text-muted-foreground wrap-break-word break-all"
+                            className="text-sm md:text-base text-foreground wrap-break-word break-all"
                           >
                             {email}
                           </p>
@@ -602,10 +602,10 @@ export function JobDetail({
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-muted-foreground mb-1">
+                    <p className="text-xs text-muted-foreground mb-1">
                       Special Requirements
                     </p>
-                    <p className="text-sm whitespace-pre-wrap wrap-break-word">
+                    <p className="text-sm md:text-base text-foreground whitespace-pre-wrap wrap-break-word">
                       {job.special_requirements}
                     </p>
                   </div>
@@ -619,10 +619,10 @@ export function JobDetail({
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-muted-foreground mb-1">
+                    <p className="text-xs text-muted-foreground mb-1">
                       Internal Notes
                     </p>
-                    <p className="text-sm whitespace-pre-wrap wrap-break-word">
+                    <p className="text-sm md:text-base text-foreground whitespace-pre-wrap wrap-break-word">
                       {(job as Job & { notes?: string }).notes}
                     </p>
                   </div>
@@ -652,7 +652,7 @@ export function JobDetail({
                   {/* eslint-disable-next-line jsx-a11y/alt-text */}
                   <Image className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
                 </div>
-                <CardTitle className="text-sm font-semibold">Photos & Videos</CardTitle>
+                <CardTitle className="text-base font-semibold">Photos & Videos</CardTitle>
               </div>
               <ChevronDown className="h-5 w-5 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180 shrink-0" />
             </div>
@@ -665,7 +665,7 @@ export function JobDetail({
                   <TabsTrigger value="before" className="text-xs">
                     <span>Before</span>
                     {job.before_photos && job.before_photos.length > 0 && (
-                      <span className="ml-1">
+                      <span className="ml-1 tabular-nums">
                         ({job.before_photos.length})
                       </span>
                     )}
@@ -673,7 +673,7 @@ export function JobDetail({
                   <TabsTrigger value="after" className="text-xs">
                     <span>After</span>
                     {job.after_photos && job.after_photos.length > 0 && (
-                      <span className="ml-1">
+                      <span className="ml-1 tabular-nums">
                         ({job.after_photos.length})
                       </span>
                     )}
@@ -737,7 +737,7 @@ export function JobDetail({
                   <div className="rounded-full bg-muted p-1.5">
                     <FileText className="h-3.5 w-3.5 text-muted-foreground" />
                   </div>
-                  <CardTitle className="text-sm font-semibold">Invoice</CardTitle>
+                  <CardTitle className="text-base font-semibold">Invoice</CardTitle>
                 </div>
                 <ChevronDown className="h-5 w-5 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180 shrink-0" />
               </div>
@@ -758,7 +758,6 @@ export function JobDetail({
 // Export status card separately for use in page layout
 export function JobStatusCard({
   job,
-  onStatusUpdate,
   onSendEmail,
   isSendingEmail,
   whatsAppLinks,
@@ -776,28 +775,24 @@ export function JobStatusCard({
           <div className="rounded-full bg-muted p-1.5">
             <Package className="h-3.5 w-3.5 text-muted-foreground" />
           </div>
-          <CardTitle className="text-sm font-semibold">Status & Actions</CardTitle>
+          <CardTitle className="text-base font-semibold">Status & Actions</CardTitle>
         </div>
       </CardHeader>
       <Separator />
       <CardContent className="pt-6 space-y-4">
         {job.status && (
           <div>
-            <p className="text-xs font-medium text-muted-foreground mb-2">
-              Current Status
-            </p>
+            <Label className="mb-2">Current Status</Label>
             <StatusBadge status={job.status as JobStatus} />
           </div>
         )}
         {job.status && (
           <div>
-            <p className="text-xs font-medium text-muted-foreground mb-2">
-              Update Status
-            </p>
+            <Label className="mb-2">Update Status</Label>
             <StatusUpdate
               currentStatus={job.status as JobStatus}
               jobId={job.id}
-              onStatusUpdate={onStatusUpdate}
+              jobNumber={job.job_number}
             />
           </div>
         )}

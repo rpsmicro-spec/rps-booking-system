@@ -2,152 +2,202 @@
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { X, Filter } from 'lucide-react'
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
+import { Search, SlidersHorizontal, X } from 'lucide-react'
 import { useState } from 'react'
+import { SimpleDatePicker } from '@/features/jobs/components/SimpleDatePicker'
+import { ACTION_OPTIONS } from './activity-format'
 
 interface ActivityFiltersProps {
   search: string
   dateFrom: string | null
   dateTo: string | null
+  action: string | null
   onSearchChange: (search: string) => void
   onDateFromChange: (date: string | null) => void
   onDateToChange: (date: string | null) => void
+  onActionChange: (action: string | null) => void
   onClear: () => void
+}
+
+function SearchField({
+  id,
+  search,
+  onSearchChange,
+}: {
+  id: string
+  search: string
+  onSearchChange: (search: string) => void
+}) {
+  return (
+    <div className="relative min-w-0 flex-1">
+      <Search
+        className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+        aria-hidden
+      />
+      <Input
+        id={id}
+        type="search"
+        placeholder="Search activity…"
+        value={search}
+        onChange={(e) => onSearchChange(e.target.value)}
+        className="w-full pl-9"
+        aria-label="Search activity"
+      />
+    </div>
+  )
+}
+
+function ActionSelect({
+  id,
+  action,
+  onActionChange,
+  className,
+}: {
+  id: string
+  action: string | null
+  onActionChange: (action: string | null) => void
+  className?: string
+}) {
+  return (
+    <Select
+      value={action || 'all'}
+      onValueChange={(value) => onActionChange(value === 'all' ? null : value)}
+    >
+      <SelectTrigger id={id} className={className} aria-label="Action type">
+        <SelectValue placeholder="All actions" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="all">All actions</SelectItem>
+        {ACTION_OPTIONS.map((option) => (
+          <SelectItem key={option.value} value={option.value}>
+            {option.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  )
 }
 
 export function ActivityFilters({
   search,
   dateFrom,
   dateTo,
+  action,
   onSearchChange,
   onDateFromChange,
   onDateToChange,
+  onActionChange,
   onClear,
 }: ActivityFiltersProps) {
   const [isOpen, setIsOpen] = useState(false)
-  const hasFilters = search || dateFrom || dateTo
+  const hasFilters = !!(search || dateFrom || dateTo || action)
+  const sheetFilterCount = [dateFrom, dateTo, action].filter(Boolean).length
 
   return (
     <>
-      {/* Desktop Filters */}
-      <div className="hidden md:block">
-        <div className="rounded-lg border bg-card p-4">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="sm:col-span-2">
-              <Label htmlFor="search" className="mb-2 block text-sm font-medium">
-                Search
-              </Label>
-              <Input
-                id="search"
-                placeholder="Search by user, action, or resource..."
-                value={search}
-                onChange={(e) => onSearchChange(e.target.value)}
-                className="w-full"
-              />
-            </div>
-            <div>
-              <Label htmlFor="dateFrom" className="mb-2 block text-sm font-medium">
-                From Date
-              </Label>
-              <Input
-                id="dateFrom"
-                type="date"
-                value={dateFrom || ''}
-                onChange={(e) => onDateFromChange(e.target.value || null)}
-                className="w-full"
-              />
-            </div>
-            <div>
-              <Label htmlFor="dateTo" className="mb-2 block text-sm font-medium">
-                To Date
-              </Label>
-              <Input
-                id="dateTo"
-                type="date"
-                value={dateTo || ''}
-                onChange={(e) => onDateToChange(e.target.value || null)}
-                className="w-full"
-              />
-            </div>
-          </div>
-          {hasFilters && (
-            <div className="mt-4 flex justify-end">
-              <Button variant="outline" size="sm" onClick={onClear}>
-                <X className="h-4 w-4 mr-2" />
-                Clear Filters
-              </Button>
-            </div>
-          )}
+      {/* Desktop: one row on wide screens; search on its own row on narrow tablets */}
+      <div className="hidden md:grid md:grid-cols-[repeat(3,minmax(0,1fr))_auto] md:gap-2 xl:grid-cols-[minmax(0,2fr)_repeat(3,minmax(0,1fr))_auto]">
+        <div className="flex min-w-0 md:col-span-4 xl:col-span-1">
+          <SearchField id="activity-search" search={search} onSearchChange={onSearchChange} />
         </div>
+        <ActionSelect
+          id="activity-action"
+          action={action}
+          onActionChange={onActionChange}
+          className="w-full min-w-0"
+        />
+        <SimpleDatePicker
+          id="activity-dateFrom"
+          value={dateFrom || undefined}
+          onChange={(date) => onDateFromChange(date || null)}
+          placeholder="From date"
+          className="min-w-0"
+        />
+        <SimpleDatePicker
+          id="activity-dateTo"
+          value={dateTo || undefined}
+          onChange={(date) => onDateToChange(date || null)}
+          placeholder="To date"
+          className="min-w-0"
+        />
+        {hasFilters ? (
+          <Button variant="ghost" onClick={onClear} className="shrink-0 text-muted-foreground">
+            <X />
+            Clear
+          </Button>
+        ) : (
+          <span aria-hidden />
+        )}
       </div>
 
-      {/* Mobile Filters */}
-      <div className="md:hidden">
-        <Sheet open={isOpen} onOpenChange={setIsOpen}>
-          <SheetTrigger asChild>
-            <Button variant="outline" className="w-full justify-between">
-              <span>
-                Filters {hasFilters && `(${[search, dateFrom, dateTo].filter(Boolean).length})`}
-              </span>
-              <Filter className="h-4 w-4" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="bottom" className="w-full max-h-[85vh] overflow-y-auto pb-6">
-            <SheetHeader className="px-4 pb-4 border-b">
-              <SheetTitle>Filter Activity</SheetTitle>
-            </SheetHeader>
-            <div className="pt-6 pb-2 px-4 space-y-5">
-              <div className="space-y-2.5">
-                <Label htmlFor="mobile-search" className="text-sm font-medium">
-                  Search
-                </Label>
-                <Input
-                  id="mobile-search"
-                  placeholder="Search by user, action, or resource..."
-                  value={search}
-                  onChange={(e) => onSearchChange(e.target.value)}
-                  className="w-full"
-                />
-              </div>
-              <div className="space-y-2.5">
-                <Label htmlFor="mobile-dateFrom" className="text-sm font-medium">
-                  From Date
-                </Label>
-                <Input
-                  id="mobile-dateFrom"
-                  type="date"
-                  value={dateFrom || ''}
-                  onChange={(e) => onDateFromChange(e.target.value || null)}
-                  className="w-full"
-                />
-              </div>
-              <div className="space-y-2.5">
-                <Label htmlFor="mobile-dateTo" className="text-sm font-medium">
-                  To Date
-                </Label>
-                <Input
-                  id="mobile-dateTo"
-                  type="date"
-                  value={dateTo || ''}
-                  onChange={(e) => onDateToChange(e.target.value || null)}
-                  className="w-full"
-                />
-              </div>
-              {hasFilters && (
-                <div className="pt-2">
-                  <Button variant="outline" onClick={onClear} className="w-full">
-                    <X className="h-4 w-4 mr-2" />
-                    Clear All Filters
-                  </Button>
-                </div>
-              )}
-            </div>
-          </SheetContent>
-        </Sheet>
+      {/* Mobile: search + filter icon button; other filters in a bottom sheet */}
+      <div className="flex items-center gap-2 md:hidden">
+        <SearchField id="activity-search-mobile" search={search} onSearchChange={onSearchChange} />
+        <Button
+          variant="outline"
+          size="icon"
+          className="relative shrink-0"
+          onClick={() => setIsOpen(true)}
+          aria-label={
+            sheetFilterCount > 0 ? `Open filters (${sheetFilterCount} active)` : 'Open filters'
+          }
+          title="Filters"
+        >
+          <SlidersHorizontal />
+          {sheetFilterCount > 0 && (
+            <span
+              aria-hidden
+              className="absolute -right-1 -top-1 flex min-w-4 items-center justify-center rounded-full bg-primary px-1 py-0.5 text-xs leading-none font-medium tabular-nums text-primary-foreground"
+            >
+              {sheetFilterCount}
+            </span>
+          )}
+        </Button>
       </div>
+
+      <Sheet open={isOpen} onOpenChange={setIsOpen}>
+        <SheetContent side="bottom" className="w-full max-h-[85vh] overflow-y-auto pb-6 md:hidden">
+          <SheetHeader className="px-4 pb-4 border-b">
+            <SheetTitle>Filter activity</SheetTitle>
+          </SheetHeader>
+          <div className="pt-6 pb-2 px-4 space-y-5">
+            <ActionSelect
+              id="activity-action-mobile"
+              action={action}
+              onActionChange={onActionChange}
+              className="w-full"
+            />
+            <SimpleDatePicker
+              id="activity-dateFrom-mobile"
+              value={dateFrom || undefined}
+              onChange={(date) => onDateFromChange(date || null)}
+              placeholder="From date"
+            />
+            <SimpleDatePicker
+              id="activity-dateTo-mobile"
+              value={dateTo || undefined}
+              onChange={(date) => onDateToChange(date || null)}
+              placeholder="To date"
+            />
+            {hasFilters && (
+              <div className="pt-2">
+                <Button variant="outline" onClick={onClear} className="w-full">
+                  <X className="h-4 w-4 mr-2" />
+                  Clear all filters
+                </Button>
+              </div>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
     </>
   )
 }
-

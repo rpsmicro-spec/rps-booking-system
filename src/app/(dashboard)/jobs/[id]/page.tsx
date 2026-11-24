@@ -1,21 +1,12 @@
 import { requireAuth } from "@/lib/auth/helpers";
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
-import { Badge } from "@/components/ui/badge";
-import { Hash, Calendar, Package, Truck } from "lucide-react";
 import { getSignedUrl } from "@/lib/storage/signed-url";
-import { STATUS_LABELS, getStatusBadgeCustomClasses } from "@/lib/constants";
 import type { JobStatus } from "@/types/types";
 import { ClientOnly } from "@/components/client-only";
 import { JobDetailPageContent } from "@/features/jobs/components/JobDetailPageContent";
 import { JobDetailPageSkeleton } from "@/features/jobs/components/JobDetailPageSkeleton";
-
-const STATUS_ICONS: Record<string, typeof Calendar> = {
-  collected: Calendar,
-  in_progress: Package,
-  completed: Package,
-  delivered: Truck,
-};
+import { JobDetailHeader } from "@/features/jobs/components/JobDetailHeader";
 
 export default async function JobDetailPage({
   params,
@@ -60,28 +51,16 @@ export default async function JobDetailPage({
     invoice_file_path: invoiceUrl,
   };
 
-  const StatusIcon = job.status
-    ? STATUS_ICONS[job.status] || Hash
-    : Hash;
-
   return (
-    <div className="flex-1 space-y-4">
+    <div className="flex-1 space-y-4 md:space-y-6">
       {/* Top Row: Job Number with Dynamic Icon, Status Badge, and Edit/Delete Buttons */}
-      <div className="flex flex-col gap-3 sm:gap-4 pt-2 md:pt-4">
+      <div className="flex flex-col gap-3 sm:gap-4 pt-1 md:pt-2">
         {/* Job Number and Badge Row */}
-        <div className="flex items-center justify-between gap-3 sm:gap-4">
-          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-            <StatusIcon className="h-6 w-6 sm:h-8 sm:w-8 text-muted-foreground flex-shrink-0" />
-            <h1 className="text-2xl sm:text-3xl font-bold truncate">{job.job_number}</h1>
-          </div>
-          {job.status && (
-            <Badge
-              className={`${getStatusBadgeCustomClasses(job.status as JobStatus)} shrink-0 text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2 font-semibold`}
-            >
-              {STATUS_LABELS[job.status as JobStatus] || "Unknown"}
-            </Badge>
-          )}
-        </div>
+        <JobDetailHeader
+          jobId={job.id}
+          jobNumber={job.job_number}
+          serverStatus={(job.status as JobStatus) ?? null}
+        />
         {/* Action buttons + detail content: client-only to avoid Radix hydration mismatch */}
         <ClientOnly fallback={<JobDetailPageSkeleton />}>
           <JobDetailPageContent

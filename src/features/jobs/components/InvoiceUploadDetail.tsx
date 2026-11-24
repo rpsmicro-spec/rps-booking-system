@@ -169,7 +169,7 @@ export function InvoiceUploadDetail({ job, displayJob, onUpdate }: InvoiceUpload
                   aria-label="Invoice icon"
                 />
               </div>
-              <h3 className="text-sm font-semibold text-foreground">
+              <h3 className="text-base font-semibold text-foreground">
                 Invoice
               </h3>
             </div>

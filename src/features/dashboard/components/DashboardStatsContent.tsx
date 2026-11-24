@@ -144,13 +144,13 @@ export async function DashboardStatsContent() {
   return (
     <div className="grid gap-3 md:gap-4 grid-cols-2 lg:grid-cols-4">
       {/* Total Jobs */}
-      <div className="aspect-square flex flex-col relative overflow-hidden rounded-lg border-2 border-blue-200/50 dark:border-blue-800/50 transition-all active:scale-[0.98] active:opacity-90 bg-linear-to-br from-blue-50/60 to-blue-100/40 dark:from-blue-950/30 dark:to-blue-900/20">
+      <div className="aspect-square [:root[data-font-scale]_&]:aspect-auto flex flex-col relative overflow-hidden rounded-lg border-2 border-blue-200/50 dark:border-blue-800/50 transition-all active:scale-[0.98] active:opacity-90 bg-linear-to-br from-blue-50/60 to-blue-100/40 dark:from-blue-950/30 dark:to-blue-900/20">
         <div className="flex flex-row items-start justify-between pb-2 shrink-0 pt-4 px-4">
           <div className="space-y-0.5">
-            <p className="text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wide">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
               Total Jobs
             </p>
-            <div className="text-2xl sm:text-3xl font-bold text-foreground leading-none">
+            <div className="text-2xl font-bold tabular-nums text-foreground leading-none">
               {totalJobs}
             </div>
           </div>
@@ -160,7 +160,7 @@ export async function DashboardStatsContent() {
         </div>
         <div className="flex-1 flex flex-col justify-end pb-4 px-4 space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-[9px] sm:text-[10px] text-muted-foreground">
+            <span className="text-xs text-muted-foreground">
               This Week
             </span>
             <div className="flex items-center gap-1">
@@ -170,13 +170,13 @@ export async function DashboardStatsContent() {
                 <TrendingDown className="h-3 w-3 text-red-600 dark:text-red-400" />
               )}
               <span
-                className={`text-[10px] sm:text-xs font-semibold ${wowChange >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}
+                className={`text-xs font-semibold tabular-nums ${wowChange >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}
               >
                 {Math.abs(wowChange)}%
               </span>
             </div>
           </div>
-          <div className="flex items-center justify-between text-[9px] sm:text-[10px]">
+          <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5 text-xs tabular-nums">
             <span className="text-muted-foreground">
               New jobs: {jobsThisWeek}
             </span>
@@ -196,13 +196,13 @@ export async function DashboardStatsContent() {
       </div>
 
       {/* Active Jobs */}
-      <div className="aspect-square flex flex-col relative overflow-hidden rounded-lg border-2 border-orange-200/50 dark:border-orange-800/50 transition-all active:scale-[0.98] active:opacity-90 bg-linear-to-br from-orange-50/60 to-orange-100/40 dark:from-orange-950/30 dark:to-orange-900/20">
+      <div className="aspect-square [:root[data-font-scale]_&]:aspect-auto flex flex-col relative overflow-hidden rounded-lg border-2 border-orange-200/50 dark:border-orange-800/50 transition-all active:scale-[0.98] active:opacity-90 bg-linear-to-br from-orange-50/60 to-orange-100/40 dark:from-orange-950/30 dark:to-orange-900/20">
         <div className="flex flex-row items-start justify-between pb-2 shrink-0 pt-4 px-4">
           <div className="space-y-0.5">
-            <p className="text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wide">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
               Active Jobs
             </p>
-            <div className="text-2xl sm:text-3xl font-bold text-foreground leading-none">
+            <div className="text-2xl font-bold tabular-nums text-foreground leading-none">
               {activeJobs}
             </div>
           </div>
@@ -212,14 +212,14 @@ export async function DashboardStatsContent() {
         </div>
         <div className="flex-1 flex flex-col justify-end pb-4 px-4 space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-[9px] sm:text-[10px] text-muted-foreground">
+            <span className="text-xs text-muted-foreground">
               Active Rate
             </span>
-            <span className="text-[10px] sm:text-xs font-semibold text-orange-600 dark:text-orange-400">
+            <span className="text-xs font-semibold tabular-nums text-orange-600 dark:text-orange-400">
               {activePercentage}%
             </span>
           </div>
-          <div className="flex items-center justify-between text-[9px] sm:text-[10px]">
+          <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5 text-xs tabular-nums">
             <span className="text-muted-foreground">
               In Progress: {inProgressJobsResult.count ?? 0}
             </span>
@@ -237,13 +237,13 @@ export async function DashboardStatsContent() {
       </div>
 
       {/* Completed Today */}
-      <div className="aspect-square flex flex-col relative overflow-hidden rounded-lg border-2 border-green-200/50 dark:border-green-800/50 transition-all active:scale-[0.98] active:opacity-90 bg-linear-to-br from-green-50/60 to-green-100/40 dark:from-green-950/30 dark:to-green-900/20">
+      <div className="aspect-square [:root[data-font-scale]_&]:aspect-auto flex flex-col relative overflow-hidden rounded-lg border-2 border-green-200/50 dark:border-green-800/50 transition-all active:scale-[0.98] active:opacity-90 bg-linear-to-br from-green-50/60 to-green-100/40 dark:from-green-950/30 dark:to-green-900/20">
         <div className="flex flex-row items-start justify-between pb-2 shrink-0 pt-4 px-4">
           <div className="space-y-0.5">
-            <p className="text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wide">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
               Completed Today
             </p>
-            <div className="text-2xl sm:text-3xl font-bold text-foreground leading-none">
+            <div className="text-2xl font-bold tabular-nums text-foreground leading-none">
               {completedToday}
             </div>
           </div>
@@ -253,7 +253,7 @@ export async function DashboardStatsContent() {
         </div>
         <div className="flex-1 flex flex-col justify-end pb-4 px-4 space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-[9px] sm:text-[10px] text-muted-foreground">
+            <span className="text-xs text-muted-foreground">
               This Week
             </span>
             <div className="flex items-center gap-1">
@@ -263,13 +263,13 @@ export async function DashboardStatsContent() {
                 <ArrowDownRight className="h-3 w-3 text-red-600 dark:text-red-400" />
               )}
               <span
-                className={`text-[10px] sm:text-xs font-semibold ${completionWowChange >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}
+                className={`text-xs font-semibold tabular-nums ${completionWowChange >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}
               >
                 {Math.abs(completionWowChange)}%
               </span>
             </div>
           </div>
-          <div className="flex items-center justify-between text-[9px] sm:text-[10px]">
+          <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5 text-xs tabular-nums">
             <span className="text-muted-foreground">
               Week total: {completedThisWeek}
             </span>
@@ -289,13 +289,13 @@ export async function DashboardStatsContent() {
       </div>
 
       {/* Delivered */}
-      <div className="aspect-square flex flex-col relative overflow-hidden rounded-lg border-2 border-purple-200/50 dark:border-purple-800/50 transition-all active:scale-[0.98] active:opacity-90 bg-linear-to-br from-purple-50/60 to-purple-100/40 dark:from-purple-950/30 dark:to-purple-900/20">
+      <div className="aspect-square [:root[data-font-scale]_&]:aspect-auto flex flex-col relative overflow-hidden rounded-lg border-2 border-purple-200/50 dark:border-purple-800/50 transition-all active:scale-[0.98] active:opacity-90 bg-linear-to-br from-purple-50/60 to-purple-100/40 dark:from-purple-950/30 dark:to-purple-900/20">
         <div className="flex flex-row items-start justify-between pb-2 shrink-0 pt-4 px-4">
           <div className="space-y-0.5">
-            <p className="text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wide">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
               Delivered
             </p>
-            <div className="text-2xl sm:text-3xl font-bold text-foreground leading-none">
+            <div className="text-2xl font-bold tabular-nums text-foreground leading-none">
               {deliveredJobs}
             </div>
           </div>
@@ -305,14 +305,14 @@ export async function DashboardStatsContent() {
         </div>
         <div className="flex-1 flex flex-col justify-end pb-4 px-4 space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-[9px] sm:text-[10px] text-muted-foreground">
+            <span className="text-xs text-muted-foreground">
               Completion Rate
             </span>
-            <span className="text-[10px] sm:text-xs font-semibold text-purple-600 dark:text-purple-400">
+            <span className="text-xs font-semibold tabular-nums text-purple-600 dark:text-purple-400">
               {completionRate}%
             </span>
           </div>
-          <div className="flex items-center justify-between text-[9px] sm:text-[10px]">
+          <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5 text-xs tabular-nums">
             <span className="text-muted-foreground">
               Completed: {completedJobs}
             </span>

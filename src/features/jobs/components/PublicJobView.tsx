@@ -64,11 +64,11 @@ export function PublicJobView({ job, statusHistory = [] }: PublicJobViewProps) {
     <div className="max-w-6xl mx-auto space-y-6 pb-8">
       {/* Job Header */}
       <div className="text-center space-y-3">
-        <h1 className="text-3xl md:text-4xl font-bold">{job.job_number}</h1>
+        <h1 className="text-3xl md:text-4xl font-bold tabular-nums">{job.job_number}</h1>
         {job.booking_date && (
           <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
             <Calendar className="h-4 w-4" />
-            <span>
+            <span className="tabular-nums">
               Booking Date:{" "}
               {(() => {
                 const istDate = utcToIstDateObject(job.booking_date);
@@ -93,7 +93,7 @@ export function PublicJobView({ job, statusHistory = [] }: PublicJobViewProps) {
         {/* Job Details */}
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-lg">Job Details</CardTitle>
+            <CardTitle className="text-base font-semibold">Job Details</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             {job.job_number && (
@@ -107,7 +107,7 @@ export function PublicJobView({ job, statusHistory = [] }: PublicJobViewProps) {
                   <p className="text-xs font-medium text-muted-foreground mb-1.5">
                     Job Number
                   </p>
-                  <p className="text-sm font-medium">{job.job_number}</p>
+                  <p className="text-sm font-medium tabular-nums">{job.job_number}</p>
                 </div>
               </div>
             )}
@@ -122,7 +122,7 @@ export function PublicJobView({ job, statusHistory = [] }: PublicJobViewProps) {
                   <p className="text-xs font-medium text-muted-foreground mb-1.5">
                     Booking Date
                   </p>
-                  <p className="text-sm font-medium">
+                  <p className="text-sm font-medium tabular-nums">
                     {(() => {
                       const istDate = utcToIstDateObject(job.booking_date);
                       return istDate ? format(istDate, "MMM dd, yyyy") : "";
@@ -142,7 +142,7 @@ export function PublicJobView({ job, statusHistory = [] }: PublicJobViewProps) {
                   <p className="text-xs font-medium text-muted-foreground mb-1.5">
                     Delivery Date
                   </p>
-                  <p className="text-sm font-medium">
+                  <p className="text-sm font-medium tabular-nums">
                     {(() => {
                       const istDate = utcToIstDateObject(job.delivery_date);
                       return istDate ? format(istDate, "MMM dd, yyyy") : "";
@@ -163,7 +163,7 @@ export function PublicJobView({ job, statusHistory = [] }: PublicJobViewProps) {
                   <p className="text-xs font-medium text-muted-foreground mb-1.5">
                     Customer DC Number
                   </p>
-                  <p className="text-sm font-medium">
+                  <p className="text-sm font-medium tabular-nums">
                     {
                       (job as Job & { customer_dc_number?: string })
                         .customer_dc_number
@@ -238,7 +238,7 @@ export function PublicJobView({ job, statusHistory = [] }: PublicJobViewProps) {
         {/* Contact Us - same row as Job Details */}
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-lg">Contact Us</CardTitle>
+            <CardTitle className="text-base font-semibold">Contact Us</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-start gap-3">
@@ -269,12 +269,12 @@ export function PublicJobView({ job, statusHistory = [] }: PublicJobViewProps) {
                   </p>
                   <a
                     href={`tel:${COMPANY_INFO.PHONE.replace(/[^\d+]/g, "")}`}
-                    className="text-sm hover:underline"
+                    className="text-sm tabular-nums hover:underline"
                   >
                     {COMPANY_INFO.PHONE}
                   </a>
                   {COMPANY_INFO.TEL && (
-                    <p className="text-sm text-muted-foreground mt-1">
+                    <p className="text-sm tabular-nums text-muted-foreground mt-1">
                       {COMPANY_INFO.TEL}
                     </p>
                   )}
@@ -336,7 +336,7 @@ export function PublicJobView({ job, statusHistory = [] }: PublicJobViewProps) {
         (job.after_photos?.length ?? 0) > 0) && (
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-lg">Photos & Videos</CardTitle>
+            <CardTitle className="text-base font-semibold">Photos & Videos</CardTitle>
           </CardHeader>
           <CardContent className="pt-6">
             {(job.before_photos?.length || 0) > 0 &&
@@ -385,7 +385,7 @@ export function PublicJobView({ job, statusHistory = [] }: PublicJobViewProps) {
       {job.invoice_file_path && (
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-lg">Invoice</CardTitle>
+            <CardTitle className="text-base font-semibold">Invoice</CardTitle>
           </CardHeader>
           <CardContent>
             <PDFViewer

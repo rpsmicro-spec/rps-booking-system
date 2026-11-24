@@ -110,7 +110,7 @@ export function UsersList({ refreshTrigger }: UsersListProps) {
                   {user.name && (
                     <p className="text-sm text-muted-foreground">{user.name}</p>
                   )}
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <p className="text-xs tabular-nums text-muted-foreground mt-1">
                     Joined: {new Date(user.created_at).toLocaleDateString()}
                   </p>
                 </div>

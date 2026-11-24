@@ -34,7 +34,7 @@ export function RoleInformationDialog({
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <Crown className="h-5 w-5 text-yellow-600 dark:text-yellow-500" />
-              <h4 className="font-semibold text-lg">Owner</h4>
+              <h4 className="font-semibold text-base">Owner</h4>
               <Badge variant="default">{ROLE_LABELS[USER_ROLES.OWNER]}</Badge>
             </div>
             <p className="text-sm text-muted-foreground pl-7">
@@ -59,7 +59,7 @@ export function RoleInformationDialog({
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <Shield className="h-5 w-5 text-blue-600 dark:text-blue-500" />
-              <h4 className="font-semibold text-lg">Admin</h4>
+              <h4 className="font-semibold text-base">Admin</h4>
               <Badge variant="secondary">{ROLE_LABELS[USER_ROLES.ADMIN]}</Badge>
             </div>
             <p className="text-sm text-muted-foreground pl-7">
@@ -82,7 +82,7 @@ export function RoleInformationDialog({
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <User className="h-5 w-5 text-gray-600 dark:text-gray-400" />
-              <h4 className="font-semibold text-lg">Staff</h4>
+              <h4 className="font-semibold text-base">Staff</h4>
               <Badge variant="outline">{ROLE_LABELS[USER_ROLES.STAFF]}</Badge>
             </div>
             <p className="text-sm text-muted-foreground pl-7">

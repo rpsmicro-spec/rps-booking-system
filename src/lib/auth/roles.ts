@@ -1,3 +1,5 @@
+import { cache } from 'react'
+import { getCurrentUser } from '@/lib/auth/helpers'
 import { createClient } from '@/lib/supabase/server'
 import { USER_ROLES, type UserRole } from '@/lib/constants/roles'
 import { canInviteUsers, canManageUsers } from '@/lib/constants/roles'
@@ -5,10 +7,9 @@ import { canInviteUsers, canManageUsers } from '@/lib/constants/roles'
 /**
  * Get the current user's role from the users table
  */
-export async function getUserRole(): Promise<UserRole | null> {
+export const getUserRole = cache(async (): Promise<UserRole | null> => {
+  const user = await getCurrentUser()
   const supabase = await createClient()
-  const { data } = await supabase.auth.getUser()
-  const user = data?.user
 
   if (!user) return null
 
@@ -20,15 +21,14 @@ export async function getUserRole(): Promise<UserRole | null> {
     .single()
 
   return (userData?.role as UserRole) || USER_ROLES.STAFF
-}
+})
 
 /**
  * Get the current user's full profile from the users table
  */
-export async function getUserProfile() {
+export const getUserProfile = cache(async () => {
+  const user = await getCurrentUser()
   const supabase = await createClient()
-  const { data } = await supabase.auth.getUser()
-  const user = data?.user
 
   if (!user) return null
 
@@ -39,7 +39,7 @@ export async function getUserProfile() {
     .single()
 
   return userData
-}
+})
 
 // Re-export permission checks
 export { canInviteUsers, canManageUsers }

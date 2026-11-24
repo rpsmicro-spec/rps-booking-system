@@ -66,7 +66,7 @@ export function RecentJobs() {
             <Clock className="h-4 w-4" aria-hidden />
           </div>
           <div>
-            <h3 className="text-sm font-semibold tracking-tight text-foreground">
+            <h3 className="text-lg md:text-xl font-semibold tracking-tight text-foreground">
               Recent Jobs
             </h3>
             <p className="text-xs text-muted-foreground">
@@ -78,7 +78,7 @@ export function RecentJobs() {
           variant="outline"
           size="sm"
           onClick={handleClearRecent}
-          className="h-8 px-2.5 text-xs -mr-1"
+          className="h-8 px-2.5 -mr-1"
           aria-label="Clear recent jobs"
         >
           <X className="h-3.5 w-3 mr-1.5" />
@@ -93,7 +93,7 @@ export function RecentJobs() {
               className="flex items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-muted/50 active:bg-muted/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate text-foreground">
+                <p className="text-sm font-medium tabular-nums truncate text-foreground">
                   {job.jobNumber}
                 </p>
                 <p className="text-xs text-muted-foreground truncate mt-0.5">

@@ -67,7 +67,7 @@ export function SimpleDatePicker({
           disabled={disabled}
           aria-invalid={ariaInvalid}
           className={cn(
-            "w-full justify-between font-normal",
+            "w-full justify-between font-normal text-base md:text-sm",
             !date && "text-muted-foreground",
             ariaInvalid && "border-destructive",
             className

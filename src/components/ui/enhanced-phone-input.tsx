@@ -306,7 +306,7 @@ export function EnhancedPhoneInput({
         <div className="flex items-center gap-2 p-2 text-sm bg-muted rounded-md">
           <ClipboardPaste className="h-4 w-4 text-muted-foreground" />
           <span className="flex-1 text-muted-foreground">
-            Paste <strong className="text-foreground">{clipboardPhone}</strong>?
+            Paste <strong className="text-foreground tabular-nums">{clipboardPhone}</strong>?
           </span>
           <Button
             type="button"
@@ -357,8 +357,9 @@ export function EnhancedPhoneInput({
             placeholder: placeholder || "Enter phone number",
             "aria-invalid": ariaInvalid,
             autoComplete: "tel",
+            inputMode: "tel",
             className: cn(
-              "flex h-9 w-full rounded-r-md rounded-l-none border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
+              "flex h-9 w-full tabular-nums rounded-r-md rounded-l-none border border-input bg-transparent px-3 py-1 text-base md:text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
               // Add padding for action buttons based on what's showing
               showValidation && isValid !== null && "pr-24",
               !showValidation &&
@@ -374,7 +375,7 @@ export function EnhancedPhoneInput({
           }}
           countrySelectorStyleProps={{
             buttonClassName: cn(
-              "h-9 min-w-[70px] border-r-0 rounded-l-md pointer-events-none",
+              "min-w-[70px] border-r-0 rounded-l-md pointer-events-none",
               disabled && "opacity-50 cursor-not-allowed"
             ),
             dropdownStyleProps: {
@@ -447,7 +448,7 @@ export function EnhancedPhoneInput({
                         >
                           <div className="flex items-center gap-2 w-full">
                             <Clock className="h-3 w-3 text-muted-foreground" />
-                            <span className="font-medium">
+                            <span className="font-medium tabular-nums">
                               {formatPhoneForDisplay(contact.phone)}
                             </span>
                           </div>

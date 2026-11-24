@@ -96,7 +96,7 @@ export function StatusTimeline({
             >
               <div className="flex items-center gap-1 flex-wrap justify-center">
                 <p
-                  className={`text-[10px] sm:text-xs font-medium ${
+                  className={`text-xs font-medium leading-tight ${
                     isCurrent
                       ? 'text-green-600 dark:text-green-500'
                       : isCompleted
@@ -107,13 +107,13 @@ export function StatusTimeline({
                   {STATUS_LABELS[status]}
                 </p>
                 {isCurrent && (
-                  <span className="text-[9px] sm:text-[10px] px-1 sm:px-1.5 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 shrink-0">
+                  <span className="text-xs px-1 sm:px-1.5 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 shrink-0">
                     Current
                   </span>
                 )}
               </div>
               {historyEntry?.changed_at && (
-                <p className="text-[9px] sm:text-[10px] text-muted-foreground mt-0.5 truncate max-w-full">
+                <p className="text-xs leading-tight tabular-nums text-muted-foreground mt-0.5 max-w-full break-words">
                   {(() => {
                     const istDate = utcToIstDateObject(historyEntry.changed_at)
                     return istDate
@@ -123,7 +123,7 @@ export function StatusTimeline({
                 </p>
               )}
               {!historyEntry && isCompleted && (
-                <p className="text-[9px] sm:text-[10px] text-muted-foreground mt-0.5">
+                <p className="text-xs leading-tight text-muted-foreground mt-0.5 max-w-full break-words">
                   Status set on creation
                 </p>
               )}

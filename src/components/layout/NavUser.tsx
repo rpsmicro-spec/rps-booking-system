@@ -37,6 +37,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 import { toast } from "sonner"
+import { clearLocalUserData, syncBeforeLogout } from "@/lib/offline/clear-local-data"
 import { ROLE_LABELS, type UserRole } from "@/lib/constants/roles"
 import type { User as UserType } from "@/types/types"
 import { NameDialog } from "./NameDialog"
@@ -56,7 +57,26 @@ export function NavUser() {
   const user = data?.user ?? null
   const isLoading = !data && !user
 
-  const handleLogout = async (logoutEverywhere = false) => {
+  const handleLogout = async (logoutEverywhere = false, force = false) => {
+    // Unsynced offline work would otherwise sit on this phone for the next
+    // person who logs in. Try to flush it; if it can't be, warn first.
+    if (!force) {
+      const pending = await syncBeforeLogout()
+      if (pending > 0) {
+        setShowLogoutDialog(false)
+        toast.error(
+          `${pending} change${pending === 1 ? "" : "s"} on this phone ${pending === 1 ? "hasn't" : "haven't"} synced yet. Connect to the internet and let ${pending === 1 ? "it" : "them"} sync before logging out.`,
+          {
+            duration: 12000,
+            action: {
+              label: "Log out anyway",
+              onClick: () => void handleLogout(logoutEverywhere, true),
+            },
+          }
+        )
+        return
+      }
+    }
     try {
       const response = await fetch("/api/auth/logout", {
         method: "POST",
@@ -68,6 +88,8 @@ export function NavUser() {
       })
 
       if (response.ok) {
+        // Only after the server confirmed: wipe this user's cached data.
+        await clearLocalUserData()
         toast.success(
           logoutEverywhere
             ? "Logged out from all devices"

@@ -1,6 +1,5 @@
 'use client'
 
-import { useState } from 'react'
 import {
   Select,
   SelectContent,
@@ -10,98 +9,83 @@ import {
 } from '@/components/ui/select'
 import { STATUS_LABELS, STATUS_WORKFLOW } from '@/lib/constants'
 import type { JobStatus } from '@/types/types'
-import { toast } from 'sonner'
-import { Loader2 } from 'lucide-react'
+import { CloudUpload, Loader2 } from 'lucide-react'
+import { changeJobStatus } from '@/lib/jobs/status-client'
+import { useEffectiveJobStatus } from '@/lib/jobs/status-overrides'
 
 interface StatusUpdateProps {
-  currentStatus: JobStatus
+  currentStatus: JobStatus // server status
   jobId: string
-  onStatusUpdate?: () => void
+  jobNumber: string
 }
 
-export function StatusUpdate({
-  currentStatus,
-  jobId,
-  onStatusUpdate,
-}: StatusUpdateProps) {
-  const [selectedStatus, setSelectedStatus] = useState<JobStatus | null>(null)
-  const [isUpdating, setIsUpdating] = useState(false)
+/**
+ * Optimistic: the select, badge, timeline and cached lists change at once;
+ * the PATCH (or the offline queue) runs in the background and the change is
+ * rolled back with a toast if the server refuses it.
+ */
+export function StatusUpdate({ currentStatus, jobId, jobNumber }: StatusUpdateProps) {
+  const { status, isPending, isQueued, override } = useEffectiveJobStatus(jobId, currentStatus)
 
-  const nextStatuses = STATUS_WORKFLOW[currentStatus] || []
+  const nextStatuses = STATUS_WORKFLOW[status] || []
   const canUpdate = nextStatuses.length > 0
+  const isSending = override?.state === 'sending'
 
-  const handleStatusChange = async (newStatus: JobStatus) => {
-    if (newStatus === currentStatus) {
-      setSelectedStatus(null)
-      return
-    }
-
-    setIsUpdating(true)
-    setSelectedStatus(newStatus)
-
-    try {
-      const response = await fetch(`/api/jobs/${jobId}/status`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus }),
-      })
-
-      const result = await response.json()
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to update status')
-      }
-
-      toast.success(
-        `Status updated to ${STATUS_LABELS[newStatus]}`
-      )
-      setSelectedStatus(null)
-      onStatusUpdate?.()
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : 'Failed to update status'
-      )
-      setSelectedStatus(null)
-    } finally {
-      setIsUpdating(false)
-    }
+  const handleStatusChange = (value: string) => {
+    const newStatus = value as JobStatus
+    if (newStatus === status || isSending) return
+    void changeJobStatus({ jobId, jobNumber, fromStatus: status, toStatus: newStatus })
   }
+
+  const pendingNote = isQueued ? (
+    <p className="mt-1.5 flex items-center gap-1.5 text-xs text-amber-700 dark:text-amber-400">
+      <CloudUpload className="h-3.5 w-3.5" aria-hidden />
+      Saved on this phone — will sync when you&apos;re back online
+    </p>
+  ) : null
 
   if (!canUpdate) {
     return (
-      <div className="text-sm text-muted-foreground">
-        Status: <strong>{STATUS_LABELS[currentStatus]}</strong> (Final status)
+      <div>
+        <div className="text-sm text-muted-foreground">
+          Status: <strong>{STATUS_LABELS[status]}</strong> (Final status)
+        </div>
+        {pendingNote}
       </div>
     )
   }
 
   return (
-    <div className="flex items-center gap-2 sm:gap-4">
-      <div className="flex-1 min-w-0">
-        <Select
-          value={selectedStatus || currentStatus}
-          onValueChange={(value) => handleStatusChange(value as JobStatus)}
-          disabled={isUpdating}
-        >
-          <SelectTrigger size="sm" className="w-full">
-            <SelectValue placeholder="Select status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={currentStatus}>
-              {STATUS_LABELS[currentStatus]} (Current)
-            </SelectItem>
-            {nextStatuses.map((status) => (
-              <SelectItem key={status} value={status}>
-                {STATUS_LABELS[status]}
+    <div>
+      <div className="flex items-center gap-2 sm:gap-4">
+        <div className="flex-1 min-w-0">
+          <Select
+            value={status}
+            onValueChange={handleStatusChange}
+            // Block a second change only while the first is in flight; a
+            // queued (offline) change can be followed by the next step.
+            disabled={isSending}
+          >
+            <SelectTrigger size="sm" className="w-full">
+              <SelectValue placeholder="Select status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={status}>
+                {STATUS_LABELS[status]} (Current)
               </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+              {nextStatuses.map((s) => (
+                <SelectItem key={s} value={s}>
+                  {STATUS_LABELS[s]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        {isSending && (
+          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground flex-shrink-0" aria-label="Saving" />
+        )}
       </div>
-      {isUpdating && (
-        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground flex-shrink-0" />
-      )}
+      {isPending && pendingNote}
     </div>
   )
 }
-

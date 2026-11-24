@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Input } from "./input";
 import { Button } from "./button";
+import { Label } from "./label";
 import { Plus, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -13,6 +14,8 @@ interface MultiEmailInputProps {
   onAdditionalChange: (values: string[]) => void;
   disabled?: boolean;
   className?: string;
+  /** Extra classes for each email field (e.g. a height override). */
+  inputClassName?: string;
   primaryError?: string;
   additionalErrors?: string[];
 }
@@ -24,6 +27,7 @@ export function MultiEmailInput({
   onAdditionalChange,
   disabled = false,
   className,
+  inputClassName,
   primaryError,
 }: MultiEmailInputProps) {
   const [additionalEmails, setAdditionalEmails] = useState<string[]>(
@@ -54,9 +58,9 @@ export function MultiEmailInput({
       {/* Primary Email */}
       <div className="space-y-1.5">
         <div className="flex items-center gap-2">
-          <label className="text-xs font-medium text-muted-foreground">
+          <Label htmlFor="primary_email" className="text-muted-foreground">
             Primary Email Address
-          </label>
+          </Label>
           <span className="text-xs text-muted-foreground">(for notifications)</span>
         </div>
         <Input
@@ -67,7 +71,7 @@ export function MultiEmailInput({
           onChange={(e) => onPrimaryChange(e.target.value)}
           disabled={disabled}
           placeholder="customer@email.com"
-          className="text-sm sm:text-base"
+          className={inputClassName}
           aria-invalid={!!primaryError}
         />
         {primaryError && (
@@ -79,9 +83,12 @@ export function MultiEmailInput({
       {additionalEmails.map((email, index) => (
         <div key={index} className="space-y-1.5">
           <div className="flex items-center justify-between">
-            <label className="text-xs font-medium text-muted-foreground">
+            <Label
+              htmlFor={`additional_email_${index}`}
+              className="text-muted-foreground"
+            >
               Additional Email #{index + 1}
-            </label>
+            </Label>
             <Button
               type="button"
               variant="ghost"
@@ -102,7 +109,7 @@ export function MultiEmailInput({
             onChange={(e) => handleAdditionalEmailChange(index, e.target.value)}
             disabled={disabled}
             placeholder="additional@email.com"
-            className="text-sm sm:text-base"
+            className={inputClassName}
           />
         </div>
       ))}

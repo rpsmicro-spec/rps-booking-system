@@ -26,6 +26,7 @@ interface CityComboboxProps {
   placeholder?: string
   id?: string
   "aria-invalid"?: boolean
+  className?: string
   state?: string // Optional: filter cities by state
   allowCustom?: boolean // Allow typing custom city names
 }
@@ -37,6 +38,7 @@ export function CityCombobox({
   placeholder = "Select city...",
   id,
   "aria-invalid": ariaInvalid,
+  className,
   state,
   allowCustom = true,
 }: CityComboboxProps) {
@@ -81,12 +83,13 @@ export function CityCombobox({
           aria-invalid={ariaInvalid}
           disabled={disabled}
           className={cn(
-            "w-full justify-between",
+            "w-full justify-between text-base md:text-sm",
             !value && "text-muted-foreground",
-            ariaInvalid && "border-destructive"
+            ariaInvalid && "border-destructive",
+            className
           )}
         >
-          {selectedCity ? selectedCity.label : placeholder}
+          <span className="truncate">{selectedCity ? selectedCity.label : placeholder}</span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>

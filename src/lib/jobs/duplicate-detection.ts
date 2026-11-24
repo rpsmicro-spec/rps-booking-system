@@ -124,8 +124,14 @@ export async function checkDuplicateJob(
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     
+    // Best-effort and skippable: never let a dead connection stall the
+    // submit (the caller treats any failure as "no duplicate").
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      return { isDuplicate: false, similarity: 0, reasons: [] };
+    }
     const response = await fetch(
-      `/api/jobs?dateFrom=${thirtyDaysAgo.toISOString().split("T")[0]}&limit=100`
+      `/api/jobs?dateFrom=${thirtyDaysAgo.toISOString().split("T")[0]}&limit=100`,
+      { signal: AbortSignal.timeout(8000) }
     );
     
     if (!response.ok) {
